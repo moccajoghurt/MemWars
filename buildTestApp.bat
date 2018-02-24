@@ -1,0 +1,1 @@
+cl.exe memoryTestApp.c /link user32.lib

@@ -1,0 +1,4 @@
+hack.txt
+*.obj
+.vscode
+*.exe
