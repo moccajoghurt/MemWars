@@ -1,8 +1,13 @@
-#include "memAnalyzer.h"
 #include <stdio.h>
+#include <windows.h>
+#include <Psapi.h> // enumprocesses
+#include "memAnalyzer.h"
 
 
 BOOL valueIsMatching(BYTE* memPtr, BYTEARRAY* value) {
+    // for (int i = 0; i < value->size; i++) {
+    //     printf("%c, %c\n", *(memPtr + i), value->values[i]);
+    // }
     for (int i = 0; i < value->size; i++) {
         if ((BYTE)*(memPtr + i) != value->values[i]) {
             return FALSE;
@@ -12,7 +17,7 @@ BOOL valueIsMatching(BYTE* memPtr, BYTEARRAY* value) {
 }
 
 
-void intToByteArray(int val, BYTEARRAY* bArr) {
+void intToByteArray(BYTEARRAY* bArr, int val) {
     // windows uses little-endian
     bArr->values[3] = val >> 24;
     bArr->values[2] = val >> 16;
@@ -21,19 +26,41 @@ void intToByteArray(int val, BYTEARRAY* bArr) {
     bArr->size = 4;
 }
 
-void reallocMemPtrs(MEMPTRS* matchingMemPtrs) {
-    matchingMemPtrs->memPointerArray[matchingMemPtrs->size/20] = malloc(sizeof(int*) * 20);
+void floatToByteArray(BYTEARRAY* bArr, float val){
+    // memcpy(bArr->values, &val, sizeof(float));
+    bArr->values[3] = *((BYTE*)&val);
+    bArr->values[2] = *(((BYTE*)&val) + 1);
+    bArr->values[1] = *(((BYTE*)&val) + 2);
+    bArr->values[0] = *(((BYTE*)&val) + 3);
+    bArr->size = sizeof(float);
+
+    for (int i = 0; i < bArr->size; i++) {
+        printf("%c\n", *(((BYTE*)&val) + i));
+    }
 }
 
-void findValue(BYTEARRAY* value, HANDLE process, MEMPTRS* matchingMemPtrs) {
+void reallocMemPtrs(MEMPTRS* memPtrs) {
+    if (memPtrs->size == 0) {
+        memPtrs->memPointerArray = malloc(sizeof(BYTE*) * 20);
+    } else {
+        memPtrs->memPointerArray = realloc(memPtrs->memPointerArray, memPtrs->size * sizeof(BYTE*) + sizeof(BYTE*) * 20);
+    }
+}
+
+void concatMemPtr(BYTE* ptr, MEMPTRS* memPtrs) {
+    if (memPtrs->size % 20 == 0) {
+        reallocMemPtrs(memPtrs);
+    }
+    memPtrs->memPointerArray[memPtrs->size] = ptr;
+    memPtrs->size++;
+}
+
+void findValueByProcess(BYTEARRAY* value, HANDLE process, MEMPTRS* matchingMemPtrs) {
     BYTE* p = NULL;
     MEMORY_BASIC_INFORMATION info;
-    size_t edgeByteCount = 0;
-    void* edgeBytePtr = NULL;
     
     for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
         if (info.State == MEM_COMMIT && (info.Type == MEM_MAPPED || info.Type == MEM_PRIVATE)) {
-            
             BYTE* buf = malloc(info.RegionSize);
             size_t bytesRead;
             BOOL status = ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
@@ -43,40 +70,64 @@ void findValue(BYTEARRAY* value, HANDLE process, MEMPTRS* matchingMemPtrs) {
                     return;
                 }
             }
-            for (int i = 0; i < info.RegionSize; i += value->size) {
-                if (i + value->size > info.RegionSize && i != info.RegionSize) {
+            for (int i = 0; i < bytesRead; i += value->size) {
+                if (i + value->size > bytesRead) {
                     // end of memory reached
-                    edgeByteCount = info.RegionSize - i;
-                    edgeBytePtr = p + i;
                     printf("edge reached\n");
-                    continue;
-                } else {
-
-                    //edge byte handling
-                    if (i == 0 && edgeByteCount != 0) {
-                        for (int n = 0; n < edgeByteCount; n++) {
-
-                        }
-                    }
-                    
-                    if (valueIsMatching((buf + i), value)) {
-                        printf("found match\n");
-                        if (matchingMemPtrs->size % 20 == 0 && matchingMemPtrs->size != 0) {
-                            reallocMemPtrs(matchingMemPtrs);
-                        } else {
-                            matchingMemPtrs->memPointerArray[matchingMemPtrs->size] = (int*)(p + i);
-                        }
-                        matchingMemPtrs->size++;
-                    }
-
-                    edgeByteCount = 0;
-                    edgeBytePtr = NULL;
+                    break;
                 }
-                
+                if (valueIsMatching((buf + i), value)) {
+                    printf("found match\n");
+                    concatMemPtr((p + i), matchingMemPtrs);
+                }
             }
             free(buf);
         }
     }
+}
+
+HANDLE getProcessByWindowName(const char* windowName) {
+    HWND windowHwnd = FindWindow(0, windowName);
+    if (windowHwnd == NULL) {
+        printf("getProcessByWindowName::FindWindow() returned NULL: %d\n", GetLastError());
+        return NULL;
+    }
+    DWORD processId;
+    DWORD thread = GetWindowThreadProcessId(windowHwnd, &processId);
+    HANDLE process = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, processId);
+    if (process == NULL) {
+        printf("getProcessByWindowName::OpenProcess() returned NULL: %d\n", GetLastError());
+    }
+    return process;
+}
+
+HANDLE getProcessByName(const TCHAR* szProcessName) {
+    if(szProcessName == NULL) return NULL;
+    const char* strProcessName = szProcessName;
+
+    DWORD aProcesses[1024], cbNeeded, cProcesses;
+    if (!EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded)) {
+        return NULL;
+    }
+    cProcesses = cbNeeded / sizeof(DWORD);
+    for (unsigned int i = 0; i < cProcesses; i++) {
+        DWORD dwProcessID = aProcesses[i];
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwProcessID);
+
+        TCHAR szEachProcessName[MAX_PATH];
+        if (hProcess != NULL) {
+            HMODULE hMod;
+            DWORD cbNeeded;
+            if (EnumProcessModules(hProcess, &hMod, sizeof(hMod), &cbNeeded)) {
+                GetModuleBaseName(hProcess, hMod, szEachProcessName, sizeof(szEachProcessName) / sizeof(TCHAR));
+            }
+        }
+        if (strcmp(strProcessName, szEachProcessName) == 0) {
+            return hProcess;
+        }
+        CloseHandle(hProcess);
+    }
+    return NULL;
 }
 
 void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info) {
@@ -91,18 +142,8 @@ void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info) {
 }
 
 void printProcessMemory(const char* windowName) {
-    HWND windowHwnd = FindWindow(0, windowName);
-    if (windowHwnd == NULL) {
-        printf("FindWindow() returned NULL: %d\n", GetLastError());
-        return;
-    }
-    DWORD processId;
-    DWORD thread = GetWindowThreadProcessId(windowHwnd, &processId);
-    printf("process id: %d\n", processId);
-    printf("thread id: %d\n", thread);
-    HANDLE process = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, processId);
+    HANDLE process = (HANDLE)getProcessByWindowName(windowName);
     if (process == NULL) {
-        printf("OpenProcess() returned NULL: %d\n", GetLastError());
         return;
     }
     UCHAR *p = NULL;
