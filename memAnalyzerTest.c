@@ -2,7 +2,7 @@
 #include <windows.h>
 #include "memAnalyzer.h"
 
-void findValueByProcessTest() {
+void findValueInProcessTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
@@ -12,16 +12,85 @@ void findValueByProcessTest() {
     BYTEARRAY testValue2;
     BYTEARRAY testValue3;
     BYTEARRAY testValue4;
+    BYTEARRAY testValue5;
+    BYTEARRAY testValue6;
     intToByteArray(&testValue1, 133337);
     intToByteArray(&testValue2, 0xB00B);
-    // intToByteArray(0xC0FE, &testValue3);
-    // floatToByteArray(1.375, &testValue4);
+    intToByteArray(&testValue3, 0xCFFE);
+    strToByteArray(&testValue4, "smallStr");
+    strToByteArray(&testValue5, "Can you find me too?");
+    strToByteArray(&testValue6, "And me??");
 
     MEMPTRS matchingMemPtrs = {0};
-    findValueByProcess(&testValue1, process, &matchingMemPtrs);
-    findValueByProcess(&testValue2, process, &matchingMemPtrs);
-    // findValueByProcess(&testValue3, process, &matchingMemPtrs);
-    // findValueByProcess(&testValue4, process, &matchingMemPtrs);
+    int lastSize = matchingMemPtrs.size;
+    findValueInProcess(&testValue1, process, &matchingMemPtrs);
+    if (lastSize >= matchingMemPtrs.size) {
+        printf("findValueInProcessTest() failed\n");
+        goto Exit;
+    }
+    lastSize = matchingMemPtrs.size;
+    findValueInProcess(&testValue2, process, &matchingMemPtrs);
+    if (lastSize >= matchingMemPtrs.size) {
+        printf("findValueInProcessTest() failed\n");
+        goto Exit;
+    }
+    lastSize = matchingMemPtrs.size;
+    findValueInProcess(&testValue3, process, &matchingMemPtrs);
+    if (lastSize >= matchingMemPtrs.size) {
+        printf("findValueInProcessTest() failed\n");
+        goto Exit;
+    }
+    lastSize = matchingMemPtrs.size;
+    findValueInProcess(&testValue4, process, &matchingMemPtrs);
+    if (lastSize >= matchingMemPtrs.size) {
+        printf("findValueInProcessTest() failed\n");
+        goto Exit;
+    }
+    lastSize = matchingMemPtrs.size;
+    findValueInProcess(&testValue5, process, &matchingMemPtrs);
+    if (lastSize >= matchingMemPtrs.size) {
+        printf("findValueInProcessTest() failed\n");
+        goto Exit;
+    }
+    lastSize = matchingMemPtrs.size;
+    findValueInProcess(&testValue6, process, &matchingMemPtrs);
+    if (lastSize >= matchingMemPtrs.size) {
+        printf("findValueInProcessTest() failed\n");
+        goto Exit;
+    }
+    printf("findValueInProcessTest() success\n");
+    Exit:
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+void readProcessMemoryAtPtrLocationTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    BYTEARRAY testValue;
+    strToByteArray(&testValue, "smallStr");
+    MEMPTRS matchingMemPtrs = {0};
+    int lastSize = matchingMemPtrs.size;
+    findValueInProcess(&testValue, process, &matchingMemPtrs);
+    if (lastSize >= matchingMemPtrs.size) {
+        printf("readProcessMemoryAtPtrLocationTest()::findValueInProcess() failed\n");
+        goto Exit;
+    }
+    BYTEARRAY foundValue;
+    BOOL success = readProcessMemoryAtPtrLocation(matchingMemPtrs.memPointerArray[0], testValue.size, process, &foundValue);
+    if (!success) {
+        printf("readProcessMemoryAtPtrLocationTest()::readProcessMemoryAtPtrLocation() failed\n");
+        goto Exit;
+    }
+    printf("%d, %d\n", foundValue.size, testValue.size);
+    if (valueIsMatching(testValue.values, foundValue)) {
+        printf("readProcessMemoryAtPtrLocationTest() success\n");
+    } else {
+        printf("readProcessMemoryAtPtrLocationTest() failed\n");
+    }
+    Exit:
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
@@ -44,6 +113,17 @@ void floatToByteArrayTest() {
         printf("floatToByteArrayTest() success\n");
     } else {
         printf("floatToByteArrayTest() failed\n");
+    }
+}
+
+void strToByteArrayTest() {
+    const char* testString = "Test123";
+    BYTEARRAY bArr;
+    strToByteArray(&bArr, testString);
+    if (valueIsMatching(testString, &bArr) && bArr.size == strlen("Test123")) {
+        printf("strToByteArrayTest() success\n");
+    } else {
+        printf("strToByteArrayTest() failed\n");
     }
 }
 
@@ -95,13 +175,15 @@ void reallocMemPtrsTest() {
         concatMemPtr(&testVal, &memPtrs);
     }
     for (int i = 0; i < memPtrs.size; i++) {
-        if (*memPtrs.memPointerArray[i] != 16) {
+        if (*(int*)*(memPtrs.memPointerArray + i) != 16) {
             printf("reallocMemPtrsTest() failed\n");
             return;
         }
     }
     printf("reallocMemPtrsTest() success\n");
 }
+
+
 
 int main() {
     // printProcessMemory("test.txt - Editor");
@@ -111,6 +193,8 @@ int main() {
     intToByteArrayTest();
     concatMemPtrTest();
     reallocMemPtrsTest();
-    // floatToByteArrayTest();
-    findValueByProcessTest();
+    strToByteArrayTest();
+    findValueInProcessTest();
+    readProcessMemoryAtPtrLocationTest();
+    // floatToByteArrayTest(); // todo
 }

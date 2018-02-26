@@ -5,10 +5,10 @@
 int main(int argc, char* argv[]) {
     int value1 = 133337;
     int value2 = 0xB00B;
-    long value3 = 0xC0FEFE;
+    long value3 = 0xCFFE;
     float value4 = 1.375;
     double value5 = 312.76493;
-    char* str1 = "Hello, can you find me?";
+    char* str1 = "smallStr";
     const char* str2 = "Can you find me too?";
     char str3[] = "And me??";
     wchar_t* str4 = L"Try finding wide chars...";

@@ -7,15 +7,16 @@
 
 #define MAX_VAL_SIZE 200
 
-typedef struct _MEM_PTRS {
-    // 4 bytes
-    BYTE** memPointerArray;
-    size_t size;
-} MEMPTRS;
-
 typedef struct _BYTE_ARRAY {
     BYTE values[MAX_VAL_SIZE];
     size_t size;
 } BYTEARRAY;
+
+typedef struct _MEM_PTRS {
+    // 4 bytes
+    void** memPointerArray;
+    size_t datatypeSize;
+    size_t size;
+} MEMPTRS;
 
 #endif

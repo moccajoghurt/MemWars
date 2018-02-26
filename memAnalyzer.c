@@ -6,10 +6,10 @@
 
 BOOL valueIsMatching(BYTE* memPtr, BYTEARRAY* value) {
     // for (int i = 0; i < value->size; i++) {
-    //     printf("%c, %c\n", *(memPtr + i), value->values[i]);
+    //     printf("%x, %x\n", *(memPtr + i), value->values[i]);
     // }
     for (int i = 0; i < value->size; i++) {
-        if ((BYTE)*(memPtr + i) != value->values[i]) {
+        if (*(memPtr + i) != value->values[i]) {
             return FALSE;
         }
     }
@@ -26,28 +26,30 @@ void intToByteArray(BYTEARRAY* bArr, int val) {
     bArr->size = 4;
 }
 
-void floatToByteArray(BYTEARRAY* bArr, float val){
-    // memcpy(bArr->values, &val, sizeof(float));
-    bArr->values[3] = *((BYTE*)&val);
-    bArr->values[2] = *(((BYTE*)&val) + 1);
-    bArr->values[1] = *(((BYTE*)&val) + 2);
-    bArr->values[0] = *(((BYTE*)&val) + 3);
-    bArr->size = sizeof(float);
+void floatToByteArray(BYTEARRAY* bArr, float memPtr){
 
-    for (int i = 0; i < bArr->size; i++) {
-        printf("%c\n", *(((BYTE*)&val) + i));
+    printf("floatToByteArray() not implemented yet\n");
+    return;
+}
+
+void strToByteArray(BYTEARRAY* bArr, const char* str) {
+    if (strlen(str) > MAX_VAL_SIZE) {
+        printf("strToByteArray()::String too long! Increase MAX_VAL_SIZE\n");
+        return;
     }
+    strcpy(bArr->values, str);
+    bArr->size = strlen(str);
 }
 
 void reallocMemPtrs(MEMPTRS* memPtrs) {
     if (memPtrs->size == 0) {
-        memPtrs->memPointerArray = malloc(sizeof(BYTE*) * 20);
+        memPtrs->memPointerArray = malloc(sizeof(void*) * 20);
     } else {
-        memPtrs->memPointerArray = realloc(memPtrs->memPointerArray, memPtrs->size * sizeof(BYTE*) + sizeof(BYTE*) * 20);
+        memPtrs->memPointerArray = realloc(memPtrs->memPointerArray, memPtrs->size * sizeof(void*) + sizeof(void*) * 20);
     }
 }
 
-void concatMemPtr(BYTE* ptr, MEMPTRS* memPtrs) {
+void concatMemPtr(void* ptr, MEMPTRS* memPtrs) {
     if (memPtrs->size % 20 == 0) {
         reallocMemPtrs(memPtrs);
     }
@@ -55,35 +57,66 @@ void concatMemPtr(BYTE* ptr, MEMPTRS* memPtrs) {
     memPtrs->size++;
 }
 
-void findValueByProcess(BYTEARRAY* value, HANDLE process, MEMPTRS* matchingMemPtrs) {
+void findValueInProcess(BYTEARRAY* bArrValue, HANDLE process, MEMPTRS* matchingMemPtrs) {
     BYTE* p = NULL;
     MEMORY_BASIC_INFORMATION info;
     
     for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
-        if (info.State == MEM_COMMIT && (info.Type == MEM_MAPPED || info.Type == MEM_PRIVATE)) {
+        if (info.State == MEM_COMMIT/* && (info.Type == MEM_MAPPED || info.Type == MEM_PRIVATE || MEM_IMAGE)*/) {
             BYTE* buf = malloc(info.RegionSize);
             size_t bytesRead;
             BOOL status = ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
             if (!status) {
                 if (GetLastError() != 299) {
-                    printf("ReadProcessMemory() failed: %d\n", GetLastError());
+                    printf("findValueInProcess()::ReadProcessMemory() failed: %d\n", GetLastError());
                     return;
                 }
             }
-            for (int i = 0; i < bytesRead; i += value->size) {
-                if (i + value->size > bytesRead) {
+            for (int i = 0; i < bytesRead; i++) {
+                if (i + bArrValue->size > bytesRead) {
                     // end of memory reached
-                    printf("edge reached\n");
+                    // printf("edge reached\n");
                     break;
                 }
-                if (valueIsMatching((buf + i), value)) {
-                    printf("found match\n");
+                if (valueIsMatching((buf + i), bArrValue)) {
+                    // printf("found match\n");
                     concatMemPtr((p + i), matchingMemPtrs);
                 }
             }
             free(buf);
         }
     }
+}
+
+BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray) {
+    if (byteLen > MAX_VAL_SIZE) {
+        printf("readProcessMemoryAtPtrLocation() failed, byteLen too big, increase MAX_VAL_SIZE\n");
+        return FALSE;
+    }
+    MEMORY_BASIC_INFORMATION info;
+    BOOL status = VirtualQueryEx(process, ptr, &info, sizeof(info));
+    if (status == 0 || info.RegionSize < byteLen || info.State != MEM_COMMIT) {
+        return FALSE;
+    }
+    BYTE* buf = malloc(info.RegionSize);
+    size_t bytesRead;
+    status = ReadProcessMemory(process, ptr, buf, byteLen, &bytesRead);
+    if (!status) {
+        if (GetLastError() != 299) {
+            printf("readProcessMemoryAtPtrLocation()::ReadProcessMemory() failed: %d\n", GetLastError());
+            return FALSE;
+        }
+    }
+    if (bytesRead < byteLen) {
+        return FALSE;
+    }
+    memcpy(readValueByteArray->values, buf, byteLen);
+    readValueByteArray->size = byteLen;
+
+    printf("%s\n%s", readValueByteArray->values, buf);
+
+    free(buf);
+    return TRUE;
 }
 
 HANDLE getProcessByWindowName(const char* windowName) {
@@ -150,7 +183,7 @@ void printProcessMemory(const char* windowName) {
     MEMORY_BASIC_INFORMATION info;
     for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
         printProcessMemoryInformation(&info);
-        if (info.State == MEM_COMMIT && (info.Type == MEM_MAPPED || info.Type == MEM_PRIVATE /*||info.Type == MEM_IMAGE*/)) {
+        if (info.State == MEM_COMMIT && (info.Type == MEM_MAPPED || info.Type == MEM_PRIVATE ||info.Type == MEM_IMAGE)) {
             UCHAR* buf = malloc(info.RegionSize);
             SIZE_T bytesRead;
             ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
