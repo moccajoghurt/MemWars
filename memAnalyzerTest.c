@@ -14,12 +14,16 @@ void findValueInProcessTest() {
     BYTEARRAY testValue4;
     BYTEARRAY testValue5;
     BYTEARRAY testValue6;
+    BYTEARRAY testValue7;
+    BYTEARRAY testValue8;
     intToByteArray(&testValue1, 133337);
     intToByteArray(&testValue2, 0xB00B);
     intToByteArray(&testValue3, 0xCFFE);
     strToByteArray(&testValue4, "smallStr");
     strToByteArray(&testValue5, "Can you find me too?");
     strToByteArray(&testValue6, "And me??");
+    floatToByteArray(&testValue7, 1.375);
+    doubleToByteArray(&testValue8, 312.76493);
 
     MEMPTRS matchingMemPtrs = {0};
     int lastSize = matchingMemPtrs.size;
@@ -54,6 +58,18 @@ void findValueInProcessTest() {
     }
     lastSize = matchingMemPtrs.size;
     findValueInProcess(&testValue6, process, &matchingMemPtrs);
+    if (lastSize >= matchingMemPtrs.size) {
+        printf("findValueInProcessTest() failed\n");
+        goto Exit;
+    }
+    lastSize = matchingMemPtrs.size;
+    findValueInProcess(&testValue7, process, &matchingMemPtrs);
+    if (lastSize >= matchingMemPtrs.size) {
+        printf("findValueInProcessTest() failed\n");
+        goto Exit;
+    }
+    lastSize = matchingMemPtrs.size;
+    findValueInProcess(&testValue8, process, &matchingMemPtrs);
     if (lastSize >= matchingMemPtrs.size) {
         printf("findValueInProcessTest() failed\n");
         goto Exit;
@@ -110,14 +126,32 @@ void intToByteArrayTest() {
 
 void floatToByteArrayTest() {
     float testVal = 2.859;
+    BYTEARRAY bArr1 = {0};
+    bArr1.size = sizeof(testVal);
+    memcpy(bArr1.values, &testVal, sizeof(testVal));
     BYTEARRAY bArr = {0};
     floatToByteArray(&bArr, testVal);
-    if (valueIsMatching(&testVal, &bArr)) {
+    if (valueIsMatching(&bArr, &bArr1)) {
         printf("floatToByteArrayTest() success\n");
     } else {
         printf("floatToByteArrayTest() failed\n");
     }
 }
+
+void doubleToByteArrayTest() {
+    double testVal = 23.8591;
+    BYTEARRAY bArr1 = {0};
+    bArr1.size = sizeof(testVal);
+    memcpy(bArr1.values, &testVal, sizeof(testVal));
+    BYTEARRAY bArr = {0};
+    doubleToByteArray(&bArr, testVal);
+    if (valueIsMatching(&bArr, &bArr1)) {
+        printf("doubleToByteArrayTest() success\n");
+    } else {
+        printf("doubleToByteArrayTest() failed\n");
+    }
+}
+
 
 void strToByteArrayTest() {
     const char* testString = "Test123";
@@ -209,11 +243,12 @@ int main() {
     // printProcessMemory("Vermintide 2");
     
     valueIsMatchingTest();
-    intToByteArrayTest();
     concatMemPtrTest();
     reallocMemPtrsTest();
+    intToByteArrayTest();
     strToByteArrayTest();
-    findValueInProcessTest();
+    floatToByteArrayTest();
+    doubleToByteArrayTest();
+    findValueInProcessTest(); // todo: add float & double
     readProcessMemoryAtPtrLocationTest();
-    // floatToByteArrayTest(); // todo
 }

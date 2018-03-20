@@ -4,28 +4,17 @@
 #include "memAnalyzer.h"
 
 
-BOOL valueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* value) {
-    // for (int i = 0; i < value->size; i++) {
-    //     printf("%x, %x\n", *(memPtr + i), value->values[i]);
-    // }
-    
-    // for (int i = 0; i < value->size; i++) {
-    //     if (*(memPtr + i) != value->values[i]) {
-    //         return FALSE;
-    //     }
-    // }
-    // return TRUE;
-
-    if (memPtr->size != value->size) {
-        printf("valueIsMatching() failed. memPtr->size != value->size\n");
+BOOL valueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* memPtr1) {
+    if (memPtr->size != memPtr1->size) {
+        printf("valueIsMatching() failed. memPtr->size != memPtr1->size\n");
         return FALSE;
     }
-    for (int i = 0; i < value->size; i++) {
-        if (memPtr->values[i] != value->values[i]) {
-            return FALSE;
-        }
+    int status = memcmp(memPtr->values, memPtr1->values, memPtr->size);
+    if (status == 0) {
+        return TRUE;
+    } else {
+        return FALSE;
     }
-    return TRUE;
 }
 
 
@@ -38,9 +27,17 @@ void intToByteArray(BYTEARRAY* bArr, int val) {
     bArr->size = 4;
 }
 
-void floatToByteArray(BYTEARRAY* bArr, float memPtr){
+void floatToByteArray(BYTEARRAY* bArr, float f) {
+    // printf("floatToByteArray() warning: comparing float values in memory not implemented yet!\n");
+    bArr->size = sizeof(f);
+    memcpy(bArr->values, &f, sizeof(f));
+    return;
+}
 
-    printf("floatToByteArray() not implemented yet\n");
+void doubleToByteArray(BYTEARRAY* bArr, double d) {
+    // printf("floatToByteArray() warning: comparing float values in memory not implemented yet!\n");
+    bArr->size = sizeof(d);
+    memcpy(bArr->values, &d, sizeof(d));
     return;
 }
 
@@ -93,9 +90,7 @@ void findValueInProcess(BYTEARRAY* bArrValue, HANDLE process, MEMPTRS* matchingM
                 BYTEARRAY memVal;
                 memcpy(memVal.values, buf + i, bArrValue->size);
                 memVal.size = bArrValue->size;
-                //if (valueIsMatching((buf + i), bArrValue)) {
                 if (valueIsMatching(&memVal, bArrValue)) {
-                    // printf("found match\n");
                     concatMemPtr((p + i), matchingMemPtrs);
                 }
             }
