@@ -8,8 +8,8 @@
 #define MAX_VAL_SIZE 200
 
 typedef struct _BYTE_ARRAY {
-    BYTE values[MAX_VAL_SIZE];
     size_t size;
+    BYTE values[MAX_VAL_SIZE];
 } BYTEARRAY;
 
 typedef struct _MEM_PTRS {

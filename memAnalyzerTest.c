@@ -70,7 +70,7 @@ void readProcessMemoryAtPtrLocationTest() {
         process = (HANDLE)getProcessByName("memoryTestApp.exe");
     }
     BYTEARRAY testValue;
-    strToByteArray(&testValue, "smallStr");
+    strToByteArray(&testValue, "smallStr"); // make sure that this value actually is inside memoryTestApp.exe
     MEMPTRS matchingMemPtrs = {0};
     int lastSize = matchingMemPtrs.size;
     findValueInProcess(&testValue, process, &matchingMemPtrs);
@@ -84,8 +84,8 @@ void readProcessMemoryAtPtrLocationTest() {
         printf("readProcessMemoryAtPtrLocationTest()::readProcessMemoryAtPtrLocation() failed\n");
         goto Exit;
     }
-    printf("%d, %d\n", foundValue.size, testValue.size);
-    if (valueIsMatching(testValue.values, foundValue)) {
+    // printf("%d, %d\n", foundValue.size, testValue.size);
+    if (valueIsMatching(&testValue, &foundValue)) {
         printf("readProcessMemoryAtPtrLocationTest() success\n");
     } else {
         printf("readProcessMemoryAtPtrLocationTest() failed\n");
@@ -96,9 +96,12 @@ void readProcessMemoryAtPtrLocationTest() {
 
 void intToByteArrayTest() {
     int testVal = 1337;
+    BYTEARRAY bArr1;
+    memcpy(bArr1.values, &testVal, sizeof(int));
+    bArr1.size = sizeof(int);
     BYTEARRAY bArr;
     intToByteArray(&bArr, testVal);
-    if (valueIsMatching(&testVal, &bArr)) {
+    if (valueIsMatching(&bArr, &bArr1)) {
         printf("intToByteArrayTest() success\n");
     } else {
         printf("intToByteArrayTest() failed\n");
@@ -118,9 +121,12 @@ void floatToByteArrayTest() {
 
 void strToByteArrayTest() {
     const char* testString = "Test123";
+    BYTEARRAY bArr1;
+    memcpy(bArr1.values, testString, strlen("Test123"));
+    bArr1.size = strlen("Test123");
     BYTEARRAY bArr;
     strToByteArray(&bArr, testString);
-    if (valueIsMatching(testString, &bArr) && bArr.size == strlen("Test123")) {
+    if (valueIsMatching(&bArr, &bArr1) && bArr.size == strlen("Test123")) {
         printf("strToByteArrayTest() success\n");
     } else {
         printf("strToByteArrayTest() failed\n");
@@ -128,8 +134,7 @@ void strToByteArrayTest() {
 }
 
 void valueIsMatchingTest() {
-    CHAR testMemory1[] = {0xA, 0xB, 0x0, 0x4};
-    CHAR testMemory2[] = {0xB, 0x0, 0x0, 0xB};
+    
     BYTEARRAY bArr;
     bArr.size = 4;
     bArr.values[0] = 0xA;
@@ -137,7 +142,21 @@ void valueIsMatchingTest() {
     bArr.values[2] = 0x0;
     bArr.values[3] = 0x4;
 
-    if (valueIsMatching(testMemory1, &bArr) == TRUE && valueIsMatching(testMemory2, &bArr) == FALSE) {
+    BYTEARRAY bArr1;
+    bArr1.size = 4;
+    bArr1.values[0] = 0xA;
+    bArr1.values[1] = 0xB;
+    bArr1.values[2] = 0x0;
+    bArr1.values[3] = 0x4;
+
+    BYTEARRAY bArr2;
+    bArr2.size = 4;
+    bArr2.values[0] = 0x5;
+    bArr2.values[1] = 0x1;
+    bArr2.values[2] = 0x3;
+    bArr2.values[3] = 0x4;
+
+    if (valueIsMatching(&bArr, &bArr1) == TRUE && valueIsMatching(&bArr, &bArr2) == FALSE) {
         printf("valueIsMatchingTest() success\n");
     } else {
         printf("valueIsMatchingTest() failed\n");
@@ -187,7 +206,7 @@ void reallocMemPtrsTest() {
 
 int main() {
     // printProcessMemory("test.txt - Editor");
-    // printProcessMemory("Warcraft III");
+    // printProcessMemory("Vermintide 2");
     
     valueIsMatchingTest();
     intToByteArrayTest();

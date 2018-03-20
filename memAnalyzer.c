@@ -4,12 +4,24 @@
 #include "memAnalyzer.h"
 
 
-BOOL valueIsMatching(BYTE* memPtr, BYTEARRAY* value) {
+BOOL valueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* value) {
     // for (int i = 0; i < value->size; i++) {
     //     printf("%x, %x\n", *(memPtr + i), value->values[i]);
     // }
+    
+    // for (int i = 0; i < value->size; i++) {
+    //     if (*(memPtr + i) != value->values[i]) {
+    //         return FALSE;
+    //     }
+    // }
+    // return TRUE;
+
+    if (memPtr->size != value->size) {
+        printf("valueIsMatching() failed. memPtr->size != value->size\n");
+        return FALSE;
+    }
     for (int i = 0; i < value->size; i++) {
-        if (*(memPtr + i) != value->values[i]) {
+        if (memPtr->values[i] != value->values[i]) {
             return FALSE;
         }
     }
@@ -78,7 +90,11 @@ void findValueInProcess(BYTEARRAY* bArrValue, HANDLE process, MEMPTRS* matchingM
                     // printf("edge reached\n");
                     break;
                 }
-                if (valueIsMatching((buf + i), bArrValue)) {
+                BYTEARRAY memVal;
+                memcpy(memVal.values, buf + i, bArrValue->size);
+                memVal.size = bArrValue->size;
+                //if (valueIsMatching((buf + i), bArrValue)) {
+                if (valueIsMatching(&memVal, bArrValue)) {
                     // printf("found match\n");
                     concatMemPtr((p + i), matchingMemPtrs);
                 }
@@ -96,6 +112,7 @@ BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, B
     MEMORY_BASIC_INFORMATION info;
     BOOL status = VirtualQueryEx(process, ptr, &info, sizeof(info));
     if (status == 0 || info.RegionSize < byteLen || info.State != MEM_COMMIT) {
+        printf("readProcessMemoryAtPtrLocation()::VirtualQueryEx() failed\n");
         return FALSE;
     }
     BYTE* buf = malloc(info.RegionSize);
@@ -112,8 +129,6 @@ BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, B
     }
     memcpy(readValueByteArray->values, buf, byteLen);
     readValueByteArray->size = byteLen;
-
-    printf("%s\n%s", readValueByteArray->values, buf);
 
     free(buf);
     return TRUE;
