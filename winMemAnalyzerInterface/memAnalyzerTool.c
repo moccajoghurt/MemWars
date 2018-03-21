@@ -7,36 +7,36 @@
 size_t scanfByDatatype(char c, BYTEARRAY* bArr) {
     switch (c) {
         case 'd':
-            scanf("%d", (int*)bArr->values);
+            scanf(" %d", (int*)bArr->values);
             bArr->size = sizeof(int);
             return bArr->size;
         case 'u':
-            scanf("%u", (unsigned int*)bArr->values);
+            scanf(" %u", (unsigned int*)bArr->values);
             bArr->size = sizeof(unsigned int);
             return bArr->size;
         case 'h':
-            scanf("%h", (short*)bArr->values);
+            scanf(" %h", (short*)bArr->values);
             bArr->size = sizeof(short);
             return bArr->size;
         case 'o':
-            scanf("%hu", (unsigned short*)bArr->values);
+            scanf(" %hu", (unsigned short*)bArr->values);
             bArr->size = sizeof(unsigned short);
             return bArr->size;
         case 'l':
-            scanf("%lf", (double*)bArr->values);
+            scanf(" %lf", (double*)bArr->values);
             bArr->size = sizeof(double);
             return bArr->size;
         case 'f':
-            scanf("%f", (float*)bArr->values);
+            scanf(" %f", (float*)bArr->values);
             bArr->size = sizeof(float);
             return bArr->size;
         case 'b':
-            scanf("%c", (char*)bArr->values);
+            scanf(" %c", (char*)bArr->values);
             bArr->size = sizeof(char);
             return bArr->size;
         case 's':
             char buf[MAX_VAL_SIZE];
-            scanf("%s", buf);
+            scanf(" %s", buf);
             bArr->size = strlen(buf);
             strcpy_s(bArr->values, MAX_VAL_SIZE, buf);
             return bArr->size;
@@ -87,7 +87,9 @@ void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName
     }
 }
 
-void memorySnapshotRoutine(HANDLE hProcess) {
+void memorySnapshotRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName) {
+    fprintf(stderr, "Enter datatype to scan for.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value)\n");
+    char c = getchar();getchar();
 
 }
 
@@ -123,7 +125,7 @@ int main(int argc, char* argv[]) {
             valueSearchRoutine(hProcess, processBaseAddress, processName);
             break;
         case '2':
-            memorySnapshotRoutine(hProcess);
+            memorySnapshotRoutine(hProcess, processBaseAddress, processName);
             break;
         default:
             fprintf(stderr, "Invalid input.\n");

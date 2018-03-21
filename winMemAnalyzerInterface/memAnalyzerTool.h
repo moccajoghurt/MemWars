@@ -5,7 +5,7 @@
 
 size_t scanfByDatatype(char c, BYTEARRAY* bArr);
 void valueSearchRoutine(HANDLE hProcess, HMODULE processBaseAddress, TCHAR* processName);
-void memorySnapshotRoutine(HANDLE hProcess);
+void memorySnapshotRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName);
 
 
 #endif

@@ -2,7 +2,6 @@
 #ifndef _MEM_ANALYZER_H
 #define _MEM_ANALYZER_H
 
-// #include <stdlib.h> // size_t
 #include <windows.h>
 
 #define MAX_VAL_SIZE 200
@@ -29,6 +28,7 @@ void findValueInProcess(BYTEARRAY* bArrValue, HANDLE process, MEMPTRS* matchingM
 BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray);
 HANDLE getProcessByWindowName(const char* windowName);
 HANDLE getProcessByName(const TCHAR* szProcessName);
+HMODULE getProcessBaseAddress(HANDLE hProcess, TCHAR* szProcessName);
 void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info);
 void printProcessMemory(const char* windowName);
 

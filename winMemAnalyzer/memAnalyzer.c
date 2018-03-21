@@ -137,7 +137,7 @@ HANDLE getProcessByWindowName(const char* windowName) {
     }
     DWORD processId;
     DWORD thread = GetWindowThreadProcessId(windowHwnd, &processId);
-    HANDLE process = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, processId);
+    HANDLE process = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION | PROCESS_ALL_ACCESS, FALSE, processId);
     if (process == NULL) {
         printf("getProcessByWindowName::OpenProcess() returned NULL: %d\n", GetLastError());
     }
@@ -155,7 +155,7 @@ HANDLE getProcessByName(const TCHAR* szProcessName) {
     cProcesses = cbNeeded / sizeof(DWORD);
     for (unsigned int i = 0; i < cProcesses; i++) {
         DWORD dwProcessID = aProcesses[i];
-        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwProcessID);
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_ALL_ACCESS, FALSE, dwProcessID);
 
         TCHAR szEachProcessName[MAX_PATH];
         if (hProcess != NULL) {
@@ -169,6 +169,20 @@ HANDLE getProcessByName(const TCHAR* szProcessName) {
             return hProcess;
         }
         CloseHandle(hProcess);
+    }
+    return NULL;
+}
+
+HMODULE getProcessBaseAddress(HANDLE hProcess, TCHAR* szProcessName) {
+
+    TCHAR szProcessNameBuf[MAX_PATH];
+    HMODULE hMod;
+    DWORD cbNeeded;
+    if (EnumProcessModulesEx(hProcess, &hMod, sizeof(hMod), &cbNeeded, LIST_MODULES_32BIT | LIST_MODULES_64BIT)) {
+        GetModuleBaseName(hProcess, hMod, szProcessNameBuf, sizeof(szProcessNameBuf) / sizeof(TCHAR));
+        if (!_tcsicmp(szProcessName, szProcessNameBuf)) {
+            return hMod;
+        }
     }
     return NULL;
 }

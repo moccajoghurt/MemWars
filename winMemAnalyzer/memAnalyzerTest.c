@@ -236,11 +236,26 @@ void reallocMemPtrsTest() {
     printf("reallocMemPtrsTest() success\n");
 }
 
+void getProcessBaseAddressTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    HMODULE hMod = getProcessBaseAddress(process, "memoryTestApp.exe");
+
+    if (hMod == NULL) {
+        printf("getProcessBaseAddressTest() failed\n");
+    } else {
+        printf("getProcessBaseAddressTest() success\n");
+    }
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
 
 
 int main() {
     // printProcessMemory("test.txt - Editor");
-    // printProcessMemory("Vermintide 2");
+    // printProcessMemory("Buddy Liste");
     
     valueIsMatchingTest();
     concatMemPtrTest();
@@ -250,6 +265,6 @@ int main() {
     floatToByteArrayTest();
     doubleToByteArrayTest();
     findValueInProcessTest();
-    
     readProcessMemoryAtPtrLocationTest();
+    getProcessBaseAddressTest();
 }
