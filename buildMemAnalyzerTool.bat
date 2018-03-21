@@ -1,1 +1,1 @@
-cl.exe memAnalyzer.c memAnalyzerTool.c /link user32.lib Kernel32.lib
+cl.exe memAnalyzerTool.c memAnalyzer.c /link user32.lib Kernel32.lib
