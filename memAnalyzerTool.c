@@ -64,7 +64,7 @@ void valueSearchRoutine(HANDLE hProcess) {
     // now we reiterate over the matching pointers as long as we want
     for (;;) {
         MEMPTRS matchingMemPtrsBuf = {0};
-        fprintf(stderr, "Enter new (or same) value (of the same datatype) for the matching pointers:\n");
+        fprintf(stderr, "Enter new (or same) value (of the same datatype) to search among the matching pointers:\n");
         size_t dataSize = scanfByDatatype(c, &bArr);
         printf("Matching pointers:\n");
         for (int i = 0; i < matchingMemPtrs.size; i++) {
