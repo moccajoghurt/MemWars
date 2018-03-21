@@ -249,6 +249,7 @@ int main() {
     strToByteArrayTest();
     floatToByteArrayTest();
     doubleToByteArrayTest();
-    findValueInProcessTest(); // todo: add float & double
+    findValueInProcessTest();
+    
     readProcessMemoryAtPtrLocationTest();
 }

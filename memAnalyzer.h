@@ -13,7 +13,6 @@ typedef struct _BYTE_ARRAY {
 } BYTEARRAY;
 
 typedef struct _MEM_PTRS {
-    // 4 bytes
     void** memPointerArray;
     size_t datatypeSize;
     size_t size;
