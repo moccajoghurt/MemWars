@@ -86,11 +86,19 @@ void valueSearchRoutine(HANDLE hProcess) {
 
 int main(int argc, char* argv[]) {
 
+
     HANDLE hProcess = getProcessByName(argv[1]);
     if (hProcess == NULL) {
         fprintf(stderr, "Could not find process %s\n", argv[1]);
-        return;
+        fprintf(stderr, "Searching for window insead\n");
+
+        hProcess = getProcessByWindowName(argv[1]);
+        if (hProcess == NULL) {
+            fprintf(stderr, "Could not find window %s\n", argv[1]);
+            return;
+        }
     }
+    
     // we use stderr for user notifications and stdout for data values
     fprintf(stderr, "Found %s.\n", argv[1]);
     fprintf(stderr, "1. search for value (1)\n2. compare memory snapshots (2)\n");
@@ -106,9 +114,5 @@ int main(int argc, char* argv[]) {
         default:
             fprintf(stderr, "Invalid input.\n");
             break;
-    }
-    fflush(stdout);
-    for (;;) {
-
     }
 }
