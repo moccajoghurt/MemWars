@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <windows.h>
+#include <Psapi.h> // GetModuleFileNameEx
 #include "../winMemAnalyzer/memAnalyzer.h"
 #include "memAnalyzerTool.h"
 
@@ -44,7 +46,7 @@ size_t scanfByDatatype(char c, BYTEARRAY* bArr) {
     }
 }
 
-void valueSearchRoutine(HANDLE hProcess) {
+void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName) {
     BYTEARRAY bArr = {0};
     fprintf(stderr, "Enter datatype to search for.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value) \n8. string (s)\n");
     char c = getchar();getchar();
@@ -55,7 +57,7 @@ void valueSearchRoutine(HANDLE hProcess) {
     findValueInProcess(&bArr, hProcess, &matchingMemPtrs);
     printf("Matching pointers:\n");
     for (int i = 0; i < matchingMemPtrs.size; i++) {
-        printf("%#x\n", (unsigned int)*(matchingMemPtrs.memPointerArray + i));
+        printf("%s+%x\n", processName, ((unsigned int)*(matchingMemPtrs.memPointerArray + i) - (unsigned int)baseAddress));
     }
     if (matchingMemPtrs.size == 0) {
         fprintf(stderr, "No matching pointers found\n");
@@ -71,7 +73,8 @@ void valueSearchRoutine(HANDLE hProcess) {
             BYTEARRAY bArrBuf = {0};
             readProcessMemoryAtPtrLocation(*(matchingMemPtrs.memPointerArray + i), dataSize, hProcess, &bArrBuf);
             if (valueIsMatching(&bArr, &bArrBuf)) {
-                printf("%#x\n", (unsigned int)*(matchingMemPtrs.memPointerArray + i));
+                // printf("%#x\n", (unsigned int)*(matchingMemPtrs.memPointerArray + i));
+                printf("%s+%x\n", processName, ((unsigned int)*(matchingMemPtrs.memPointerArray + i) - (unsigned int)baseAddress));
                 concatMemPtr(*(matchingMemPtrs.memPointerArray + i), &matchingMemPtrsBuf);
             }
         }
@@ -84,9 +87,14 @@ void valueSearchRoutine(HANDLE hProcess) {
     }
 }
 
+void memorySnapshotRoutine(HANDLE hProcess) {
+
+}
+
 int main(int argc, char* argv[]) {
 
-
+    TCHAR processName[MAX_PATH];
+    strcpy_s(processName, MAX_PATH, argv[1]);
     HANDLE hProcess = getProcessByName(argv[1]);
     if (hProcess == NULL) {
         fprintf(stderr, "Could not find process %s\n", argv[1]);
@@ -97,6 +105,13 @@ int main(int argc, char* argv[]) {
             fprintf(stderr, "Could not find window %s\n", argv[1]);
             return;
         }
+        GetModuleFileNameEx(hProcess, NULL, processName, MAX_PATH); // get the process name
+    }
+
+    HMODULE processBaseAddress = getProcessBaseAddress(hProcess, processName);
+    if (processBaseAddress == NULL) {
+        fprintf(stderr, "Could not retrieve process base address.\n");
+        return;
     }
     
     // we use stderr for user notifications and stdout for data values
@@ -105,14 +120,15 @@ int main(int argc, char* argv[]) {
     char c = getchar();getchar();
     switch (c) {
         case '1':
-            valueSearchRoutine(hProcess);
+            valueSearchRoutine(hProcess, processBaseAddress, processName);
             break;
         case '2':
-
+            memorySnapshotRoutine(hProcess);
             break;
-
         default:
             fprintf(stderr, "Invalid input.\n");
             break;
     }
+    fprintf(stderr, "Press Enter to close.\n");
+    getchar();getchar();
 }
