@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "memAnalyzer.h"
+#include "../winMemAnalyzer/memAnalyzer.h"
 #include "memAnalyzerTool.h"
 
 size_t scanfByDatatype(char c, BYTEARRAY* bArr) {
