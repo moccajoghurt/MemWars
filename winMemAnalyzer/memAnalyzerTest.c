@@ -265,41 +265,34 @@ void reallocMemoryMapTest() {
     }
     freeMemMap(&memMap);
 }
+
 void concatMemoryMapTest() {
-
     MEMMAP memMap = {0};
-
     BYTEARRAY bArr;
     bArr.size = 4;
     bArr.values[0] = 0xA;
     bArr.values[1] = 0xB;
     bArr.values[2] = 0x0;
     bArr.values[3] = 0x4;
-
     BYTEARRAY bArr1;
     bArr1.size = 4;
     bArr1.values[0] = 0xA;
     bArr1.values[1] = 0xB;
     bArr1.values[2] = 0x0;
     bArr1.values[3] = 0x4;
-
     BYTEARRAY bArr2;
     bArr2.size = 4;
     bArr2.values[0] = 0x5;
     bArr2.values[1] = 0x1;
     bArr2.values[2] = 0x3;
     bArr2.values[3] = 0x4;
-
     int testVal1 = 1;
     int testVal2 = 5;
     int testVal3 = 50;
-
     concatMemoryMap(&memMap, &testVal1, &bArr);
     concatMemoryMap(&memMap, &testVal2, &bArr1);
     concatMemoryMap(&memMap, &testVal3, &bArr2);
-
     memMap.byteArrays[2]->values[0] = 0x1;
-
     if (valueIsMatching(memMap.byteArrays[0], &bArr) &&
         valueIsMatching(memMap.byteArrays[1], &bArr1) &&
         !valueIsMatching(memMap.byteArrays[2], &bArr2) &&
@@ -332,21 +325,33 @@ void getProcessBaseAddressTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
+void getMemorySnapshotTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    MEMMAP memMap = {0};
+    getMemorySnapshot(&memMap, process, 4);
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
 
 int main() {
     // printProcessMemory("test.txt - Editor");
     // printProcessMemory("Buddy Liste");
     
-    valueIsMatchingTest();
-    concatMemPtrTest();
-    reallocMemPtrsTest();
-    intToByteArrayTest();
-    strToByteArrayTest();
-    floatToByteArrayTest();
-    doubleToByteArrayTest();
-    findValueInProcessTest();
-    readProcessMemoryAtPtrLocationTest();
-    getProcessBaseAddressTest();
-    reallocMemoryMapTest();
-    concatMemoryMapTest();
+    // valueIsMatchingTest();
+    // concatMemPtrTest();
+    // reallocMemPtrsTest();
+    // intToByteArrayTest();
+    // strToByteArrayTest();
+    // floatToByteArrayTest();
+    // doubleToByteArrayTest();
+    // findValueInProcessTest();
+    // readProcessMemoryAtPtrLocationTest();
+    // getProcessBaseAddressTest();
+    // reallocMemoryMapTest();
+    // concatMemoryMapTest();
+    getMemorySnapshotTest();
 }

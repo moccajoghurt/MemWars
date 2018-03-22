@@ -134,7 +134,7 @@ void getMemorySnapshot(MEMMAP* memMap, HANDLE process, size_t valByteSize) {
     BYTE* p = NULL;
     MEMORY_BASIC_INFORMATION info;
     for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
-        if (info.State == MEM_COMMIT) {
+        if (info.State == MEM_COMMIT && (/*info.Type == MEM_MAPPED  || info.Type == MEM_PRIVATE ||*/ MEM_IMAGE)) {
             BYTE* buf = malloc(info.RegionSize);
             size_t bytesRead;
             BOOL status = ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
@@ -156,6 +156,7 @@ void getMemorySnapshot(MEMMAP* memMap, HANDLE process, size_t valByteSize) {
             free(buf);
         }
     }
+    printf("%d\n", count);
 }
 
 BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray) {
