@@ -17,6 +17,12 @@ typedef struct _MEM_PTRS {
     size_t size;
 } MEMPTRS;
 
+typedef struct _MEMORY_MAP {
+    MEMPTRS* memPtrs;
+    BYTEARRAY** byteArrays;
+    size_t size;
+} MEMMAP;
+
 BOOL valueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* memPtr1);
 void intToByteArray(BYTEARRAY* bArr, int val);
 void floatToByteArray(BYTEARRAY* bArr, float f);
@@ -31,5 +37,10 @@ HANDLE getProcessByName(const TCHAR* szProcessName);
 HMODULE getProcessBaseAddress(HANDLE hProcess, TCHAR* szProcessName);
 void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info);
 void printProcessMemory(const char* windowName);
+void reallocMemoryMap(MEMMAP* memMap);
+void concatMemoryMap(MEMMAP* memMap, void* memPtr, BYTEARRAY* bArrVal);
+void getMemorySnapshot(MEMMAP* memMap, HANDLE process, size_t valByteSize);
+void freeMemMap(MEMMAP* memMap);
+
 
 #endif

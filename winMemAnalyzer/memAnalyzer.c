@@ -99,6 +99,65 @@ void findValueInProcess(BYTEARRAY* bArrValue, HANDLE process, MEMPTRS* matchingM
     }
 }
 
+
+void reallocMemoryMap(MEMMAP* memMap) {
+    if (memMap->size == 0) {
+        memMap->byteArrays = malloc(sizeof(BYTEARRAY*) * 20);
+        memMap->memPtrs = calloc(sizeof(MEMPTRS), 0);
+        memMap->memPtrs->size = 0;
+    } else {
+        memMap->byteArrays = realloc(memMap->byteArrays, memMap->size * sizeof(BYTEARRAY*) + sizeof(BYTEARRAY*) * 20);
+    }
+}
+
+void concatMemoryMap(MEMMAP* memMap, void* memPtr, BYTEARRAY* bArrVal) {
+    if (memMap->size % 20 == 0) {
+        reallocMemoryMap(memMap);
+    }
+    memMap->byteArrays[memMap->size] = malloc(sizeof(BYTEARRAY));
+    memcpy(memMap->byteArrays[memMap->size], bArrVal, sizeof(BYTEARRAY));
+    concatMemPtr(memPtr, memMap->memPtrs);
+    memMap->size++;
+}
+
+void freeMemMap(MEMMAP* memMap) {
+    for (int i = 0; i < memMap->size; i++) {
+        free(memMap->byteArrays[i]);
+    }
+    free(memMap->byteArrays);
+    free(memMap->memPtrs->memPointerArray);
+    free(memMap->memPtrs);
+}
+
+
+void getMemorySnapshot(MEMMAP* memMap, HANDLE process, size_t valByteSize) {
+    BYTE* p = NULL;
+    MEMORY_BASIC_INFORMATION info;
+    for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
+        if (info.State == MEM_COMMIT) {
+            BYTE* buf = malloc(info.RegionSize);
+            size_t bytesRead;
+            BOOL status = ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
+            if (!status) {
+                if (GetLastError() != 299) {
+                    printf("findValueInProcess()::ReadProcessMemory() failed: %d\n", GetLastError());
+                    return;
+                }
+            }
+            for (int i = 0; i < bytesRead; i++) {
+                if (i + valByteSize > bytesRead) {
+                    break;
+                }
+                BYTEARRAY memVal = {0};
+                memcpy(memVal.values, buf + i, valByteSize);
+                memVal.size = valByteSize;
+                concatMemoryMap(memMap, (p + i), &memVal);
+            }
+            free(buf);
+        }
+    }
+}
+
 BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray) {
     if (byteLen > MAX_VAL_SIZE) {
         printf("readProcessMemoryAtPtrLocation() failed, byteLen too big, increase MAX_VAL_SIZE\n");

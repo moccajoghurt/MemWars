@@ -233,7 +233,87 @@ void reallocMemPtrsTest() {
             return;
         }
     }
-    printf("reallocMemPtrsTest() success\n");
+    if (memPtrs.size == 101) {
+        printf("reallocMemPtrsTest() success\n");
+    } else {
+        printf("reallocMemPtrsTest() failed\n");
+    }
+}
+
+void reallocMemoryMapTest() {
+    MEMMAP memMap = {0};
+    BYTEARRAY bArr;
+    bArr.size = 4;
+    bArr.values[0] = 0xA;
+    bArr.values[1] = 0xB;
+    bArr.values[2] = 0x0;
+    bArr.values[3] = 0x4;
+    int testVal = 16;
+    for (int i = 0; i < 101; i++) {
+        concatMemoryMap(&memMap, &testVal, &bArr);
+    }
+    for (int i = 0; i < memMap.size; i++) {
+        if (!valueIsMatching(memMap.byteArrays[i], &bArr) || 
+            memMap.memPtrs->memPointerArray[i] != &testVal) {
+            printf("reallocMemoryMapTest() failed\n");
+            return;
+        }
+    }
+    
+    if (memMap.size == 101 && memMap.memPtrs->size == 101) {
+        printf("reallocMemoryMapTest() success\n");
+    }
+    freeMemMap(&memMap);
+}
+void concatMemoryMapTest() {
+
+    MEMMAP memMap = {0};
+
+    BYTEARRAY bArr;
+    bArr.size = 4;
+    bArr.values[0] = 0xA;
+    bArr.values[1] = 0xB;
+    bArr.values[2] = 0x0;
+    bArr.values[3] = 0x4;
+
+    BYTEARRAY bArr1;
+    bArr1.size = 4;
+    bArr1.values[0] = 0xA;
+    bArr1.values[1] = 0xB;
+    bArr1.values[2] = 0x0;
+    bArr1.values[3] = 0x4;
+
+    BYTEARRAY bArr2;
+    bArr2.size = 4;
+    bArr2.values[0] = 0x5;
+    bArr2.values[1] = 0x1;
+    bArr2.values[2] = 0x3;
+    bArr2.values[3] = 0x4;
+
+    int testVal1 = 1;
+    int testVal2 = 5;
+    int testVal3 = 50;
+
+    concatMemoryMap(&memMap, &testVal1, &bArr);
+    concatMemoryMap(&memMap, &testVal2, &bArr1);
+    concatMemoryMap(&memMap, &testVal3, &bArr2);
+
+    memMap.byteArrays[2]->values[0] = 0x1;
+
+    if (valueIsMatching(memMap.byteArrays[0], &bArr) &&
+        valueIsMatching(memMap.byteArrays[1], &bArr1) &&
+        !valueIsMatching(memMap.byteArrays[2], &bArr2) &&
+        memMap.memPtrs->memPointerArray[0] == &testVal1 &&
+        memMap.memPtrs->memPointerArray[1] == &testVal2 &&
+        memMap.memPtrs->memPointerArray[2] == &testVal3 &&
+        memMap.memPtrs->size == 3 &&
+        memMap.size == 3) {
+        
+        printf("concatMemoryMapTest() success\n");
+    } else {
+        printf("concatMemoryMapTest() failed\n");
+    }
+    freeMemMap(&memMap);
 }
 
 void getProcessBaseAddressTest() {
@@ -267,4 +347,6 @@ int main() {
     findValueInProcessTest();
     readProcessMemoryAtPtrLocationTest();
     getProcessBaseAddressTest();
+    reallocMemoryMapTest();
+    concatMemoryMapTest();
 }
