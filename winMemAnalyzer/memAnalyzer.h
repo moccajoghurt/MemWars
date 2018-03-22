@@ -27,6 +27,8 @@ BOOL valueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* memPtr1);
 void intToByteArray(BYTEARRAY* bArr, int val);
 void floatToByteArray(BYTEARRAY* bArr, float f);
 void doubleToByteArray(BYTEARRAY* bArr, double d);
+void shortToByteArray(BYTEARRAY* bArr, short s);
+void byteToByteArray(BYTEARRAY* bArr, char c);
 void strToByteArray(BYTEARRAY* bArr, const char* str);
 void reallocMemPtrs(MEMPTRS* memPtrs);
 void concatMemPtr(void* ptr, MEMPTRS* memPtrs);
@@ -39,7 +41,7 @@ void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info);
 void printProcessMemory(const char* windowName);
 void reallocMemoryMap(MEMMAP* memMap);
 void concatMemoryMap(MEMMAP* memMap, void* memPtr, BYTEARRAY* bArrVal);
-void getMemorySnapshot(MEMMAP* memMap, HANDLE process, size_t valByteSize);
+void memorySnapshotToDisc(HANDLE process, const char* fileName);
 void freeMemMap(MEMMAP* memMap);
 
 

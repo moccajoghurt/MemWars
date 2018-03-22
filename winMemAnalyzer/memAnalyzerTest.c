@@ -124,6 +124,34 @@ void intToByteArrayTest() {
     }
 }
 
+void shortToByteArrayTest() {
+    short testVal = 137;
+    BYTEARRAY bArr1;
+    memcpy(bArr1.values, &testVal, sizeof(short));
+    bArr1.size = sizeof(short);
+    BYTEARRAY bArr;
+    shortToByteArray(&bArr, testVal);
+    if (valueIsMatching(&bArr, &bArr1)) {
+        printf("shortToByteArrayTest() success\n");
+    } else {
+        printf("shortToByteArrayTest() failed\n");
+    }
+}
+
+void byteToByteArrayTest() {
+    char testVal = 255;
+    BYTEARRAY bArr1;
+    memcpy(bArr1.values, &testVal, sizeof(char));
+    bArr1.size = sizeof(char);
+    BYTEARRAY bArr;
+    byteToByteArray(&bArr, testVal);
+    if (valueIsMatching(&bArr, &bArr1)) {
+        printf("byteToByteArrayTest() success\n");
+    } else {
+        printf("byteToByteArrayTest() failed\n");
+    }
+}
+
 void floatToByteArrayTest() {
     float testVal = 2.859;
     BYTEARRAY bArr1 = {0};
@@ -262,6 +290,8 @@ void reallocMemoryMapTest() {
     
     if (memMap.size == 101 && memMap.memPtrs->size == 101) {
         printf("reallocMemoryMapTest() success\n");
+    } else {
+        printf("reallocMemoryMapTest() failed\n");
     }
     freeMemMap(&memMap);
 }
@@ -325,16 +355,32 @@ void getProcessBaseAddressTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void getMemorySnapshotTest() {
+void memorySnapshotToDiscTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
         process = (HANDLE)getProcessByName("memoryTestApp.exe");
     }
-    MEMMAP memMap = {0};
-    getMemorySnapshot(&memMap, process, 4);
+    MEMPTRS ptrs = {0};
+    memorySnapshotToDisc(process, "buf.txt");
+    FILE* file = fopen("buf.txt", "rb");
+    if (file == NULL) {
+        printf("Could not open buf.txt\n");
+        printf("memorySnapshotToDiscTest() failed\n");
+        goto Exit;
+    }
+    fclose(file);
+
+    // write according pointers to disc
+
+    printf("memorySnapshotToDiscTest() success\n");
+    Exit:
+    system("del buf.txt");
+    system("del \"buf.txt - ptrs\"");
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
+
+
 
 
 int main() {
@@ -345,6 +391,8 @@ int main() {
     // concatMemPtrTest();
     // reallocMemPtrsTest();
     // intToByteArrayTest();
+    // shortToByteArrayTest();
+    // byteToByteArrayTest();
     // strToByteArrayTest();
     // floatToByteArrayTest();
     // doubleToByteArrayTest();
@@ -353,5 +401,5 @@ int main() {
     // getProcessBaseAddressTest();
     // reallocMemoryMapTest();
     // concatMemoryMapTest();
-    getMemorySnapshotTest();
+    memorySnapshotToDiscTest();
 }

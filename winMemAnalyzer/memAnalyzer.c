@@ -27,18 +27,24 @@ void intToByteArray(BYTEARRAY* bArr, int val) {
     bArr->size = 4;
 }
 
+void byteToByteArray(BYTEARRAY* bArr, char c) {
+    bArr->size = sizeof(c);
+    memcpy(bArr->values, &c, sizeof(c));
+}
+
+void shortToByteArray(BYTEARRAY* bArr, short s) {
+    bArr->size = sizeof(s);
+    memcpy(bArr->values, &s, sizeof(s));
+}
+
 void floatToByteArray(BYTEARRAY* bArr, float f) {
-    // printf("floatToByteArray() warning: comparing float values in memory not implemented yet!\n");
     bArr->size = sizeof(f);
     memcpy(bArr->values, &f, sizeof(f));
-    return;
 }
 
 void doubleToByteArray(BYTEARRAY* bArr, double d) {
-    // printf("floatToByteArray() warning: comparing float values in memory not implemented yet!\n");
     bArr->size = sizeof(d);
     memcpy(bArr->values, &d, sizeof(d));
-    return;
 }
 
 void strToByteArray(BYTEARRAY* bArr, const char* str) {
@@ -130,11 +136,21 @@ void freeMemMap(MEMMAP* memMap) {
 }
 
 
-void getMemorySnapshot(MEMMAP* memMap, HANDLE process, size_t valByteSize) {
+void memorySnapshotToDisc(HANDLE process, const char* fileName) {
+    char* memPtrsFileName;
+    memPtrsFileName = malloc(strlen(fileName) + strlen(" - ptrs"));
+    strcpy(memPtrsFileName, fileName);
+    strcat(memPtrsFileName, " - ptrs");
+    FILE* dataFile = fopen(fileName, "wb");
+    FILE* memPtrFile = fopen(memPtrsFileName, "w");
+    if (dataFile == NULL) {
+        printf("Could not open file %s\n", fileName);
+        exit(1);
+    }
     BYTE* p = NULL;
     MEMORY_BASIC_INFORMATION info;
     for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
-        if (info.State == MEM_COMMIT && (/*info.Type == MEM_MAPPED  || info.Type == MEM_PRIVATE ||*/ MEM_IMAGE)) {
+        if (info.State == MEM_COMMIT) {
             BYTE* buf = malloc(info.RegionSize);
             size_t bytesRead;
             BOOL status = ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
@@ -144,19 +160,26 @@ void getMemorySnapshot(MEMMAP* memMap, HANDLE process, size_t valByteSize) {
                     return;
                 }
             }
-            for (int i = 0; i < bytesRead; i++) {
-                if (i + valByteSize > bytesRead) {
-                    break;
-                }
-                BYTEARRAY memVal = {0};
-                memcpy(memVal.values, buf + i, valByteSize);
-                memVal.size = valByteSize;
-                concatMemoryMap(memMap, (p + i), &memVal);
+            for (int i = 0; i < info.RegionSize; i++) {
+                unsigned int ptrBuf = (unsigned int)(p + i);
+                fwrite(&ptrBuf, sizeof(unsigned int), 1, memPtrFile);
             }
+            fwrite(buf, sizeof(char), bytesRead, dataFile);
             free(buf);
         }
     }
-    printf("%d\n", count);
+    fclose(dataFile);
+    fclose(memPtrFile);
+    free(memPtrsFileName);
+}
+
+void compareMemorySnapshots() {
+
+
+    // plan:
+    // take 2x snapshots
+    // compare and check differences
+    // 
 }
 
 BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray) {
