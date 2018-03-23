@@ -142,7 +142,7 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
     strcpy(memPtrsFileName, fileName);
     strcat(memPtrsFileName, " - ptrs");
     FILE* dataFile = fopen(fileName, "wb");
-    FILE* memPtrFile = fopen(memPtrsFileName, "w");
+    FILE* memPtrFile = fopen(memPtrsFileName, "wb");
     if (dataFile == NULL) {
         printf("Could not open file %s\n", fileName);
         exit(1);
@@ -173,13 +173,74 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
     free(memPtrsFileName);
 }
 
-void compareMemorySnapshots() {
+// this function compares two memory snapshots and either saves values that changed or didn't change
+void filterMemorySnapshots(const char* fileName1, const char* fileName2, const char* filteredSnapshotName, BOOL valsChanged) {
 
+    FILE* snapshot1;
+    snapshot1 = fopen(fileName1, "r");
+    if (snapshot1 == NULL) {
+        printf("Could not open file %s\n", fileName1);
+        exit(1);
+    }
+
+    FILE* snapshot2;
+    snapshot2 = fopen(fileName2, "r");
+    if (snapshot2 == NULL) {
+        printf("Could not open file %s\n", fileName2);
+        exit(1);
+    }
+
+    char* snapshotPtrsFileName1;
+    snapshotPtrsFileName1 = malloc(strlen(fileName1) + strlen(" - ptrs"));
+    strcpy(snapshotPtrsFileName1, fileName1);
+    strcat(snapshotPtrsFileName1, " - ptrs");
+    FILE* snapshotPtrs1;
+    snapshotPtrs1 = fopen(snapshotPtrsFileName1, "r");
+    if (snapshotPtrs1 == NULL) {
+        printf("Could not open file %s\n", snapshotPtrsFileName1);
+        exit(1);
+    }
+
+    char* snapshotPtrsFileName2;
+    snapshotPtrsFileName2 = malloc(strlen(fileName2) + strlen(" - ptrs"));
+    strcpy(snapshotPtrsFileName2, fileName2);
+    strcat(snapshotPtrsFileName2, " - ptrs");
+    FILE* snapshotPtrs2;
+    snapshotPtrs2 = fopen(snapshotPtrsFileName2, "r");
+    if (snapshotPtrs2 == NULL) {
+        printf("Could not open file %s\n", snapshotPtrsFileName2);
+        exit(1);
+    }
+
+    int fileSize1;
+    fseek(snapshot1, 0 , SEEK_END);
+    fileSize1 = ftell(snapshot1);
+    fseek(snapshot1, 0, SEEK_SET);
+
+    int fileSize2;
+    fseek(snapshot2, 0 , SEEK_END);
+    fileSize2 = ftell(snapshot2);
+    fseek(snapshot2, 0, SEEK_SET);
+
+    FILE* smallerFile = snapshot1;
+    FILE* biggerFile = snapshot2;
+    int fileIterationLength = fileSize1;
+
+    if (fileSize1 > fileSize2) {
+        smallerFile = snapshot2;
+        biggerFile = snapshot1;
+        fileIterationLength = fileSize2;
+    }
+
+    printf("%d\n", fileIterationLength);
+    for (int i = 0; i < fileIterationLength; i++) {
+
+    }
 
     // plan:
     // take 2x snapshots
+    // iterate over smaller file
     // compare and check differences
-    // 
 }
 
 BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray) {

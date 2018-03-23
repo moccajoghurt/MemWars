@@ -355,32 +355,189 @@ void getProcessBaseAddressTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void memorySnapshotToDiscTest() {
+void memorySnapshotToDiscFileCreationTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
         process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        // process = (HANDLE)getProcessByName("ac_client.exe");
     }
-    MEMPTRS ptrs = {0};
     memorySnapshotToDisc(process, "buf.txt");
     FILE* file = fopen("buf.txt", "rb");
     if (file == NULL) {
         printf("Could not open buf.txt\n");
-        printf("memorySnapshotToDiscTest() failed\n");
+        printf("memorySnapshotToDiscFileCreationTest() failed\n");
         goto Exit;
     }
     fclose(file);
 
-    // write according pointers to disc
+    FILE* file1 = fopen("buf.txt - ptrs", "rb");
+    if (file1 == NULL) {
+        printf("Could not open buf.txt - ptrs\n");
+        printf("memorySnapshotToDiscFileCreationTest() failed\n");
+        goto Exit;
+    }
+    fclose(file1);
 
-    printf("memorySnapshotToDiscTest() success\n");
+    printf("memorySnapshotToDiscFileCreationTest() success\n");
     Exit:
     system("del buf.txt");
     system("del \"buf.txt - ptrs\"");
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
+void memorySnapshotSavesCorrectPointerTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    memorySnapshotToDisc(process, "buf.txt");
 
+    MEMPTRS matchingPtrs = {0};
+    BYTEARRAY testVal = {0};
+    intToByteArray(&testVal, 133337);
+    findValueInProcess(&testVal, process, &matchingPtrs);
+
+    FILE* file1 = fopen("buf.txt - ptrs", "rb");
+    if (file1 == NULL) {
+        printf("Could not open buf.txt - ptrs\n");
+        printf("memorySnapshotToDiscTest() failed\n");
+        goto Exit;
+    }
+
+    int fileSize;
+    fseek(file1, 0 , SEEK_END);
+    fileSize = ftell(file1);
+    fseek(file1, 0, SEEK_SET);
+
+    void* buffer = malloc(fileSize * 4);
+    fread(buffer, fileSize, 1, file1);
+
+    BOOL foundVal = FALSE;
+    for (int i = 0; i < fileSize; i += sizeof(unsigned int)) {
+        if (i + sizeof(unsigned int) >= fileSize) {
+            break;
+        }
+        // if this test sometimes fails, it might be because we don't check for all matching pointers and only the first one
+        if ( *(((unsigned int*)buffer) + i) == *(unsigned int*)matchingPtrs.memPointerArray) {
+            BYTEARRAY buf = {0};
+            readProcessMemoryAtPtrLocation((void*)*(((unsigned int*)buffer) + i), 4, process, &buf);
+            if (valueIsMatching(&testVal, &buf)) {
+                foundVal = TRUE;
+            }
+        }
+    }
+
+    if (foundVal) {
+        printf("memorySnapshotToDiscSavesCorrectPointerTest() success\n");
+    } else {
+        printf("memorySnapshotToDiscSavesCorrectPointerTest() failed\n");
+    }
+
+    fclose(file1);
+    Exit:
+    system("del buf.txt");
+    system("del \"buf.txt - ptrs\"");
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+void memorySnapshotSavesCorrectValueTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    memorySnapshotToDisc(process, "buf.txt");
+
+    MEMPTRS matchingPtrs = {0};
+    BYTEARRAY testVal = {0};
+    intToByteArray(&testVal, 133337);
+    findValueInProcess(&testVal, process, &matchingPtrs);
+
+    FILE* file1 = fopen("buf.txt - ptrs", "rb");
+    if (file1 == NULL) {
+        printf("Could not open buf.txt - ptrs\n");
+        printf("memorySnapshotSavesCorrectValueTest() failed\n");
+        goto Exit;
+    }
+
+    FILE* file2 = fopen("buf.txt", "rb");
+    if (file2 == NULL) {
+        printf("Could not open buf.txt\n");
+        printf("memorySnapshotSavesCorrectValueTest() failed\n");
+        goto Exit;
+    }
+
+    int fileSize;
+    fseek(file1, 0 , SEEK_END);
+    fileSize = ftell(file1);
+    fseek(file1, 0, SEEK_SET);
+
+    void* fileBuf1 = malloc(fileSize * 4);
+    fread(fileBuf1, fileSize, 1, file1);
+
+    int fileSize2;
+    fseek(file2, 0 , SEEK_END);
+    fileSize2 = ftell(file2);
+    fseek(file2, 0, SEEK_SET);
+
+    void* fileBuf2 = malloc(fileSize * 4);
+    fread(fileBuf2, fileSize2, 1, file2);
+
+    BOOL foundValInMemory = FALSE;
+    BOOL foundValOnDisc = FALSE;
+    for (int i = 0; i < fileSize; i += sizeof(unsigned int)) {
+        if (i + sizeof(unsigned int) >= fileSize) {
+            break;
+        }
+        // if this test function sometimes fails, look here. it might be because we don't check for all matching pointers and only the first one
+        if ( *(((unsigned int*)fileBuf1) + i) == *(unsigned int*)matchingPtrs.memPointerArray) {
+            BYTEARRAY buf = {0};
+            readProcessMemoryAtPtrLocation((void*)*(((unsigned int*)fileBuf1) + i), 4, process, &buf);
+            if (valueIsMatching(&testVal, &buf)) {
+                foundValInMemory = TRUE;
+            }
+            // continue here
+            BYTEARRAY buf1 = {0};
+            intToByteArray(&buf1, (int)*(((int*)fileBuf2) + i/sizeof(unsigned int)));
+            printf("%d\n", (int)*(((int*)fileBuf2) + i/sizeof(unsigned int)));
+
+            if (valueIsMatching(&testVal, &buf1)) {
+                foundValOnDisc = TRUE;
+                
+            }
+        }
+    }
+
+    if (foundValInMemory) {
+        printf("memorySnapshotToDiscSavesCorrectPointerTest() success\n");
+    } else {
+        printf("memorySnapshotToDiscSavesCorrectPointerTest() failed\n");
+    }
+
+    fclose(file1);
+    fclose(file2);
+    Exit:
+    system("del buf.txt");
+    system("del \"buf.txt - ptrs\"");
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+void filterMemorySnapshotsTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    memorySnapshotToDisc(process, "buf1.txt");
+    memorySnapshotToDisc(process, "buf2.txt");
+
+    filterMemorySnapshots("buf1.txt", "buf2.txt", "filtered.txt", TRUE);
+
+    Exit:
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
 
 
 int main() {
@@ -401,5 +558,11 @@ int main() {
     // getProcessBaseAddressTest();
     // reallocMemoryMapTest();
     // concatMemoryMapTest();
-    memorySnapshotToDiscTest();
+    // memorySnapshotToDiscFileCreationTest();
+    // memorySnapshotSavesCorrectPointerTest();
+    memorySnapshotSavesCorrectValueTest();
+
+    // filterMemorySnapshotsTest();
+
+    return 0;
 }
