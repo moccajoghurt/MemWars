@@ -355,7 +355,7 @@ void getProcessBaseAddressTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void memorySnapshotToDiscFileCreationTest() {
+void memorySnapshotMemCountMatchesPtrCountTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
@@ -363,23 +363,45 @@ void memorySnapshotToDiscFileCreationTest() {
         // process = (HANDLE)getProcessByName("ac_client.exe");
     }
     memorySnapshotToDisc(process, "buf.txt");
-    FILE* file = fopen("buf.txt", "rb");
-    if (file == NULL) {
-        printf("Could not open buf.txt\n");
-        printf("memorySnapshotToDiscFileCreationTest() failed\n");
-        goto Exit;
-    }
-    fclose(file);
-
-    FILE* file1 = fopen("buf.txt - ptrs", "rb");
+    FILE* file1 = fopen("buf.txt", "rb");
     if (file1 == NULL) {
-        printf("Could not open buf.txt - ptrs\n");
-        printf("memorySnapshotToDiscFileCreationTest() failed\n");
+        printf("Could not open buf.txt\n");
+        printf("memorySnapshotMemCountMatchesPtrCountTest() failed\n");
         goto Exit;
     }
-    fclose(file1);
+    
 
-    printf("memorySnapshotToDiscFileCreationTest() success\n");
+    FILE* file2 = fopen("buf.txt - ptrs", "rb");
+    if (file2 == NULL) {
+        printf("Could not open buf.txt - ptrs\n");
+        printf("memorySnapshotMemCountMatchesPtrCountTest() failed\n");
+        goto Exit;
+    }
+    
+    int fileSize1;
+    fseek(file1, 0 , SEEK_END);
+    fileSize1 = ftell(file1);
+    fseek(file1, 0, SEEK_SET);
+
+    void* fileBuf1 = malloc(fileSize1 * 4);
+    fread(fileBuf1, fileSize1, 1, file1);
+
+    int fileSize2;
+    fseek(file2, 0 , SEEK_END);
+    fileSize2 = ftell(file2);
+    fseek(file2, 0, SEEK_SET);
+
+    void* fileBuf2 = malloc(fileSize2 * 4);
+    fread(fileBuf2, fileSize2, 1, file2);
+
+    if (fileSize1 == fileSize2/sizeof(unsigned int)) {
+        printf("memorySnapshotMemCountMatchesPtrCountTest() success\n");
+    } else {
+        printf("memorySnapshotMemCountMatchesPtrCountTest() failed\n");
+    }
+
+    fclose(file1);
+    fclose(file2);
     Exit:
     system("del buf.txt");
     system("del \"buf.txt - ptrs\"");
@@ -479,6 +501,12 @@ void filterMemorySnapshotsTest() {
 
     filterMemorySnapshots("buf1.txt", "buf2.txt", "filtered.txt", 4, TRUE);
 
+    system("del buf1.txt");
+    system("del \"buf1.txt - ptrs\"");
+    system("del buf2.txt");
+    system("del \"buf2.txt - ptrs\"");
+    system("del filtered.txt");
+    system("del \"filtered.txt - ptrs\"");
     Exit:
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
@@ -502,7 +530,7 @@ int main() {
     // getProcessBaseAddressTest();
     // reallocMemoryMapTest();
     // concatMemoryMapTest();
-    // memorySnapshotToDiscFileCreationTest();
+    // memorySnapshotMemCountMatchesPtrCountTest();
     // memorySnapshotSavesCorrectValueAndPointerTest();
 
     filterMemorySnapshotsTest();

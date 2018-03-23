@@ -136,115 +136,6 @@ void freeMemMap(MEMMAP* memMap) {
 }
 
 
-void memorySnapshotToDisc(HANDLE process, const char* fileName) {
-    char* memPtrsFileName;
-    memPtrsFileName = malloc(strlen(fileName) + strlen(" - ptrs"));
-    strcpy(memPtrsFileName, fileName);
-    strcat(memPtrsFileName, " - ptrs");
-    FILE* dataFile = fopen(fileName, "wb");
-    FILE* memPtrFile = fopen(memPtrsFileName, "wb");
-    if (dataFile == NULL) {
-        printf("Could not open file %s\n", fileName);
-        exit(1);
-    }
-    BYTE* p = NULL;
-    MEMORY_BASIC_INFORMATION info;
-    for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
-        if (info.State == MEM_COMMIT) {
-            BYTE* buf = malloc(info.RegionSize);
-            size_t bytesRead;
-            BOOL status = ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
-            if (!status) {
-                if (GetLastError() != 299) {
-                    printf("findValueInProcess()::ReadProcessMemory() failed: %d\n", GetLastError());
-                    return;
-                }
-            }
-            for (int i = 0; i < bytesRead; i++) {
-                unsigned int ptrBuf = (unsigned int)(p + i);
-                fwrite(&ptrBuf, sizeof(unsigned int), 1, memPtrFile);
-            }
-            fwrite(buf, sizeof(char), bytesRead, dataFile);
-            free(buf);
-        }
-    }
-    fclose(dataFile);
-    fclose(memPtrFile);
-    free(memPtrsFileName);
-}
-
-// this function compares two memory snapshots and either saves values that changed or didn't change
-void filterMemorySnapshots(const char* fileName1, const char* fileName2, const char* filteredSnapshotName, size_t valByteLen, BOOL valsChanged) {
-
-    FILE* snapshot1;
-    snapshot1 = fopen(fileName1, "r");
-    if (snapshot1 == NULL) {
-        printf("Could not open file %s\n", fileName1);
-        exit(1);
-    }
-
-    FILE* snapshot2;
-    snapshot2 = fopen(fileName2, "r");
-    if (snapshot2 == NULL) {
-        printf("Could not open file %s\n", fileName2);
-        exit(1);
-    }
-
-    char* snapshotPtrsFileName1;
-    snapshotPtrsFileName1 = malloc(strlen(fileName1) + strlen(" - ptrs"));
-    strcpy(snapshotPtrsFileName1, fileName1);
-    strcat(snapshotPtrsFileName1, " - ptrs");
-    FILE* snapshotPtrs1;
-    snapshotPtrs1 = fopen(snapshotPtrsFileName1, "r");
-    if (snapshotPtrs1 == NULL) {
-        printf("Could not open file %s\n", snapshotPtrsFileName1);
-        exit(1);
-    }
-
-    char* snapshotPtrsFileName2;
-    snapshotPtrsFileName2 = malloc(strlen(fileName2) + strlen(" - ptrs"));
-    strcpy(snapshotPtrsFileName2, fileName2);
-    strcat(snapshotPtrsFileName2, " - ptrs");
-    FILE* snapshotPtrs2;
-    snapshotPtrs2 = fopen(snapshotPtrsFileName2, "r");
-    if (snapshotPtrs2 == NULL) {
-        printf("Could not open file %s\n", snapshotPtrsFileName2);
-        exit(1);
-    }
-
-    int fileSize1;
-    fseek(snapshot1, 0 , SEEK_END);
-    fileSize1 = ftell(snapshot1);
-    fseek(snapshot1, 0, SEEK_SET);
-
-    int fileSize2;
-    fseek(snapshot2, 0 , SEEK_END);
-    fileSize2 = ftell(snapshot2);
-    fseek(snapshot2, 0, SEEK_SET);
-
-    FILE* smallerFile = snapshot1;
-    FILE* biggerFile = snapshot2;
-    int fileIterationLength = fileSize1;
-
-    if (fileSize1 > fileSize2) {
-        smallerFile = snapshot2;
-        biggerFile = snapshot1;
-        fileIterationLength = fileSize2;
-    }
-
-    void* smallFileBuf = malloc(fileSize * 4);
-    fread(fileBuf1, fileSize, 1, file1);
-
-    printf("%d\n", fileIterationLength);
-    for (int i = 0; i < fileIterationLength; i++) {
-
-
-
-
-    }
-
-}
-
 BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray) {
     if (byteLen > MAX_VAL_SIZE) {
         printf("readProcessMemoryAtPtrLocation() failed, byteLen too big, increase MAX_VAL_SIZE\n");
@@ -331,6 +222,172 @@ HMODULE getProcessBaseAddress(HANDLE hProcess, TCHAR* szProcessName) {
         }
     }
     return NULL;
+}
+
+void memorySnapshotToDisc(HANDLE process, const char* fileName) {
+    char* memPtrsFileName;
+    memPtrsFileName = malloc(strlen(fileName) + strlen(" - ptrs"));
+    strcpy(memPtrsFileName, fileName);
+    strcat(memPtrsFileName, " - ptrs");
+    FILE* dataFile = fopen(fileName, "wb");
+    FILE* memPtrFile = fopen(memPtrsFileName, "wb");
+    if (dataFile == NULL) {
+        printf("Could not open file %s\n", fileName);
+        exit(1);
+    }
+    BYTE* p = NULL;
+    MEMORY_BASIC_INFORMATION info;
+    for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
+        if (info.State == MEM_COMMIT) {
+            BYTE* buf = malloc(info.RegionSize);
+            size_t bytesRead;
+            BOOL status = ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
+            if (!status) {
+                if (GetLastError() != 299) {
+                    printf("findValueInProcess()::ReadProcessMemory() failed: %d\n", GetLastError());
+                    return;
+                }
+            }
+            for (int i = 0; i < bytesRead; i++) {
+                unsigned int ptrBuf = (unsigned int)(p + i);
+                fwrite(&ptrBuf, sizeof(unsigned int), 1, memPtrFile);
+            }
+            fwrite(buf, sizeof(char), bytesRead, dataFile);
+            free(buf);
+        }
+    }
+    fclose(dataFile);
+    fclose(memPtrFile);
+    free(memPtrsFileName);
+}
+
+// this function compares two memory snapshots and either saves values that changed or didn't change
+void filterMemorySnapshots(const char* oldSnapshotFileName1, const char* recentSnapshotfileName2, const char* filteredSnapshotName, size_t valByteLen, BOOL valsChanged) {
+
+    FILE* snapshot1;
+    snapshot1 = fopen(oldSnapshotFileName1, "rb");
+    if (snapshot1 == NULL) {
+        printf("Could not open file %s\n", oldSnapshotFileName1);
+        exit(1);
+    }
+
+    FILE* snapshot2;
+    snapshot2 = fopen(recentSnapshotfileName2, "rb");
+    if (snapshot2 == NULL) {
+        printf("Could not open file %s\n", recentSnapshotfileName2);
+        exit(1);
+    }
+
+    char* snapshotPtrsFileName1;
+    snapshotPtrsFileName1 = malloc(strlen(oldSnapshotFileName1) + strlen(" - ptrs"));
+    strcpy(snapshotPtrsFileName1, oldSnapshotFileName1);
+    strcat(snapshotPtrsFileName1, " - ptrs");
+    FILE* snapshotPtrs1;
+    snapshotPtrs1 = fopen(snapshotPtrsFileName1, "rb");
+    if (snapshotPtrs1 == NULL) {
+        printf("Could not open file %s\n", snapshotPtrsFileName1);
+        exit(1);
+    }
+
+    char* snapshotPtrsFileName2;
+    snapshotPtrsFileName2 = malloc(strlen(recentSnapshotfileName2) + strlen(" - ptrs"));
+    strcpy(snapshotPtrsFileName2, recentSnapshotfileName2);
+    strcat(snapshotPtrsFileName2, " - ptrs");
+    FILE* snapshotPtrs2;
+    snapshotPtrs2 = fopen(snapshotPtrsFileName2, "rb");
+    if (snapshotPtrs2 == NULL) {
+        printf("Could not open file %s\n", snapshotPtrsFileName2);
+        exit(1);
+    }
+
+    int ptrFileSize1;
+    fseek(snapshotPtrs1, 0 , SEEK_END);
+    ptrFileSize1 = ftell(snapshotPtrs1);
+    fseek(snapshotPtrs1, 0, SEEK_SET);
+
+    int ptrFileSize2;
+    fseek(snapshotPtrs2, 0 , SEEK_END);
+    ptrFileSize2 = ftell(snapshotPtrs2);
+    fseek(snapshotPtrs2, 0, SEEK_SET);
+
+    int snapshotSize1;
+    fseek(snapshot1, 0 , SEEK_END);
+    snapshotSize1 = ftell(snapshot1);
+    fseek(snapshot1, 0, SEEK_SET);
+
+    int snapshotSize2;
+    fseek(snapshot2, 0 , SEEK_END);
+    snapshotSize2 = ftell(snapshot2);
+    fseek(snapshot2, 0, SEEK_SET);
+
+    unsigned int* smallFilePtrsBuf = malloc(ptrFileSize1 * 4);
+    fread(smallFilePtrsBuf, ptrFileSize1, 1, snapshotPtrs1);
+
+    unsigned int* bigFilePtrsBuf = malloc(ptrFileSize2 * 4);
+    fread(bigFilePtrsBuf, ptrFileSize2, 1, snapshotPtrs2);
+
+    BYTE* smallSnapshotBuf = malloc(snapshotSize1 * 4);
+    fread(smallSnapshotBuf, snapshotSize1, 1, snapshot1);
+
+    BYTE* bigSnapshotBuf = malloc(snapshotSize2 * 4);
+    fread(bigSnapshotBuf, snapshotSize2, 1, snapshot2);
+
+    BYTE* recentSnapshot = bigSnapshotBuf;
+    unsigned int* recentPtrs = bigFilePtrsBuf;
+
+    int smallFileIterationLength = ptrFileSize1;
+
+    if (ptrFileSize1 > ptrFileSize2) {
+        void* ptrBuf = smallFilePtrsBuf;
+        void* snapshotBuf = smallSnapshotBuf;
+        smallFilePtrsBuf = bigFilePtrsBuf;
+        bigFilePtrsBuf = ptrBuf;
+        smallSnapshotBuf = bigSnapshotBuf;
+        bigSnapshotBuf = snapshotBuf;
+        smallFileIterationLength = ptrFileSize2;
+    }
+
+    FILE* filterFile = fopen(filteredSnapshotName, "wb");
+    if (filterFile == NULL) {
+        printf("Could not open file %s\n", filteredSnapshotName);
+        exit(1);
+    }
+
+    char* filterPtrsFileName = malloc(strlen(filteredSnapshotName) + strlen(" - ptrs"));
+    strcpy(filterPtrsFileName, filteredSnapshotName);
+    strcat(filterPtrsFileName, " - ptrs");
+    FILE* filterPtrs = fopen(filterPtrsFileName, "wb");
+    if (filterPtrs == NULL) {
+        printf("Could not open file %s\n", filterPtrsFileName);
+        exit(1);
+    }
+
+    unsigned int bigFileIterator = 0;
+    unsigned int i;
+    unsigned int* recentFileIterator = recentSnapshot == bigSnapshotBuf ? &bigFileIterator : &i;
+    unsigned int* recentPtrFileIterator = recentPtrs == bigFilePtrsBuf ? &bigFileIterator : &i;
+    for (i = 0; i < smallFileIterationLength; i += sizeof(unsigned int)) {
+        // make sure we are looking at the same pointers
+        while (*(smallFilePtrsBuf + i) != *(bigFilePtrsBuf + bigFileIterator)) {
+            bigFileIterator += sizeof(unsigned int);
+        }
+
+        BYTE* bigSnapshotPtr = bigSnapshotBuf + bigFileIterator/sizeof(unsigned int);
+        BYTE* smallSnapshotPtr = smallSnapshotBuf + i/sizeof(unsigned int);
+        if (!valsChanged && memcmp(bigSnapshotPtr, smallSnapshotPtr, valByteLen) == 0 ||
+            valsChanged && memcmp(bigSnapshotPtr, smallSnapshotPtr, valByteLen) != 0) {
+            fwrite(recentSnapshot + *recentFileIterator/sizeof(unsigned int), valByteLen, 1, filterFile);
+            fwrite(recentPtrs + *recentPtrFileIterator, valByteLen * sizeof(unsigned int), 1, filterPtrs);
+        }
+        bigFileIterator += sizeof(unsigned int);
+    }
+    fclose(snapshotPtrs1);
+    fclose(snapshotPtrs2);
+    fclose(snapshot1);
+    fclose(snapshot2);
+    fclose(filterFile);
+    fclose(filterPtrs);
+
 }
 
 void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info) {
