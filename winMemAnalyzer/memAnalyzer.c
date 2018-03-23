@@ -160,7 +160,7 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
                     return;
                 }
             }
-            for (int i = 0; i < info.RegionSize; i++) {
+            for (int i = 0; i < bytesRead; i++) {
                 unsigned int ptrBuf = (unsigned int)(p + i);
                 fwrite(&ptrBuf, sizeof(unsigned int), 1, memPtrFile);
             }
@@ -174,7 +174,7 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
 }
 
 // this function compares two memory snapshots and either saves values that changed or didn't change
-void filterMemorySnapshots(const char* fileName1, const char* fileName2, const char* filteredSnapshotName, BOOL valsChanged) {
+void filterMemorySnapshots(const char* fileName1, const char* fileName2, const char* filteredSnapshotName, size_t valByteLen, BOOL valsChanged) {
 
     FILE* snapshot1;
     snapshot1 = fopen(fileName1, "r");
@@ -232,15 +232,17 @@ void filterMemorySnapshots(const char* fileName1, const char* fileName2, const c
         fileIterationLength = fileSize2;
     }
 
+    void* smallFileBuf = malloc(fileSize * 4);
+    fread(fileBuf1, fileSize, 1, file1);
+
     printf("%d\n", fileIterationLength);
     for (int i = 0; i < fileIterationLength; i++) {
 
+
+
+
     }
 
-    // plan:
-    // take 2x snapshots
-    // iterate over smaller file
-    // compare and check differences
 }
 
 BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray) {
