@@ -8,6 +8,7 @@ int main(int argc, char* argv[]) {
     long value3 = 0xCFFE;
     float value4 = 1.375;
     double value5 = 312.76493;
+    unsigned int value6 = 3254963271;
     char* str1 = "smallStr";
     const char* str2 = "Can you find me too?";
     char str3[] = "And me??";

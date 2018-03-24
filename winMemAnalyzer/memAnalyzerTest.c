@@ -497,16 +497,114 @@ void filterMemorySnapshotsTest() {
         process = (HANDLE)getProcessByName("memoryTestApp.exe");
     }
     memorySnapshotToDisc(process, "buf1.txt");
+
+    MEMPTRS matchingPtrs = {0};
+    BYTEARRAY testVal = {0};
+    uintToByteArray(&testVal, 3254963271);
+
+    findValueInProcess(&testVal, process, &matchingPtrs);
+    if (matchingPtrs.size == 0) {
+        printf("filterMemorySnapshotsTest() failed! Testvalue not in memory!\n");
+        goto Exit;
+    }
+
+    BYTEARRAY writeVal = {0};
+    uintToByteArray(&writeVal, 71111113);
+    for (int i = 0; i < matchingPtrs.size; i++) {
+        writeProcessMemoryAtPtrLocation(process, *(matchingPtrs.memPointerArray + i), writeVal.values, writeVal.size);
+    }
+
     memorySnapshotToDisc(process, "buf2.txt");
 
-    filterMemorySnapshots("buf1.txt", "buf2.txt", "filtered.txt", 4, TRUE);
+    filterMemorySnapshots("buf1.txt", "buf2.txt", "filtered.txt", TRUE);
 
+    FILE* file1 = fopen("filtered.txt", "rb");
+    if (file1 == NULL) {
+        printf("Could not open filtered.txt\n");
+        printf("filterMemorySnapshotsTest() failed\n");
+        goto Exit;
+    }
+
+    FILE* file2 = fopen("filtered.txt - ptrs", "rb");
+    if (file2 == NULL) {
+        printf("Could not open filtered.txt - ptrs\n");
+        printf("filterMemorySnapshotsTest() failed\n");
+        goto Exit;
+    }
+
+    int fileSize1;
+    fseek(file1, 0 , SEEK_END);
+    fileSize1 = ftell(file1);
+    fseek(file1, 0, SEEK_SET);
+
+    BYTE* fileBuf1 = malloc(fileSize1 * 4);
+    fread(fileBuf1, fileSize1, 1, file1);
+
+    int fileSize2;
+    fseek(file2, 0 , SEEK_END);
+    fileSize2 = ftell(file2);
+    fseek(file2, 0, SEEK_SET);
+
+    unsigned int* fileBuf2 = malloc(fileSize2 * 4);
+    fread(fileBuf2, fileSize2, 1, file2);
+
+    for (int i = 0; i < fileSize2; i += sizeof(unsigned int)) {
+
+        for (int n = 0; n < matchingPtrs.size; n++) {
+            if ( *(fileBuf2 + i) == (unsigned int)*(matchingPtrs.memPointerArray + n)) {
+                printf("found one\n");
+            }
+        }
+    }
+
+
+    fclose(file1);
+    fclose(file2);
     system("del buf1.txt");
     system("del \"buf1.txt - ptrs\"");
     system("del buf2.txt");
     system("del \"buf2.txt - ptrs\"");
     system("del filtered.txt");
     system("del \"filtered.txt - ptrs\"");
+    Exit:
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+void writeProcessMemoryAtPtrLocationTest() {
+    
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+
+    MEMPTRS matchingPtrs = {0};
+    BYTEARRAY testVal = {0};
+    uintToByteArray(&testVal, 3254963271);
+    findValueInProcess(&testVal, process, &matchingPtrs);
+
+    BYTEARRAY testVal1 = {0};
+    uintToByteArray(&testVal1, 31111113);
+
+    if (matchingPtrs.size == 0) {
+        printf("writeProcessMemoryAtPtrLocationTest() failed! Testvalue not in memory!\n");
+        goto Exit;
+    }
+
+    for (int i = 0; i < matchingPtrs.size; i++) {
+        writeProcessMemoryAtPtrLocation(process, *(matchingPtrs.memPointerArray + i), testVal1.values, testVal1.size);
+    }
+
+    for (int i = 0; i < matchingPtrs.size; i++) {
+        BYTEARRAY buf = {0};
+        readProcessMemoryAtPtrLocation(*(matchingPtrs.memPointerArray + i), sizeof(unsigned int), process, &buf);
+        if (!valueIsMatching(&buf, &testVal1)) {
+            printf("writeProcessMemoryAtPtrLocationTest() failed\n");
+            goto Exit;
+        }
+    }
+    printf("writeProcessMemoryAtPtrLocationTest() success\n");
+
     Exit:
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
@@ -532,6 +630,7 @@ int main() {
     // concatMemoryMapTest();
     // memorySnapshotMemCountMatchesPtrCountTest();
     // memorySnapshotSavesCorrectValueAndPointerTest();
+    // writeProcessMemoryAtPtrLocationTest();
 
     filterMemorySnapshotsTest();
 

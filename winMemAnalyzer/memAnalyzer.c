@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <windows.h>
 #include <Psapi.h> // enumprocesses
+#include <limits.h> // UINT_MAX
 #include "memAnalyzer.h"
 
 
@@ -25,6 +26,11 @@ void intToByteArray(BYTEARRAY* bArr, int val) {
     bArr->values[1] = val >> 8;
     bArr->values[0] = val;
     bArr->size = 4;
+}
+
+void uintToByteArray(BYTEARRAY* bArr, unsigned int val) {
+    bArr->size = sizeof(val);
+    memcpy(bArr->values, &val, sizeof(val));
 }
 
 void byteToByteArray(BYTEARRAY* bArr, char c) {
@@ -166,6 +172,13 @@ BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, B
     return TRUE;
 }
 
+void writeProcessMemoryAtPtrLocation(HANDLE process, void* baseAdress, void* value, size_t valSize) {
+    BOOL status =  WriteProcessMemory(process, baseAdress, value, valSize, NULL);
+    if (status == 0) {
+        printf("writeMemoryAtPtrLocation()::WriteProcessMemory() failed!\n");
+    }
+}
+
 HANDLE getProcessByWindowName(const char* windowName) {
     HWND windowHwnd = FindWindow(0, windowName);
     if (windowHwnd == NULL) {
@@ -261,8 +274,8 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
     free(memPtrsFileName);
 }
 
-// this function compares two memory snapshots and either saves values that changed or didn't change
-void filterMemorySnapshots(const char* oldSnapshotFileName1, const char* recentSnapshotfileName2, const char* filteredSnapshotName, size_t valByteLen, BOOL valsChanged) {
+// this function compares two memory snapshots and either saves bytes that changed or didn't change
+void filterMemorySnapshots(const char* oldSnapshotFileName1, const char* recentSnapshotfileName2, const char* filteredSnapshotName, BOOL valsChanged) {
 
     FILE* snapshot1;
     snapshot1 = fopen(oldSnapshotFileName1, "rb");
@@ -366,18 +379,25 @@ void filterMemorySnapshots(const char* oldSnapshotFileName1, const char* recentS
     unsigned int i;
     unsigned int* recentFileIterator = recentSnapshot == bigSnapshotBuf ? &bigFileIterator : &i;
     unsigned int* recentPtrFileIterator = recentPtrs == bigFilePtrsBuf ? &bigFileIterator : &i;
-    for (i = 0; i < smallFileIterationLength; i += sizeof(unsigned int)) {
+    for (i = 0; i < smallFileIterationLength - sizeof(unsigned int); i += sizeof(unsigned int)) {
         // make sure we are looking at the same pointers
         while (*(smallFilePtrsBuf + i) != *(bigFilePtrsBuf + bigFileIterator)) {
+            // potential bug here?
+            // what if a new pointer exists that is not in the old snapshot?
             bigFileIterator += sizeof(unsigned int);
+            if (bigFileIterator >= UINT_MAX - 4) {
+                // fail safe mechanic
+                printf("filterMemorySnapshots() error. bigFileIterator >= UINT_MAX\n");
+                exit(0);
+            }
         }
 
         BYTE* bigSnapshotPtr = bigSnapshotBuf + bigFileIterator/sizeof(unsigned int);
         BYTE* smallSnapshotPtr = smallSnapshotBuf + i/sizeof(unsigned int);
-        if (!valsChanged && memcmp(bigSnapshotPtr, smallSnapshotPtr, valByteLen) == 0 ||
-            valsChanged && memcmp(bigSnapshotPtr, smallSnapshotPtr, valByteLen) != 0) {
-            fwrite(recentSnapshot + *recentFileIterator/sizeof(unsigned int), valByteLen, 1, filterFile);
-            fwrite(recentPtrs + *recentPtrFileIterator, valByteLen * sizeof(unsigned int), 1, filterPtrs);
+        if (!valsChanged && *bigSnapshotPtr == *smallSnapshotPtr ||
+            valsChanged && *bigSnapshotPtr != *smallSnapshotPtr) {
+            fwrite(recentSnapshot + (*recentFileIterator)/sizeof(unsigned int), 1, 1, filterFile);
+            fwrite(recentPtrs + *recentPtrFileIterator, sizeof(unsigned int), 1, filterPtrs);
         }
         bigFileIterator += sizeof(unsigned int);
     }
