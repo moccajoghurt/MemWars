@@ -4,6 +4,17 @@
 #include "../winMemAnalyzer/memAnalyzer.h"
 #include "memAnalyzerTool.h"
 
+char getCharacter() {
+    char c = getchar();
+    while(c == EOF || c == '\n') {
+        c = getchar();
+    }
+    // do {
+    // c = getchar();
+    // } while (c != '\n' && c != EOF);
+    return c;
+}
+
 size_t scanfByDatatype(char c, BYTEARRAY* bArr) {
     switch (c) {
         case 'd':
@@ -49,7 +60,8 @@ size_t scanfByDatatype(char c, BYTEARRAY* bArr) {
 void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName) {
     BYTEARRAY bArr = {0};
     fprintf(stderr, "Enter datatype to search for.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value) \n8. string (s)\n");
-    char c = getchar();getchar();
+    char c = getCharacter();
+    // clearInputBuffer();
     printf("Enter the value:\n");
     scanfByDatatype(c, &bArr);
 
@@ -89,11 +101,34 @@ void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName
 
 void memorySnapshotRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName) {
     fprintf(stderr, "Enter datatype to scan for.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value)\n");
-    char c = getchar();getchar();
+    char c = getCharacter();
+    // clearInputBuffer();
 
 }
 
+void writeProcessMemoryRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName) {
+    unsigned int address;
+    fprintf(stderr, "Enter the pointer address\n");
+    scanf(" %x", &address);
+
+    BYTEARRAY bArr = {0};
+    printf("Enter the datatype to write into the memory.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value)\n");
+    // clearInputBuffer();
+    char c = getCharacter();
+    // // clearInputBuffer();
+    printf("%c\n", c);
+    printf("Enter the value:\n");
+    scanfByDatatype(c, &bArr);
+
+    writeProcessMemoryAtPtrLocation(hProcess, (void*)((unsigned int)baseAddress + address), bArr.values, bArr.size);
+}
+
 int main(int argc, char* argv[]) {
+
+    if (argc != 2) {
+        fprintf(stderr, "usage: memAnalyzerTool.exe processName (or window name)\n");
+        return;
+    }
 
     TCHAR processName[MAX_PATH];
     strcpy_s(processName, MAX_PATH, argv[1]);
@@ -118,8 +153,9 @@ int main(int argc, char* argv[]) {
     
     // we use stderr for user notifications and stdout for data values
     fprintf(stderr, "Found %s.\n", argv[1]);
-    fprintf(stderr, "1. search for value (1)\n2. compare memory snapshots (2)\n");
-    char c = getchar();getchar();
+    fprintf(stderr, "1. search for value (1)\n2. compare memory snapshots (2)\n3. write value to process address (3)\n");
+    char c = getCharacter();
+    // clearInputBuffer();
     switch (c) {
         case '1':
             valueSearchRoutine(hProcess, processBaseAddress, processName);
@@ -127,10 +163,14 @@ int main(int argc, char* argv[]) {
         case '2':
             memorySnapshotRoutine(hProcess, processBaseAddress, processName);
             break;
+        case '3':
+            writeProcessMemoryRoutine(hProcess, processBaseAddress, processName);
+            break;
         default:
             fprintf(stderr, "Invalid input.\n");
             break;
     }
     fprintf(stderr, "Press Enter to close.\n");
-    getchar();getchar();
+    getCharacter();
+    // clearInputBuffer();
 }

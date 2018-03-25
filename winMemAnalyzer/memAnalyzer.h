@@ -25,6 +25,7 @@ typedef struct _MEMORY_MAP {
 
 BOOL valueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* memPtr1);
 void intToByteArray(BYTEARRAY* bArr, int val);
+void uintToByteArray(BYTEARRAY* bArr, unsigned int val);
 void floatToByteArray(BYTEARRAY* bArr, float f);
 void doubleToByteArray(BYTEARRAY* bArr, double d);
 void shortToByteArray(BYTEARRAY* bArr, short s);

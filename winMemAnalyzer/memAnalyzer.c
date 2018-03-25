@@ -274,6 +274,7 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
     free(memPtrsFileName);
 }
 
+
 // this function compares two memory snapshots and either saves bytes that changed or didn't change
 void filterMemorySnapshots(const char* oldSnapshotFileName1, const char* recentSnapshotfileName2, const char* filteredSnapshotName, BOOL valsChanged) {
 
@@ -379,27 +380,24 @@ void filterMemorySnapshots(const char* oldSnapshotFileName1, const char* recentS
     unsigned int i;
     unsigned int* recentFileIterator = recentSnapshot == bigSnapshotBuf ? &bigFileIterator : &i;
     unsigned int* recentPtrFileIterator = recentPtrs == bigFilePtrsBuf ? &bigFileIterator : &i;
-    for (i = 0; i < smallFileIterationLength - sizeof(unsigned int); i += sizeof(unsigned int)) {
-        // make sure we are looking at the same pointers
+    for (i = 0; i < smallFileIterationLength; i++) {
         while (*(smallFilePtrsBuf + i) != *(bigFilePtrsBuf + bigFileIterator)) {
-            // potential bug here?
-            // what if a new pointer exists that is not in the old snapshot?
-            bigFileIterator += sizeof(unsigned int);
+            bigFileIterator++;
             if (bigFileIterator >= UINT_MAX - 4) {
-                // fail safe mechanic
                 printf("filterMemorySnapshots() error. bigFileIterator >= UINT_MAX\n");
                 exit(0);
             }
         }
 
-        BYTE* bigSnapshotPtr = bigSnapshotBuf + bigFileIterator/sizeof(unsigned int);
-        BYTE* smallSnapshotPtr = smallSnapshotBuf + i/sizeof(unsigned int);
+        BYTE* bigSnapshotPtr = bigSnapshotBuf + bigFileIterator;
+        BYTE* smallSnapshotPtr = smallSnapshotBuf + i;
         if (!valsChanged && *bigSnapshotPtr == *smallSnapshotPtr ||
             valsChanged && *bigSnapshotPtr != *smallSnapshotPtr) {
-            fwrite(recentSnapshot + (*recentFileIterator)/sizeof(unsigned int), 1, 1, filterFile);
+            fwrite(recentSnapshot + *recentFileIterator, 1, 1, filterFile);
             fwrite(recentPtrs + *recentPtrFileIterator, sizeof(unsigned int), 1, filterPtrs);
+            // printf("%x\n", (unsigned int)*(recentPtrs + *recentPtrFileIterator));
         }
-        bigFileIterator += sizeof(unsigned int);
+        bigFileIterator++;
     }
     fclose(snapshotPtrs1);
     fclose(snapshotPtrs2);

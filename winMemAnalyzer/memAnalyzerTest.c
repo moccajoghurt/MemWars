@@ -490,13 +490,13 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void filterMemorySnapshotsTest() {
+BOOL filterMemorySnapshotsSameSizeTest(const char* snapshot1, const char* snapshot2, const char* filter) {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
         process = (HANDLE)getProcessByName("memoryTestApp.exe");
     }
-    memorySnapshotToDisc(process, "buf1.txt");
+    memorySnapshotToDisc(process, snapshot1);
 
     MEMPTRS matchingPtrs = {0};
     BYTEARRAY testVal = {0};
@@ -514,25 +514,29 @@ void filterMemorySnapshotsTest() {
         writeProcessMemoryAtPtrLocation(process, *(matchingPtrs.memPointerArray + i), writeVal.values, writeVal.size);
     }
 
-    memorySnapshotToDisc(process, "buf2.txt");
+    memorySnapshotToDisc(process, snapshot2);
 
-    filterMemorySnapshots("buf1.txt", "buf2.txt", "filtered.txt", TRUE);
+    filterMemorySnapshots(snapshot1, snapshot2, filter, TRUE);
 
-    FILE* file1 = fopen("filtered.txt", "rb");
+    FILE* file1 = fopen(filter, "rb");
     if (file1 == NULL) {
         printf("Could not open filtered.txt\n");
         printf("filterMemorySnapshotsTest() failed\n");
         goto Exit;
     }
 
-    FILE* file2 = fopen("filtered.txt - ptrs", "rb");
+    char* filePtrsName;
+    filePtrsName = malloc(strlen(filter) + strlen(" - ptrs"));
+    strcpy(filePtrsName, filter);
+    strcat(filePtrsName, " - ptrs");
+    FILE* file2 = fopen(filePtrsName, "rb");
     if (file2 == NULL) {
-        printf("Could not open filtered.txt - ptrs\n");
+        printf("Could not open %s\n", filePtrsName);
         printf("filterMemorySnapshotsTest() failed\n");
         goto Exit;
     }
 
-    int fileSize1;
+    unsigned int fileSize1;
     fseek(file1, 0 , SEEK_END);
     fileSize1 = ftell(file1);
     fseek(file1, 0, SEEK_SET);
@@ -540,7 +544,7 @@ void filterMemorySnapshotsTest() {
     BYTE* fileBuf1 = malloc(fileSize1 * 4);
     fread(fileBuf1, fileSize1, 1, file1);
 
-    int fileSize2;
+    unsigned int fileSize2;
     fseek(file2, 0 , SEEK_END);
     fileSize2 = ftell(file2);
     fseek(file2, 0, SEEK_SET);
@@ -548,26 +552,41 @@ void filterMemorySnapshotsTest() {
     unsigned int* fileBuf2 = malloc(fileSize2 * 4);
     fread(fileBuf2, fileSize2, 1, file2);
 
-    for (int i = 0; i < fileSize2; i += sizeof(unsigned int)) {
-
+    BOOL foundValAndPtrInFilterFile = FALSE;
+    for (int i = 0; i < fileSize2 / sizeof(unsigned int); i++) {
+        // printf("%x %x\n", (unsigned int)*(fileBuf2 + i), (unsigned int)*(matchingPtrs.memPointerArray));
         for (int n = 0; n < matchingPtrs.size; n++) {
             if ( *(fileBuf2 + i) == (unsigned int)*(matchingPtrs.memPointerArray + n)) {
-                printf("found one\n");
+                if (memcmp(writeVal.values, fileBuf1 + i, writeVal.size) == 0) {
+                    foundValAndPtrInFilterFile = TRUE;
+                }
             }
         }
     }
 
-
     fclose(file1);
     fclose(file2);
+    Exit:
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+
+    return foundValAndPtrInFilterFile;
+}
+
+void filterMemorySnapshotsTest() {
+    BOOL status = filterMemorySnapshotsSameSizeTest("buf1.txt", "buf2.txt", "filtered.txt");
     system("del buf1.txt");
     system("del \"buf1.txt - ptrs\"");
     system("del buf2.txt");
     system("del \"buf2.txt - ptrs\"");
     system("del filtered.txt");
     system("del \"filtered.txt - ptrs\"");
-    Exit:
-    system("taskkill /IM memoryTestApp.exe /F >nul");
+
+    // todo: add test for snapshots where the first snapshot is smaller than the second one and the other way around
+    if (status) {
+        printf("filterMemorySnapshotsTest() success\n");
+    } else {
+        printf("filterMemorySnapshotsTest() failed\n");
+    }
 }
 
 void writeProcessMemoryAtPtrLocationTest() {
@@ -614,24 +633,23 @@ int main() {
     // printProcessMemory("test.txt - Editor");
     // printProcessMemory("Buddy Liste");
     
-    // valueIsMatchingTest();
-    // concatMemPtrTest();
-    // reallocMemPtrsTest();
-    // intToByteArrayTest();
-    // shortToByteArrayTest();
-    // byteToByteArrayTest();
-    // strToByteArrayTest();
-    // floatToByteArrayTest();
-    // doubleToByteArrayTest();
-    // findValueInProcessTest();
-    // readProcessMemoryAtPtrLocationTest();
-    // getProcessBaseAddressTest();
-    // reallocMemoryMapTest();
-    // concatMemoryMapTest();
-    // memorySnapshotMemCountMatchesPtrCountTest();
-    // memorySnapshotSavesCorrectValueAndPointerTest();
-    // writeProcessMemoryAtPtrLocationTest();
-
+    valueIsMatchingTest();
+    concatMemPtrTest();
+    reallocMemPtrsTest();
+    intToByteArrayTest();
+    shortToByteArrayTest();
+    byteToByteArrayTest();
+    strToByteArrayTest();
+    floatToByteArrayTest();
+    doubleToByteArrayTest();
+    findValueInProcessTest();
+    readProcessMemoryAtPtrLocationTest();
+    getProcessBaseAddressTest();
+    reallocMemoryMapTest();
+    concatMemoryMapTest();
+    memorySnapshotMemCountMatchesPtrCountTest();
+    memorySnapshotSavesCorrectValueAndPointerTest();
+    writeProcessMemoryAtPtrLocationTest();
     filterMemorySnapshotsTest();
 
     return 0;
