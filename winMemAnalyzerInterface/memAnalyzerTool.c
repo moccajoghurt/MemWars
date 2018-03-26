@@ -61,7 +61,7 @@ void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName
     BYTEARRAY bArr = {0};
     fprintf(stderr, "Enter datatype to search for.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value) \n8. string (s)\n");
     char c = getCharacter();
-    // clearInputBuffer();
+    
     printf("Enter the value:\n");
     scanfByDatatype(c, &bArr);
 
@@ -100,10 +100,21 @@ void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName
 }
 
 void memorySnapshotRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName) {
+    
+    memorySnapshotToDisc(hProcess, "snapshot1");
+    fprintf(stderr, "Created snapshot. Hit Enter for another snapshot.\n");
+    memorySnapshotToDisc(hProcess, "snapshot2");
+    fprintf(stderr, "1. Filter for values that changed (1)\n2. Filter for values that did not change (2)\n");
+    char changed = getCharacter();
+    
+    if (changed == '1') {
+        filterMemorySnapshots("snapshot1", "snapshot2", "filter", TRUE);
+    } else if (changed == '2') {
+        filterMemorySnapshots("snapshot1", "snapshot2", "filter", FALSE);
+    }
+
     fprintf(stderr, "Enter datatype to scan for.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value)\n");
     char c = getCharacter();
-    // clearInputBuffer();
-
 }
 
 void writeProcessMemoryRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName) {
@@ -113,9 +124,8 @@ void writeProcessMemoryRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* proc
 
     BYTEARRAY bArr = {0};
     printf("Enter the datatype to write into the memory.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value)\n");
-    // clearInputBuffer();
+    
     char c = getCharacter();
-    // // clearInputBuffer();
     printf("%c\n", c);
     printf("Enter the value:\n");
     scanfByDatatype(c, &bArr);
@@ -155,7 +165,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "Found %s.\n", argv[1]);
     fprintf(stderr, "1. search for value (1)\n2. compare memory snapshots (2)\n3. write value to process address (3)\n");
     char c = getCharacter();
-    // clearInputBuffer();
+    
     switch (c) {
         case '1':
             valueSearchRoutine(hProcess, processBaseAddress, processName);
@@ -172,5 +182,5 @@ int main(int argc, char* argv[]) {
     }
     fprintf(stderr, "Press Enter to close.\n");
     getCharacter();
-    // clearInputBuffer();
+    
 }
