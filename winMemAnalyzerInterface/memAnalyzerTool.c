@@ -171,7 +171,8 @@ int main(int argc, char* argv[]) {
             valueSearchRoutine(hProcess, processBaseAddress, processName);
             break;
         case '2':
-            memorySnapshotRoutine(hProcess, processBaseAddress, processName);
+            fprintf(stderr, "Not implemented yet\n");
+            // memorySnapshotRoutine(hProcess, processBaseAddress, processName);
             break;
         case '3':
             writeProcessMemoryRoutine(hProcess, processBaseAddress, processName);

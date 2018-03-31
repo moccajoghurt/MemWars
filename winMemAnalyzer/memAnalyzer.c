@@ -278,6 +278,10 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
 // this function compares two memory snapshots and either saves bytes that changed or didn't change
 void filterMemorySnapshots(const char* oldSnapshotFileName1, const char* recentSnapshotfileName2, const char* filteredSnapshotName, BOOL valsChanged) {
 
+    /*
+    * This function is messy and should be implemented in a higher layer.
+    */
+
     FILE* snapshot1;
     snapshot1 = fopen(oldSnapshotFileName1, "rb");
     if (snapshot1 == NULL) {
