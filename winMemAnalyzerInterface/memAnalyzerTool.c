@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
 
     HMODULE processBaseAddress = getProcessBaseAddress(hProcess, processName);
     if (processBaseAddress == NULL) {
-        fprintf(stderr, "Could not retrieve process base address.\n");
+        fprintf(stderr, "Could not retrieve process base address. Error Code: %d\n", GetLastError());
         return;
     }
     
