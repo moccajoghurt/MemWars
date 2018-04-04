@@ -274,6 +274,33 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
     free(memPtrsFileName);
 }
 
+// Handle needs to be opened with "CREATE_THREAD_ACCESS"
+BOOL injectShellcode(PBYTE pShellcode, SIZE_T szShellcodeLength, HANDLE hProc) {
+
+	HANDLE hRemoteThread;
+	PVOID pRemoteBuffer;
+
+	pRemoteBuffer = VirtualAllocEx(hProc, NULL, szShellcodeLength, (MEM_RESERVE | MEM_COMMIT), PAGE_EXECUTE_READWRITE);
+	if (!pRemoteBuffer) {
+        printf("injectShellcode()::VirtualAllocEx() failed: %d", GetLastError());
+		return FALSE;
+	}
+	if (!WriteProcessMemory(hProc, pRemoteBuffer, pShellcode, szShellcodeLength, NULL)) {
+        printf("injectShellcode()::WriteProcessMemory() failed: %d", GetLastError());
+		return FALSE;
+	}
+    // todo: add shellcode execution
+	// hRemoteThread = CreateRemoteThread(hProc, NULL, 0, (LPTHREAD_START_ROUTINE)pRemoteBuffer, NULL, 0, NULL);
+	// if (!hRemoteThread) {
+    //     printf("injectShellcode()::CreateRemoteThread() failed: %d", GetLastError());
+	// 	return FALSE;
+	// }
+
+	return TRUE;
+}
+
+
+
 
 void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info) {
     printf("\n______________________________________________________\n");

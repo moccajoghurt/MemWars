@@ -99,23 +99,6 @@ void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName
     }
 }
 
-void memorySnapshotRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName) {
-    
-    memorySnapshotToDisc(hProcess, "snapshot1");
-    fprintf(stderr, "Created snapshot. Hit Enter for another snapshot.\n");
-    memorySnapshotToDisc(hProcess, "snapshot2");
-    fprintf(stderr, "1. Filter for values that changed (1)\n2. Filter for values that did not change (2)\n");
-    char changed = getCharacter();
-    
-    if (changed == '1') {
-        filterMemorySnapshots("snapshot1", "snapshot2", "filter", TRUE);
-    } else if (changed == '2') {
-        filterMemorySnapshots("snapshot1", "snapshot2", "filter", FALSE);
-    }
-
-    fprintf(stderr, "Enter datatype to scan for.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value)\n");
-    char c = getCharacter();
-}
 
 void writeProcessMemoryRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName) {
     unsigned int address;
@@ -123,7 +106,7 @@ void writeProcessMemoryRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* proc
     scanf(" %x", &address);
 
     BYTEARRAY bArr = {0};
-    printf("Enter the datatype to write into the memory.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value)\n");
+    printf("Enter the datatype to write into the memory.\n1. int (d)\n2. uint (u)\n3. short (h)\n4. ushort (o)\n5. double (l)\n6. float (f)\n7. byte/char (b) (enter decimal value)\n8. string (s)\n");
     
     char c = getCharacter();
     printf("%c\n", c);
@@ -163,7 +146,7 @@ int main(int argc, char* argv[]) {
     
     // we use stderr for user notifications and stdout for data values
     fprintf(stderr, "Found %s.\n", argv[1]);
-    fprintf(stderr, "1. search for value (1)\n2. compare memory snapshots (2)\n3. write value to process address (3)\n");
+    fprintf(stderr, "1. search for value (1)\n2. write value to process address (2)\n");
     char c = getCharacter();
     
     switch (c) {
@@ -171,10 +154,6 @@ int main(int argc, char* argv[]) {
             valueSearchRoutine(hProcess, processBaseAddress, processName);
             break;
         case '2':
-            fprintf(stderr, "Not implemented yet\n");
-            // memorySnapshotRoutine(hProcess, processBaseAddress, processName);
-            break;
-        case '3':
             writeProcessMemoryRoutine(hProcess, processBaseAddress, processName);
             break;
         default:

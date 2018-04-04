@@ -530,28 +530,60 @@ void writeProcessMemoryAtPtrLocationTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
+void injectShellcodeTest() {
+    // todo: add shellcode execution
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    char injectBytes[] = "Let's inject this lovely string into the process";
+    BYTEARRAY testVal;
+    strToByteArray(&testVal, injectBytes);
+    MEMPTRS matchingMemPtrs = {0};
+    findValueInProcess(&testVal, process, &matchingMemPtrs);
+
+    if (matchingMemPtrs.size != 0) {
+        printf("injectShellcodeTest() failed string already exists\n");
+        goto Exit;
+    }
+
+    injectShellcode(injectBytes, strlen(injectBytes), process);
+    findValueInProcess(&testVal, process, &matchingMemPtrs);
+
+    if (matchingMemPtrs.size != 0) {
+        printf("injectShellcodeTest() success\n");
+    } else {
+        printf("injectShellcodeTest() failed\n");
+    }
+
+    Exit:
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
 
 int main() {
     // printProcessMemory("test.txt - Editor");
     // printProcessMemory("Buddy Liste");
     
-    valueIsMatchingTest();
-    concatMemPtrTest();
-    reallocMemPtrsTest();
-    intToByteArrayTest();
-    shortToByteArrayTest();
-    byteToByteArrayTest();
-    strToByteArrayTest();
-    floatToByteArrayTest();
-    doubleToByteArrayTest();
-    findValueInProcessTest();
-    readProcessMemoryAtPtrLocationTest();
-    getProcessBaseAddressTest();
-    reallocMemoryMapTest();
-    concatMemoryMapTest();
-    memorySnapshotMemCountMatchesPtrCountTest();
-    memorySnapshotSavesCorrectValueAndPointerTest();
-    writeProcessMemoryAtPtrLocationTest();
+    // valueIsMatchingTest();
+    // concatMemPtrTest();
+    // reallocMemPtrsTest();
+    // intToByteArrayTest();
+    // shortToByteArrayTest();
+    // byteToByteArrayTest();
+    // strToByteArrayTest();
+    // floatToByteArrayTest();
+    // doubleToByteArrayTest();
+    // findValueInProcessTest();
+    // readProcessMemoryAtPtrLocationTest();
+    // getProcessBaseAddressTest();
+    // reallocMemoryMapTest();
+    // concatMemoryMapTest();
+    // memorySnapshotMemCountMatchesPtrCountTest();
+    // memorySnapshotSavesCorrectValueAndPointerTest();
+    // writeProcessMemoryAtPtrLocationTest();
+    injectShellcodeTest();
 
     return 0;
 }

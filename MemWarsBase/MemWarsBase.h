@@ -45,6 +45,7 @@ void reallocMemoryMap(MEMMAP* memMap);
 void concatMemoryMap(MEMMAP* memMap, void* memPtr, BYTEARRAY* bArrVal);
 void memorySnapshotToDisc(HANDLE process, const char* fileName);
 void freeMemMap(MEMMAP* memMap);
+BOOL injectShellcode(PBYTE pShellcode, SIZE_T szShellcodeLength, HANDLE hProc);
 
 
 #endif
