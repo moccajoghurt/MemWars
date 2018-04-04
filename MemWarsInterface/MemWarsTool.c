@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <windows.h>
 #include <Psapi.h> // GetModuleFileNameEx
-#include "../winMemAnalyzer/memAnalyzer.h"
-#include "memAnalyzerTool.h"
+#include "../MemWarsBase/MemWarsBase.h"
+#include "MemWarsTool.h"
 
 char getCharacter() {
     char c = getchar();

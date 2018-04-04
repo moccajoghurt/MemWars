@@ -1,0 +1,1 @@
+cl.exe MemWarsTool.c ../winMemAnalyzer/memAnalyzer.c /link user32.lib Kernel32.lib

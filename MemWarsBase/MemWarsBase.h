@@ -44,7 +44,6 @@ void printProcessMemory(const char* windowName);
 void reallocMemoryMap(MEMMAP* memMap);
 void concatMemoryMap(MEMMAP* memMap, void* memPtr, BYTEARRAY* bArrVal);
 void memorySnapshotToDisc(HANDLE process, const char* fileName);
-void filterMemorySnapshots(const char* oldSnapshotFileName1, const char* recentSnapshotfileName2, const char* filteredSnapshotName, BOOL valsChanged);
 void freeMemMap(MEMMAP* memMap);
 
 

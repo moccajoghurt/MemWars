@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <windows.h>
-#include "memAnalyzer.h"
+#include "MemWarsBase.h"
 
 void findValueInProcessTest() {
     system("start /B memoryTestApp.exe");
@@ -490,104 +490,6 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-BOOL filterMemorySnapshotsSameSizeTest(const char* snapshot1, const char* snapshot2, const char* filter) {
-    system("start /B memoryTestApp.exe");
-    HANDLE process = NULL;
-    while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
-    }
-    memorySnapshotToDisc(process, snapshot1);
-
-    MEMPTRS matchingPtrs = {0};
-    BYTEARRAY testVal = {0};
-    uintToByteArray(&testVal, 3254963271);
-
-    findValueInProcess(&testVal, process, &matchingPtrs);
-    if (matchingPtrs.size == 0) {
-        printf("filterMemorySnapshotsTest() failed! Testvalue not in memory!\n");
-        goto Exit;
-    }
-
-    BYTEARRAY writeVal = {0};
-    uintToByteArray(&writeVal, 71111113);
-    for (int i = 0; i < matchingPtrs.size; i++) {
-        writeProcessMemoryAtPtrLocation(process, *(matchingPtrs.memPointerArray + i), writeVal.values, writeVal.size);
-    }
-
-    memorySnapshotToDisc(process, snapshot2);
-
-    filterMemorySnapshots(snapshot1, snapshot2, filter, TRUE);
-
-    FILE* file1 = fopen(filter, "rb");
-    if (file1 == NULL) {
-        printf("Could not open filtered.txt\n");
-        printf("filterMemorySnapshotsTest() failed\n");
-        goto Exit;
-    }
-
-    char* filePtrsName;
-    filePtrsName = malloc(strlen(filter) + strlen(" - ptrs"));
-    strcpy(filePtrsName, filter);
-    strcat(filePtrsName, " - ptrs");
-    FILE* file2 = fopen(filePtrsName, "rb");
-    if (file2 == NULL) {
-        printf("Could not open %s\n", filePtrsName);
-        printf("filterMemorySnapshotsTest() failed\n");
-        goto Exit;
-    }
-
-    unsigned int fileSize1;
-    fseek(file1, 0 , SEEK_END);
-    fileSize1 = ftell(file1);
-    fseek(file1, 0, SEEK_SET);
-
-    BYTE* fileBuf1 = malloc(fileSize1 * 4);
-    fread(fileBuf1, fileSize1, 1, file1);
-
-    unsigned int fileSize2;
-    fseek(file2, 0 , SEEK_END);
-    fileSize2 = ftell(file2);
-    fseek(file2, 0, SEEK_SET);
-
-    unsigned int* fileBuf2 = malloc(fileSize2 * 4);
-    fread(fileBuf2, fileSize2, 1, file2);
-
-    BOOL foundValAndPtrInFilterFile = FALSE;
-    for (int i = 0; i < fileSize2 / sizeof(unsigned int); i++) {
-        // printf("%x %x\n", (unsigned int)*(fileBuf2 + i), (unsigned int)*(matchingPtrs.memPointerArray));
-        for (int n = 0; n < matchingPtrs.size; n++) {
-            if ( *(fileBuf2 + i) == (unsigned int)*(matchingPtrs.memPointerArray + n)) {
-                if (memcmp(writeVal.values, fileBuf1 + i, writeVal.size) == 0) {
-                    foundValAndPtrInFilterFile = TRUE;
-                }
-            }
-        }
-    }
-
-    fclose(file1);
-    fclose(file2);
-    Exit:
-    system("taskkill /IM memoryTestApp.exe /F >nul");
-
-    return foundValAndPtrInFilterFile;
-}
-
-void filterMemorySnapshotsTest() {
-    BOOL status = filterMemorySnapshotsSameSizeTest("buf1.txt", "buf2.txt", "filtered.txt");
-    system("del buf1.txt");
-    system("del \"buf1.txt - ptrs\"");
-    system("del buf2.txt");
-    system("del \"buf2.txt - ptrs\"");
-    system("del filtered.txt");
-    system("del \"filtered.txt - ptrs\"");
-
-    // todo: add test for snapshots where the first snapshot is smaller than the second one and the other way around
-    if (status) {
-        printf("filterMemorySnapshotsTest() success\n");
-    } else {
-        printf("filterMemorySnapshotsTest() failed\n");
-    }
-}
 
 void writeProcessMemoryAtPtrLocationTest() {
     
@@ -650,7 +552,6 @@ int main() {
     memorySnapshotMemCountMatchesPtrCountTest();
     memorySnapshotSavesCorrectValueAndPointerTest();
     writeProcessMemoryAtPtrLocationTest();
-    filterMemorySnapshotsTest();
 
     return 0;
 }
