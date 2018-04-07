@@ -20,12 +20,8 @@ BOOL valueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* memPtr1) {
 
 
 void intToByteArray(BYTEARRAY* bArr, int val) {
-    // windows uses little-endian
-    bArr->values[3] = val >> 24;
-    bArr->values[2] = val >> 16;
-    bArr->values[1] = val >> 8;
-    bArr->values[0] = val;
-    bArr->size = 4;
+    bArr->size = sizeof(val);
+    memcpy(bArr->values, &val, sizeof(val));
 }
 
 void uintToByteArray(BYTEARRAY* bArr, unsigned int val) {
@@ -172,11 +168,13 @@ BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, B
     return TRUE;
 }
 
-void writeProcessMemoryAtPtrLocation(HANDLE process, void* baseAdress, void* value, size_t valSize) {
+BOOL writeProcessMemoryAtPtrLocation(HANDLE process, void* baseAdress, void* value, size_t valSize) {
     BOOL status =  WriteProcessMemory(process, baseAdress, value, valSize, NULL);
     if (status == 0) {
         printf("writeMemoryAtPtrLocation()::WriteProcessMemory() failed!\n");
+        return FALSE;
     }
+    return TRUE;
 }
 
 HANDLE getProcessByWindowName(const char* windowName) {
@@ -262,10 +260,10 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
                 }
             }
             for (int i = 0; i < bytesRead; i++) {
-                unsigned int ptrBuf = (unsigned int)(p + i);
-                fwrite(&ptrBuf, sizeof(unsigned int), 1, memPtrFile);
+                void* ptrBuf = (p + i);
+                fwrite(&ptrBuf, sizeof(void*), 1, memPtrFile);
             }
-            fwrite(buf, sizeof(char), bytesRead, dataFile);
+            fwrite(buf, sizeof(BYTE), bytesRead, dataFile);
             free(buf);
         }
     }
@@ -302,36 +300,36 @@ BOOL injectShellcode(PBYTE pShellcode, SIZE_T szShellcodeLength, HANDLE hProc) {
 
 
 
-void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info) {
-    printf("\n______________________________________________________\n");
-    printf("BaseAddress:\t\t 0x%x\n", (UINT)info->BaseAddress);
-    printf("AllocationBase:\t\t 0x%x\n", (UINT)info->AllocationBase);
-    printf("RegionSize:\t\t %u\n", info->RegionSize);
-    printf("State:\t\t\t %d\n", info->State);
-    printf("Protect:\t\t %x\n", info->Protect);
-    printf("Type:\t\t\t %d\n", info->Type);
-    printf("______________________________________________________\n");
-}
+// void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info) {
+//     printf("\n______________________________________________________\n");
+//     printf("BaseAddress:\t\t 0x%x\n", (UINT)info->BaseAddress);
+//     printf("AllocationBase:\t\t 0x%x\n", (UINT)info->AllocationBase);
+//     printf("RegionSize:\t\t %u\n", info->RegionSize);
+//     printf("State:\t\t\t %d\n", info->State);
+//     printf("Protect:\t\t %x\n", info->Protect);
+//     printf("Type:\t\t\t %d\n", info->Type);
+//     printf("______________________________________________________\n");
+// }
 
-void printProcessMemory(const char* windowName) {
-    HANDLE process = (HANDLE)getProcessByWindowName(windowName);
-    if (process == NULL) {
-        return;
-    }
-    UCHAR *p = NULL;
-    MEMORY_BASIC_INFORMATION info;
-    for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
-        printProcessMemoryInformation(&info);
-        if (info.State == MEM_COMMIT && (info.Type == MEM_MAPPED || info.Type == MEM_PRIVATE ||info.Type == MEM_IMAGE)) {
-            UCHAR* buf = malloc(info.RegionSize);
-            SIZE_T bytesRead;
-            ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
-            for (int i = 0; i < info.RegionSize; i ++) {
-                printf("%c", *(buf + i));
-            }
-            free(buf);
-        }
-    }
-    printf("\n");
-}
+// void printProcessMemory(const char* windowName) {
+//     HANDLE process = (HANDLE)getProcessByWindowName(windowName);
+//     if (process == NULL) {
+//         return;
+//     }
+//     UCHAR *p = NULL;
+//     MEMORY_BASIC_INFORMATION info;
+//     for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
+//         printProcessMemoryInformation(&info);
+//         if (info.State == MEM_COMMIT && (info.Type == MEM_MAPPED || info.Type == MEM_PRIVATE ||info.Type == MEM_IMAGE)) {
+//             UCHAR* buf = malloc(info.RegionSize);
+//             SIZE_T bytesRead;
+//             ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
+//             for (int i = 0; i < info.RegionSize; i ++) {
+//                 printf("%c", *(buf + i));
+//             }
+//             free(buf);
+//         }
+//     }
+//     printf("\n");
+// }
 

@@ -1,0 +1,5 @@
+- shellcode injection testen
+- test-shellcode erzeugen, der labels enthält
+- shellcode kommunikation über named pipe
+- shellcode windows-funktionen aufrufen lassen
+- empty memory für shellcode finden

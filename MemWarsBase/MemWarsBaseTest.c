@@ -394,7 +394,7 @@ void memorySnapshotMemCountMatchesPtrCountTest() {
     void* fileBuf2 = malloc(fileSize2 * 4);
     fread(fileBuf2, fileSize2, 1, file2);
 
-    if (fileSize1 == fileSize2/sizeof(unsigned int)) {
+    if (fileSize1 == fileSize2/sizeof(void*)) {
         printf("memorySnapshotMemCountMatchesPtrCountTest() success\n");
     } else {
         printf("memorySnapshotMemCountMatchesPtrCountTest() failed\n");
@@ -423,6 +423,10 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
     BYTEARRAY testVal = {0};
     intToByteArray(&testVal, 133337);
     findValueInProcess(&testVal, process, &matchingPtrs);
+    if (matchingPtrs.size == 0) {
+        printf("memorySnapshotSavesCorrectValueAndPointerTest() failed. testVal not found\n");
+        goto Exit;
+    }
 
     FILE* file1 = fopen("buf.txt - ptrs", "rb");
     if (file1 == NULL) {
@@ -443,7 +447,7 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
     fileSize = ftell(file1);
     fseek(file1, 0, SEEK_SET);
 
-    void* fileBuf1 = malloc(fileSize * 4);
+    void* fileBuf1 = malloc(fileSize * sizeof(void*));
     fread(fileBuf1, fileSize, 1, file1);
 
     int fileSize2;
@@ -451,25 +455,57 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
     fileSize2 = ftell(file2);
     fseek(file2, 0, SEEK_SET);
 
-    void* fileBuf2 = malloc(fileSize * 4);
+    void* fileBuf2 = malloc(fileSize2 * sizeof(void*));
     fread(fileBuf2, fileSize2, 1, file2);
 
     BOOL foundValInMemoryBySnapshotPtr = FALSE;
     BOOL foundValOnDisc = FALSE;
-    for (int i = 0; i < fileSize; i += sizeof(unsigned int)) {
-        if (i + sizeof(unsigned int) >= fileSize) {
+    for (unsigned int i = 0; i < fileSize; i += sizeof(void*)) {
+        if (i + sizeof(void*) >= fileSize) {
             break;
         }
         
         for (int n = 0; n < matchingPtrs.size; n++) {
-            if ( *(((unsigned int*)fileBuf1) + i) == *(((unsigned int*)matchingPtrs.memPointerArray) + n)) { /* don't judge me */
+            BYTEARRAY filebufVal = {0};
+            BYTEARRAY memPtrVal = {0};
+            if (sizeof(void*) == sizeof(DWORD64)) {
+                memcpy(filebufVal.values, (DWORD64*)fileBuf1 + i, sizeof(void*));
+                memcpy(memPtrVal.values, (DWORD64*)matchingPtrs.memPointerArray + n, sizeof(void*));
+            } else if (sizeof(void*) == sizeof(DWORD)) {
+                memcpy(filebufVal.values, (DWORD*)fileBuf1 + i, sizeof(void*));
+                memcpy(memPtrVal.values, (DWORD*)matchingPtrs.memPointerArray + n, sizeof(void*));
+            } else {
+                printf("memorySnapshotSavesCorrectValueAndPointerTest() failed. unsupported platform\n");
+                goto Exit;
+            }
+            filebufVal.size = sizeof(void*);
+            memPtrVal.size = sizeof(void*);
+
+            if (valueIsMatching(&filebufVal, &memPtrVal)) {
                 BYTEARRAY buf = {0};
-                readProcessMemoryAtPtrLocation((void*)*(((unsigned int*)fileBuf1) + i), 4, process, &buf);
+                
+
+                if (sizeof(void*) == sizeof(DWORD64)) {
+                    readProcessMemoryAtPtrLocation((void*)*(((DWORD64*)fileBuf1) + i), 4, process, &buf);
+                } else if (sizeof(void*) == sizeof(DWORD)) {
+                    // suppress size warning since we made sure that the size is correct
+                    #pragma warning(push)
+                    #pragma warning(disable: 4312)
+                    readProcessMemoryAtPtrLocation((void*)*(((DWORD*)fileBuf1) + i), 4, process, &buf);
+                    #pragma warning(pop)
+                }
                 if (valueIsMatching(&testVal, &buf)) {
                     foundValInMemoryBySnapshotPtr = TRUE;
                 }
+
                 BYTEARRAY buf1 = {0};
-                intToByteArray(&buf1, (int)*(((int*)fileBuf2) + i/sizeof(unsigned int)));
+                if (sizeof(void*) == sizeof(DWORD64)) {
+                    memcpy(&buf1.values, ((DWORD64*)fileBuf2 + i/sizeof(void*)), sizeof(int));
+                    buf1.size = sizeof(int);
+                } else if (sizeof(void*) == sizeof(DWORD)) {
+                    memcpy(&buf1.values, ((DWORD*)fileBuf2 + i/sizeof(void*)), sizeof(int));
+                    buf1.size = sizeof(int);
+                }
                 if (valueIsMatching(&testVal, &buf1)) {
                     foundValOnDisc = TRUE;
                 }
@@ -485,8 +521,8 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
     fclose(file1);
     fclose(file2);
     Exit:
-    system("del buf.txt");
-    system("del \"buf.txt - ptrs\"");
+    // system("del buf.txt");
+    // system("del \"buf.txt - ptrs\"");
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
@@ -530,14 +566,52 @@ void writeProcessMemoryAtPtrLocationTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void injectShellcodeTest() {
+void injectShellcodex64Test() {
     // todo: add shellcode execution
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
         process = (HANDLE)getProcessByName("memoryTestApp.exe");
     }
-    char injectBytes[] = "Let's inject this lovely string into the process";
+    // char injectBytes[] = "Let's inject this lovely string into the process";
+    FARPROC addrCreateFileA = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CreateFileA");
+    if (addrCreateFileA == NULL) {
+        printf("injectShellcodeTest() failed. GetProcAddress returned NULL\n");
+        goto Exit;
+    }
+    void* rwMemory = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    if (rwMemory == NULL) {
+        printf("injectShellcodeTest() failed. Virtual Alloc returned NULL\n");
+        goto Exit;
+    }
+    DWORD offset = 0;
+    BYTE injectBytes[] = {
+        0x6A, 0x00,                         // push    0 ; hTemplateFile
+        0x68, 0x80, 0x00, 0x00, 0x00,       // push    80h ; dwFlagsAndAttributes
+        0x6A, 0x01,                         // push    1 ; dwCreationDisposition
+        0x6A, 0x00,                         // push    0 ; lpSecurityAttributes
+        0x6A, 0x00,                         // push    0 ; dwShareMode
+        0x68, 0x00, 0x00, 0x00, 0x40,       // push    40000000h ; dwDesiredAccess (18)
+        0x68, 0x00, 0x00, 0x00, 0x00        // push    offset FileName ; "hack.txt"
+        0xFF, 0x15, 0x00, 0x00, 0x00, 0x00  // call    ds:CreateFileA
+
+    };
+    *(DWORD*)(injectBytes + 25) = (DWORD)addrCreateFileA;
+    CopyMemory(((DWORD*)rwMemory + offset), injectBytes, sizeof(injectBytes));
+    offset += sizeof(injectBytes);
+
+
+    // UCHAR x64InfiniteLoop[] = { 0xEB, 0xFE }; // nop + jmp rel8 -2
+	// CopyMemory((void*)addrEndOfShellCode, x64InfiniteLoop, sizeof(x64InfiniteLoop));
+	// addrEndOfShellCode += sizeof(x64InfiniteLoop);
+ 
+	const char nameBuf[] = "hack.txt";
+	CopyMemory(((DWORD*)rwMemory + offset), nameBuf, strlen(nameBuf));
+	offset += strlen(nameBuf);
+
+    DWORD lpNameInRemoteExecMemory = remoteExecMem + fullShellcodeSize - sizeof(lpNameBuffer);
+	CopyMemory((void*)((DWORD64)rwMemory + 12), &lpNameInRemoteExecMemory, sizeof(lpNameInRemoteExecMemory));
+
     BYTEARRAY testVal;
     strToByteArray(&testVal, injectBytes);
     MEMPTRS matchingMemPtrs = {0};
@@ -548,7 +622,7 @@ void injectShellcodeTest() {
         goto Exit;
     }
 
-    injectShellcode(injectBytes, strlen(injectBytes), process);
+    injectShellcode(injectBytes, sizeof(injectBytes), process);
     findValueInProcess(&testVal, process, &matchingMemPtrs);
 
     if (matchingMemPtrs.size != 0) {
@@ -565,6 +639,8 @@ void injectShellcodeTest() {
 int main() {
     // printProcessMemory("test.txt - Editor");
     // printProcessMemory("Buddy Liste");
+
+    // printf("%zu\n", sizeof(DWORD64*));
     
     // valueIsMatchingTest();
     // concatMemPtrTest();
@@ -583,7 +659,7 @@ int main() {
     // memorySnapshotMemCountMatchesPtrCountTest();
     // memorySnapshotSavesCorrectValueAndPointerTest();
     // writeProcessMemoryAtPtrLocationTest();
-    injectShellcodeTest();
+    injectShellcodex64Test();
 
     return 0;
 }

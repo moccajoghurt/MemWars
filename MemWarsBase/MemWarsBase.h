@@ -13,7 +13,6 @@ typedef struct _BYTE_ARRAY {
 
 typedef struct _MEM_PTRS {
     void** memPointerArray;
-    size_t datatypeSize;
     size_t size;
 } MEMPTRS;
 
@@ -31,21 +30,22 @@ void doubleToByteArray(BYTEARRAY* bArr, double d);
 void shortToByteArray(BYTEARRAY* bArr, short s);
 void byteToByteArray(BYTEARRAY* bArr, char c);
 void strToByteArray(BYTEARRAY* bArr, const char* str);
-void reallocMemPtrs(MEMPTRS* memPtrs);
-void concatMemPtr(void* ptr, MEMPTRS* memPtrs);
-void findValueInProcess(BYTEARRAY* bArrValue, HANDLE process, MEMPTRS* matchingMemPtrs);
-BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray);
-void writeProcessMemoryAtPtrLocation(HANDLE process, void* baseAdress, void* value, size_t valSize);
+void reallocMemPtrs(MEMPTRS* memPtrs);                  // todo: x64
+void concatMemPtr(void* ptr, MEMPTRS* memPtrs);         // todo: x64
+void findValueInProcess(BYTEARRAY* bArrValue, HANDLE process, MEMPTRS* matchingMemPtrs);    // todo: x64
+BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray);  // todo: x64
+BOOL writeProcessMemoryAtPtrLocation(HANDLE process, void* baseAdress, void* value, size_t valSize); // todo: x64
 HANDLE getProcessByWindowName(const char* windowName);
 HANDLE getProcessByName(const TCHAR* szProcessName);
 HMODULE getProcessBaseAddress(HANDLE hProcess, TCHAR* szProcessName);
-void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info);
-void printProcessMemory(const char* windowName);
-void reallocMemoryMap(MEMMAP* memMap);
-void concatMemoryMap(MEMMAP* memMap, void* memPtr, BYTEARRAY* bArrVal);
-void memorySnapshotToDisc(HANDLE process, const char* fileName);
-void freeMemMap(MEMMAP* memMap);
+// void printProcessMemoryInformation(MEMORY_BASIC_INFORMATION* info);
+// void printProcessMemory(const char* windowName);
+void reallocMemoryMap(MEMMAP* memMap);  // todo: x64
+void concatMemoryMap(MEMMAP* memMap, void* memPtr, BYTEARRAY* bArrVal); // todo: x64
+void memorySnapshotToDisc(HANDLE process, const char* fileName);    // todo: x64
+void freeMemMap(MEMMAP* memMap);    // todo: x64
 BOOL injectShellcode(PBYTE pShellcode, SIZE_T szShellcodeLength, HANDLE hProc);
+BOOL injectShellcodeManually(PBYTE pShellcode, SIZE_T szShellcodeLength, void* memLoc, HANDLE thread, HANDLE hProc);
 
 
 #endif
