@@ -521,8 +521,8 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
     fclose(file1);
     fclose(file2);
     Exit:
-    // system("del buf.txt");
-    // system("del \"buf.txt - ptrs\"");
+    system("del buf.txt");
+    system("del \"buf.txt - ptrs\"");
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
@@ -566,14 +566,21 @@ void writeProcessMemoryAtPtrLocationTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void injectShellcodex64Test() {
-    // todo: add shellcode execution
+void injectx64ShellcodeTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
         process = (HANDLE)getProcessByName("memoryTestApp.exe");
     }
-    // char injectBytes[] = "Let's inject this lovely string into the process";
+    
+    
+	PVOID pRemoteBuffer;
+	pRemoteBuffer = VirtualAllocEx(process, NULL, 4096, (MEM_RESERVE | MEM_COMMIT), PAGE_EXECUTE_READWRITE);
+	if (!pRemoteBuffer) {
+        printf("injectShellcode()::VirtualAllocEx() failed: %d", GetLastError());
+	}
+
+
     FARPROC addrCreateFileA = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CreateFileA");
     if (addrCreateFileA == NULL) {
         printf("injectShellcodeTest() failed. GetProcAddress returned NULL\n");
@@ -586,50 +593,55 @@ void injectShellcodex64Test() {
     }
     DWORD offset = 0;
     BYTE injectBytes[] = {
-        0x6A, 0x00,                         // push    0 ; hTemplateFile
-        0x68, 0x80, 0x00, 0x00, 0x00,       // push    80h ; dwFlagsAndAttributes
-        0x6A, 0x01,                         // push    1 ; dwCreationDisposition
-        0x6A, 0x00,                         // push    0 ; lpSecurityAttributes
-        0x6A, 0x00,                         // push    0 ; dwShareMode
-        0x68, 0x00, 0x00, 0x00, 0x40,       // push    40000000h ; dwDesiredAccess (18)
-        0x68, 0x00, 0x00, 0x00, 0x00        // push    offset FileName ; "hack.txt"
-        0xFF, 0x15, 0x00, 0x00, 0x00, 0x00  // call    ds:CreateFileA
+        0x48, 0x83, 0xEC, 0x48,                                     // sub     rsp, 48h
+        0x48, 0xC7, 0x44, 0x24, 0x30, 0x00, 0x00, 0x00, 0x00,       // mov     [rsp+48h+hTemplateFile], 0 ; hTemplateFile
+        0xC7, 0x44, 0x24, 0x28, 0x80, 0x00, 0x00, 0x00,             // mov     [rsp+48h+dwFlagsAndAttributes], 80h ; dwFlagsAndAttributes
+        0xC7, 0x44, 0x24, 0x20, 0x01, 0x00, 0x00, 0x00,             // mov     [rsp+48h+dwCreationDisposition], 1 ; dwCreationDisposition
+        0x45, 0x33, 0xC9,                                           // xor     r9d, r9d        ; lpSecurityAttributes (31)
+        0x45, 0x33, 0xC0,                                           // xor     r8d, r8d        ; dwShareMode (34)
+        0xBA, 0x00, 0x00, 0x00, 0x40,                               // mov     edx, 40000000h  ; dwDesiredAccess (39)
+        0x48, 0x8D, 0x0D, 0xD1, 0x3F, 0x01, 0x00,                   // lea     rcx, FileName   ; "hack.txt" (46)
+        0x48, 0xA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov     rax, CreateFileAAdress
+        //0xFF, 0x15, 0xCB, 0xAF, 0x00, 0x00,                       // call    cs:CreateFileA 
+        // 0xFF, 0x02,                                              // call rax
+        0xFF, 0xD0,                                                 // call rax
+        0x33, 0xC0,                                                 // xor     eax, eax
+        0x48, 0x83, 0xC4, 0x48,                                     // add     rsp, 48h
+        0xC3                                                        // retn
 
     };
-    *(DWORD*)(injectBytes + 25) = (DWORD)addrCreateFileA;
+    // *(DWORD*)(injectBytes + 25) = (DWORD)addrCreateFileA;
+    *(DWORD64*)((PUCHAR)injectBytes + 49) = (DWORD64)(ULONG_PTR)addrCreateFileA;
     CopyMemory(((DWORD*)rwMemory + offset), injectBytes, sizeof(injectBytes));
     offset += sizeof(injectBytes);
 
 
     // UCHAR x64InfiniteLoop[] = { 0xEB, 0xFE }; // nop + jmp rel8 -2
 	// CopyMemory((void*)addrEndOfShellCode, x64InfiniteLoop, sizeof(x64InfiniteLoop));
-	// addrEndOfShellCode += sizeof(x64InfiniteLoop);
+    // addrEndOfShellCode += sizeof(x64InfiniteLoop);
+    
+    
  
 	const char nameBuf[] = "hack.txt";
-	CopyMemory(((DWORD*)rwMemory + offset), nameBuf, strlen(nameBuf));
-	offset += strlen(nameBuf);
+	CopyMemory((void*)((DWORD64)rwMemory + offset), nameBuf, strlen(nameBuf));
+    offset += strlen(nameBuf);
+    
+    DWORD64 lpNameInRemoteExecMemory = (DWORD64)pRemoteBuffer + offset - strlen(nameBuf);
+	CopyMemory((void*)((DWORD64)rwMemory + 42), &lpNameInRemoteExecMemory, sizeof(lpNameInRemoteExecMemory));
 
-    DWORD lpNameInRemoteExecMemory = remoteExecMem + fullShellcodeSize - sizeof(lpNameBuffer);
-	CopyMemory((void*)((DWORD64)rwMemory + 12), &lpNameInRemoteExecMemory, sizeof(lpNameInRemoteExecMemory));
-
-    BYTEARRAY testVal;
-    strToByteArray(&testVal, injectBytes);
-    MEMPTRS matchingMemPtrs = {0};
-    findValueInProcess(&testVal, process, &matchingMemPtrs);
-
-    if (matchingMemPtrs.size != 0) {
-        printf("injectShellcodeTest() failed string already exists\n");
-        goto Exit;
+    printf("%d, %d\n", strlen(nameBuf), sizeof(nameBuf));
+    
+	if (!WriteProcessMemory(process, pRemoteBuffer, rwMemory, 4096, NULL)) {
+        printf("injectShellcode()::WriteProcessMemory() failed: %d", GetLastError());
     }
-
-    injectShellcode(injectBytes, sizeof(injectBytes), process);
-    findValueInProcess(&testVal, process, &matchingMemPtrs);
-
-    if (matchingMemPtrs.size != 0) {
-        printf("injectShellcodeTest() success\n");
-    } else {
-        printf("injectShellcodeTest() failed\n");
-    }
+    
+    HANDLE hRemoteThread;
+    // todo: add shellcode execution
+	hRemoteThread = CreateRemoteThread(process, NULL, 0, (LPTHREAD_START_ROUTINE)pRemoteBuffer, NULL, 0, NULL);
+	if (!hRemoteThread) {
+        printf("injectShellcode()::CreateRemoteThread() failed: %d", GetLastError());
+	}
+    
 
     Exit:
     system("taskkill /IM memoryTestApp.exe /F >nul");
@@ -659,7 +671,7 @@ int main() {
     // memorySnapshotMemCountMatchesPtrCountTest();
     // memorySnapshotSavesCorrectValueAndPointerTest();
     // writeProcessMemoryAtPtrLocationTest();
-    injectShellcodex64Test();
+    injectx64ShellcodeTest();
 
     return 0;
 }
