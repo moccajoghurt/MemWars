@@ -27,23 +27,14 @@ int main() {
     }
     DWORD offset = 0;
     BYTE injectBytes[] = {
-        0x48, 0x83, 0xEC, 0x48,                                     // sub     rsp, 48h
-        0x48, 0xC7, 0x44, 0x24, 0x30, 0x00, 0x00, 0x00, 0x00,       // mov     [rsp+48h+hTemplateFile], 0 ; hTemplateFile
-        0xC7, 0x44, 0x24, 0x28, 0x80, 0x00, 0x00, 0x00,             // mov     [rsp+48h+dwFlagsAndAttributes], 80h ; dwFlagsAndAttributes
-        0xC7, 0x44, 0x24, 0x20, 0x01, 0x00, 0x00, 0x00,             // mov     [rsp+48h+dwCreationDisposition], 1 ; dwCreationDisposition
-        0x45, 0x33, 0xC9,                                           // xor     r9d, r9d        ; lpSecurityAttributes (31)
-        0x45, 0x33, 0xC0,                                           // xor     r8d, r8d        ; dwShareMode (34)
-        0xBA, 0x00, 0x00, 0x00, 0x40,                               // mov     edx, 40000000h  ; dwDesiredAccess (39)
-        0x48, 0x8D, 0x0D, 0xD1, 0x3F, 0x01, 0x00,                   // lea     rcx, FileName   ; "hack.txt" (46)
-        0x48, 0xA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov     rax, CreateFileAAdress
-        //0xFF, 0x15, 0xCB, 0xAF, 0x00, 0x00,                       // call    cs:CreateFileA 
-        // 0xFF, 0x02,                                              // call rax
-        0xFF, 0xD0,                                                 // call rax
-        0x33, 0xC0,                                                 // xor     eax, eax
-        0x48, 0x83, 0xC4, 0x48,                                     // add     rsp, 48h
-        0xC3                                                        // retn
-
-    };
+        0x41, 0xB9, 0x01, 0x00, 0x00, 0x00,
+        0x45, 0x31, 0xC0,
+        0x31, 0xD2,
+        0x31, 0xC9,
+        0x48, 0x8B, 0x04, 0x25, 0x00, 0x00, 0x00,
+        0x00,
+        0xFF, 0xD0
+        };
     // *(DWORD*)(injectBytes + 25) = (DWORD)addrCreateFileA;
     *(DWORD64*)((PUCHAR)injectBytes + 49) = (DWORD64)(ULONG_PTR)addrCreateFileA;
     CopyMemory(((DWORD*)rwMemory + offset), injectBytes, sizeof(injectBytes));
