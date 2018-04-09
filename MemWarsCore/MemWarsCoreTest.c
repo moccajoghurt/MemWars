@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <windows.h>
-#include "MemWarsBase.h"
+#include "MemWarsCore.h"
 
 void findValueInProcessTest() {
     system("start /B memoryTestApp.exe");
@@ -629,7 +629,7 @@ void injectx64ShellcodeTest() {
     DWORD64 lpNameInRemoteExecMemory = (DWORD64)pRemoteBuffer + offset - strlen(nameBuf);
 	CopyMemory((void*)((DWORD64)rwMemory + 42), &lpNameInRemoteExecMemory, sizeof(lpNameInRemoteExecMemory));
 
-    printf("%d, %d\n", strlen(nameBuf), sizeof(nameBuf));
+    // printf("%d, %d\n", strlen(nameBuf), sizeof(nameBuf));
     
 	if (!WriteProcessMemory(process, pRemoteBuffer, rwMemory, 4096, NULL)) {
         printf("injectShellcode()::WriteProcessMemory() failed: %d", GetLastError());
@@ -654,24 +654,24 @@ int main() {
 
     // printf("%zu\n", sizeof(DWORD64*));
     
-    // valueIsMatchingTest();
-    // concatMemPtrTest();
-    // reallocMemPtrsTest();
-    // intToByteArrayTest();
-    // shortToByteArrayTest();
-    // byteToByteArrayTest();
-    // strToByteArrayTest();
-    // floatToByteArrayTest();
-    // doubleToByteArrayTest();
-    // findValueInProcessTest();
-    // readProcessMemoryAtPtrLocationTest();
-    // getProcessBaseAddressTest();
-    // reallocMemoryMapTest();
-    // concatMemoryMapTest();
-    // memorySnapshotMemCountMatchesPtrCountTest();
-    // memorySnapshotSavesCorrectValueAndPointerTest();
-    // writeProcessMemoryAtPtrLocationTest();
-    injectx64ShellcodeTest();
+    valueIsMatchingTest();
+    concatMemPtrTest();
+    reallocMemPtrsTest();
+    intToByteArrayTest();
+    shortToByteArrayTest();
+    byteToByteArrayTest();
+    strToByteArrayTest();
+    floatToByteArrayTest();
+    doubleToByteArrayTest();
+    findValueInProcessTest();
+    readProcessMemoryAtPtrLocationTest();
+    getProcessBaseAddressTest();
+    reallocMemoryMapTest();
+    concatMemoryMapTest();
+    memorySnapshotMemCountMatchesPtrCountTest();
+    memorySnapshotSavesCorrectValueAndPointerTest();
+    writeProcessMemoryAtPtrLocationTest();
+    // injectx64ShellcodeTest();
 
     return 0;
 }

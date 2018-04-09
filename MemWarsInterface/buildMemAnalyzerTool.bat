@@ -1,1 +1,1 @@
-cl.exe MemWarsTool.c ../MemWarsBase/MemWarsBase.c /link user32.lib Kernel32.lib
+cl.exe MemWarsTool.c ../MemWarsCore/MemWarsCore.c /link user32.lib Kernel32.lib

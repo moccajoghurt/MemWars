@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <windows.h>
 #include <Psapi.h> // GetModuleFileNameEx
-#include "../MemWarsBase/MemWarsBase.h"
+#include "../MemWarsCore/MemWarsCore.h"
 #include "MemWarsTool.h"
 
 char getCharacter() {
@@ -69,7 +69,12 @@ void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName
     findValueInProcess(&bArr, hProcess, &matchingMemPtrs);
     printf("Matching pointers:\n");
     for (int i = 0; i < matchingMemPtrs.size; i++) {
-        printf("%s+%x\n", processName, ((unsigned int)*(matchingMemPtrs.memPointerArray + i) - (unsigned int)baseAddress));
+        if (sizeof(void*) == sizeof(DWORD)) {
+            printf("%s+%x\n", processName, ((DWORD)*(matchingMemPtrs.memPointerArray + i) - (DWORD)baseAddress));
+        } else if (sizeof(void*) == sizeof(DWORD64)) {
+            printf("%s+%I64x\n", processName, ((DWORD64)*(matchingMemPtrs.memPointerArray + i) - (DWORD64)baseAddress));
+        }
+        
     }
     if (matchingMemPtrs.size == 0) {
         fprintf(stderr, "No matching pointers found\n");

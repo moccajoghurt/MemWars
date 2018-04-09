@@ -1,0 +1,1 @@
+cl.exe MemWarsCoreTest.c MemWarsCore.c /link user32.lib Kernel32.lib

@@ -2,7 +2,7 @@
 #include <windows.h>
 #include <Psapi.h> // enumprocesses
 #include <limits.h> // UINT_MAX
-#include "MemWarsBase.h"
+#include "MemWarsCore.h"
 
 
 BOOL valueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* memPtr1) {
