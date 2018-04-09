@@ -1,1 +1,1 @@
-cl.exe memoryTestApp.c /link user32.lib
+cl.exe memoryTestApp.c /link user32.lib kernel32.lib
