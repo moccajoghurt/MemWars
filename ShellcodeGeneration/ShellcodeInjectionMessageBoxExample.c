@@ -23,8 +23,7 @@ int main() {
 
 
     FARPROC addrMessageBoxA = GetProcAddress(GetModuleHandle(TEXT("user32.dll")), "MessageBoxA");
-    FARPROC addrExitThread = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "ExitThread");
-    if (addrMessageBoxA == NULL || addrExitThread == NULL) {
+    if (addrMessageBoxA == NULL) {
         printf("GetProcAddress returned NULL\n");
         goto Exit;
     }

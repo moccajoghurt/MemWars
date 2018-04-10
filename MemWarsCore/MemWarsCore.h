@@ -44,8 +44,6 @@ void reallocMemoryMap(MEMMAP* memMap);  // todo: x64
 void concatMemoryMap(MEMMAP* memMap, void* memPtr, BYTEARRAY* bArrVal); // todo: x64
 void memorySnapshotToDisc(HANDLE process, const char* fileName);    // todo: x64
 void freeMemMap(MEMMAP* memMap);    // todo: x64
-BOOL injectShellcode(PBYTE pShellcode, SIZE_T szShellcodeLength, HANDLE hProc);
-BOOL injectShellcodeManually(PBYTE pShellcode, SIZE_T szShellcodeLength, void* memLoc, HANDLE thread, HANDLE hProc);
 
 
 #endif
