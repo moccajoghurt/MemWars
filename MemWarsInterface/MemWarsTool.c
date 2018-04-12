@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
         GetModuleFileNameEx(hProcess, NULL, processName, MAX_PATH); // get the process name
     }
 
-    HMODULE processBaseAddress = getProcessBaseAddress(hProcess, processName);
+    HMODULE processBaseAddress = GetProcessBaseAddress(hProcess);
     if (processBaseAddress == NULL) {
         fprintf(stderr, "Could not retrieve process base address. Error Code: %d\n", GetLastError());
         return;

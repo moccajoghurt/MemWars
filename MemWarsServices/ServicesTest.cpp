@@ -1,9 +1,12 @@
 #include <windows.h>
 #include <iostream>
 #include <process.h>
+#include "../MemWarsCore/MemWarsCore.h"
 #include "StealthyMemManipulator.h"
+#include "MemWarsServices.h"
 
 using namespace std;
+
 
 void SMMInstall_CreateSharedFileMappingTest() {
     StealthyMemInstaller smi;
@@ -49,22 +52,70 @@ void SMMInstall_InstanceAlreadyRunningTest() {
     cout << "SMMInstall_InstanceAlreadyRunningTest() success" << endl;
 }
 
+void GetPIDsOfProcessTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
+    if (pids.empty()) {
+        cout << "GetPIDsOfProcessTest() failed" << endl;
+    } else {
+        cout << "GetPIDsOfProcessTest() success" << endl;
+    }
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+
+
 void SMMInstall_InstallTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
     StealthyMemInstaller smi;
-    smi.Init();
+    // smi.Init(L"lsass.exe"); // need to run as admin
+    smi.Init(L"memoryTestApp.exe");
     if (!smi.Install()) {
         cout << "SMMInstall_InstallTest() failed" << endl;
-        return;
+        goto Exit;
     }
-
     
-        
-
     cout << "SMMInstall_InstallTest() success" << endl;
+    Exit:;
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+void SMMInstall_FindUnusedExecutableMemoryTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    StealthyMemInstaller smi;
+    smi.Init(L"memoryTestApp.exe");
+    // smi.Init(L"lsass.exe");
+    vector<UNUSED_EXECUTABLE_MEM> availableExecutableMem = smi.FindExecutableMemory(process, TRUE);
+
+    if (availableExecutableMem.empty()) {
+        cout << "SMMInstall_FindUnusedExecutableMemoryTest() failed" << endl;
+    } else {
+        cout << "SMMInstall_FindUnusedExecutableMemoryTest() success" << endl;
+    }
+    // cout << availableExecutableMem.size() << endl;
+    // cout << availableExecutableMem[0].size << endl;
+
+    system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
 int main() {
-    SMMInstall_CreateSharedFileMappingTest();
+    // GetPIDsOfProcessTest();
+    // SMMInstall_CreateSharedFileMappingTest();
     // SMMInstall_InstanceAlreadyRunningTest();
+    // SMMInstall_FindUnusedExecutableMemoryTest();
+    
+    
     SMMInstall_InstallTest();
 }

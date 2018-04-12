@@ -345,7 +345,7 @@ void getProcessBaseAddressTest() {
     while (process == NULL) {
         process = (HANDLE)getProcessByName("memoryTestApp.exe");
     }
-    HMODULE hMod = getProcessBaseAddress(process, "memoryTestApp.exe");
+    HMODULE hMod = GetProcessBaseAddress(process);
 
     if (hMod == NULL) {
         printf("getProcessBaseAddressTest() failed\n");

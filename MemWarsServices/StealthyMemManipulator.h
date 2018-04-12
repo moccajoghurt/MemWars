@@ -18,6 +18,11 @@
 #define _STEALTHY_MEM_MANIPULATOR_H
 
 #define SHARED_MEM_SIZE 4096
+#define PADDING_IN_EXECUTABLE_MEM 8
+
+#include <string>
+#include <vector>
+#include <map>
 
 using namespace std;
 
@@ -28,14 +33,21 @@ struct SHARED_MEM_INFO {
 	void* ptrRemoteSharedMem = nullptr;
 };
 
+struct UNUSED_EXECUTABLE_MEM {
+	MEMORY_BASIC_INFORMATION regionInfo;
+	void* start = nullptr;
+	SIZE_T size = NULL;
+};
+
 class StealthyMemInstaller {
 public:
-    BOOL Init();
+    BOOL Init(wstring targetProcessName = L"");
     BOOL Install();
     BOOL CreateSharedFileMapping();
     BOOL InstanceAlreadyRunning();
-    BOOL SetPrivilege(LPCSTR lpszPrivilege, BOOL bEnablePrivilege = TRUE);
-
+    vector <UNUSED_EXECUTABLE_MEM> FindExecutableMemory(const HANDLE, BOOL);
+    map<wstring, DWORD64> GetModulesNamesAndBaseAddresses(DWORD);
+    map<DWORD, wstring> GetTIDsModuleStartAddr(DWORD pid);
 
     // for testing
     void* getPtrLocalSharedMem() {
@@ -50,8 +62,14 @@ private:
     HANDLE hLocalSharedMem = NULL;
     void* ptrLocalSharedMem = nullptr;
     string sharedMemName;
+    HANDLE hSharedMemHandle;
     string globalMutex;
     HANDLE hGlobalMutex = NULL;
+    wstring targetProcessName;
+    DWORD targetProcessPID;
+    HANDLE hTargetProcess;
+    void* remoteExecutableMem = nullptr;
+    SIZE_T remoteExecutableMemSize = 0;
 };
 
 #endif

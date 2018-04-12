@@ -221,18 +221,17 @@ HANDLE getProcessByName(const TCHAR* szProcessName) {
     return NULL;
 }
 
-HMODULE getProcessBaseAddress(HANDLE hProcess, TCHAR* szProcessName) {
 
-    TCHAR szProcessNameBuf[MAX_PATH];
-    HMODULE hMod;
-    DWORD cbNeeded;
-    if (EnumProcessModulesEx(hProcess, &hMod, sizeof(hMod), &cbNeeded, LIST_MODULES_32BIT | LIST_MODULES_64BIT)) {
-        GetModuleBaseName(hProcess, hMod, szProcessNameBuf, sizeof(szProcessNameBuf) / sizeof(TCHAR));
-        if (!_tcsicmp(szProcessName, szProcessNameBuf)) {
-            return hMod;
-        }
+void* GetProcessBaseAddress(const HANDLE hProcess) {
+	if (hProcess == NULL) {
+        return NULL;
     }
-    return NULL;
+	HMODULE lphModule[1024];
+	DWORD lpcbNeeded;
+	if (!EnumProcessModules(hProcess, lphModule, sizeof(lphModule), &lpcbNeeded)) {
+        return NULL;
+    }
+	return lphModule[0]; // Module 0 is the EXE itself, returning its address
 }
 
 void memorySnapshotToDisc(HANDLE process, const char* fileName) {
@@ -272,4 +271,33 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
     free(memPtrsFileName);
 }
 
-
+BOOL SetProcessPrivilege(LPCSTR lpszPrivilege, BOOL bEnablePrivilege) {
+    TOKEN_PRIVILEGES priv = {0, 0, 0, 0};
+    HANDLE hToken = NULL;
+    LUID luid = {0, 0};
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken)) {
+        if (hToken) {
+            CloseHandle(hToken);
+        }
+        return FALSE;
+    }
+    if (!LookupPrivilegeValueA(0, lpszPrivilege, &luid)) {
+        if (hToken){
+            CloseHandle(hToken);
+        }
+        return FALSE;
+    }
+    priv.PrivilegeCount = 1;
+    priv.Privileges[0].Luid = luid;
+    priv.Privileges[0].Attributes = bEnablePrivilege ? SE_PRIVILEGE_ENABLED : SE_PRIVILEGE_REMOVED;
+    if (!AdjustTokenPrivileges(hToken, FALSE, &priv, 0, 0, 0)) {
+        if (hToken) {
+            CloseHandle(hToken);
+        }
+        return FALSE;
+    }
+    if (hToken) {
+        CloseHandle(hToken);
+    }
+    return TRUE;
+}
