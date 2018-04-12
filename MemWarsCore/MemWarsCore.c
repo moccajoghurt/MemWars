@@ -5,9 +5,9 @@
 #include "MemWarsCore.h"
 
 
-BOOL valueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* memPtr1) {
+BOOL ValueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* memPtr1) {
     if (memPtr->size != memPtr1->size) {
-        printf("valueIsMatching() failed. memPtr->size != memPtr1->size\n");
+        printf("ValueIsMatching() failed. memPtr->size != memPtr1->size\n");
         return FALSE;
     }
     int status = memcmp(memPtr->values, memPtr1->values, memPtr->size);
@@ -19,74 +19,83 @@ BOOL valueIsMatching(BYTEARRAY* memPtr, BYTEARRAY* memPtr1) {
 }
 
 
-void intToByteArray(BYTEARRAY* bArr, int val) {
+void IntToByteArray(BYTEARRAY* bArr, int val) {
     bArr->size = sizeof(val);
     memcpy(bArr->values, &val, sizeof(val));
 }
 
-void uintToByteArray(BYTEARRAY* bArr, unsigned int val) {
+void UintToByteArray(BYTEARRAY* bArr, UINT val) {
     bArr->size = sizeof(val);
     memcpy(bArr->values, &val, sizeof(val));
 }
 
-void byteToByteArray(BYTEARRAY* bArr, char c) {
+void ByteToByteArray(BYTEARRAY* bArr, BYTE c) {
     bArr->size = sizeof(c);
     memcpy(bArr->values, &c, sizeof(c));
 }
 
-void shortToByteArray(BYTEARRAY* bArr, short s) {
+void ShortToByteArray(BYTEARRAY* bArr, SHORT s) {
     bArr->size = sizeof(s);
     memcpy(bArr->values, &s, sizeof(s));
 }
 
-void floatToByteArray(BYTEARRAY* bArr, float f) {
+void FloatToByteArray(BYTEARRAY* bArr, FLOAT f) {
     bArr->size = sizeof(f);
     memcpy(bArr->values, &f, sizeof(f));
 }
 
-void doubleToByteArray(BYTEARRAY* bArr, double d) {
+void DoubleToByteArray(BYTEARRAY* bArr, DOUBLE d) {
     bArr->size = sizeof(d);
     memcpy(bArr->values, &d, sizeof(d));
 }
 
-void strToByteArray(BYTEARRAY* bArr, const char* str) {
+void StrToByteArray(BYTEARRAY* bArr, const TCHAR* str) {
     if (strlen(str) > MAX_VAL_SIZE) {
-        printf("strToByteArray()::String too long! Increase MAX_VAL_SIZE\n");
+        printf("StrToByteArray()::String too long! Increase MAX_VAL_SIZE\n");
         return;
     }
     strcpy(bArr->values, str);
     bArr->size = strlen(str);
 }
 
-void reallocMemPtrs(MEMPTRS* memPtrs) {
+BOOL ReallocMemPtrs(MEMPTRS* memPtrs) {
     if (memPtrs->size == 0) {
         memPtrs->memPointerArray = malloc(sizeof(void*) * 20);
     } else {
         memPtrs->memPointerArray = realloc(memPtrs->memPointerArray, memPtrs->size * sizeof(void*) + sizeof(void*) * 20);
     }
+    if (memPtrs->memPointerArray == NULL) {
+        return FALSE;
+    } else {
+        return TRUE;
+    }
 }
 
-void concatMemPtr(void* ptr, MEMPTRS* memPtrs) {
+BOOL ConcatMemPtr(void* ptr, MEMPTRS* memPtrs) {
     if (memPtrs->size % 20 == 0) {
-        reallocMemPtrs(memPtrs);
+        BOOL success = ReallocMemPtrs(memPtrs);
+        if (!success) {
+            return FALSE;
+        }
     }
     memPtrs->memPointerArray[memPtrs->size] = ptr;
     memPtrs->size++;
+    return TRUE;
 }
 
-void findValueInProcess(BYTEARRAY* bArrValue, HANDLE process, MEMPTRS* matchingMemPtrs) {
+BOOL FindValueInProcess(BYTEARRAY* bArrValue, HANDLE hProcess, MEMPTRS* matchingMemPtrs) {
     BYTE* p = NULL;
     MEMORY_BASIC_INFORMATION info;
     
-    for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
+    for (p = NULL; VirtualQueryEx(hProcess, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
         if (info.State == MEM_COMMIT/* && (info.Type == MEM_MAPPED || info.Type == MEM_PRIVATE || MEM_IMAGE)*/) {
             BYTE* buf = malloc(info.RegionSize);
-            size_t bytesRead;
-            BOOL status = ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
+            SIZE_T bytesRead;
+            BOOL status = ReadProcessMemory(hProcess, p, buf, info.RegionSize, &bytesRead);
             if (!status) {
                 if (GetLastError() != 299) {
-                    printf("findValueInProcess()::ReadProcessMemory() failed: %d\n", GetLastError());
-                    return;
+                    printf("FindValueInProcess()::ReadProcessMemory() failed: %d\n", GetLastError());
+                    return FALSE;
                 }
             }
             for (int i = 0; i < bytesRead; i++) {
@@ -98,17 +107,18 @@ void findValueInProcess(BYTEARRAY* bArrValue, HANDLE process, MEMPTRS* matchingM
                 BYTEARRAY memVal;
                 memcpy(memVal.values, buf + i, bArrValue->size);
                 memVal.size = bArrValue->size;
-                if (valueIsMatching(&memVal, bArrValue)) {
-                    concatMemPtr((p + i), matchingMemPtrs);
+                if (ValueIsMatching(&memVal, bArrValue)) {
+                    ConcatMemPtr((p + i), matchingMemPtrs);
                 }
             }
             free(buf);
         }
     }
+    return TRUE;
 }
 
 
-void reallocMemoryMap(MEMMAP* memMap) {
+BOOL ReallocMemoryMap(MEMMAP* memMap) {
     if (memMap->size == 0) {
         memMap->byteArrays = malloc(sizeof(BYTEARRAY*) * 20);
         memMap->memPtrs = calloc(sizeof(MEMPTRS), 0);
@@ -116,19 +126,30 @@ void reallocMemoryMap(MEMMAP* memMap) {
     } else {
         memMap->byteArrays = realloc(memMap->byteArrays, memMap->size * sizeof(BYTEARRAY*) + sizeof(BYTEARRAY*) * 20);
     }
+    if (memMap->byteArrays == NULL || memMap->memPtrs == NULL || memMap->byteArrays == NULL) {
+        return FALSE;
+    }
+    return TRUE;
 }
 
-void concatMemoryMap(MEMMAP* memMap, void* memPtr, BYTEARRAY* bArrVal) {
+BOOL ConcatMemoryMap(MEMMAP* memMap, void* memPtr, BYTEARRAY* bArrVal) {
     if (memMap->size % 20 == 0) {
-        reallocMemoryMap(memMap);
+        BOOL status = ReallocMemoryMap(memMap);
+        if (!status) {
+            return FALSE;
+        }
     }
     memMap->byteArrays[memMap->size] = malloc(sizeof(BYTEARRAY));
     memcpy(memMap->byteArrays[memMap->size], bArrVal, sizeof(BYTEARRAY));
-    concatMemPtr(memPtr, memMap->memPtrs);
+    BOOL status = ConcatMemPtr(memPtr, memMap->memPtrs);
     memMap->size++;
+    if (!status) {
+        return FALSE;
+    }
+    return TRUE;
 }
 
-void freeMemMap(MEMMAP* memMap) {
+void FreeMemMap(MEMMAP* memMap) {
     for (int i = 0; i < memMap->size; i++) {
         free(memMap->byteArrays[i]);
     }
@@ -138,23 +159,23 @@ void freeMemMap(MEMMAP* memMap) {
 }
 
 
-BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, BYTEARRAY* readValueByteArray) {
+BOOL ReadProcessMemoryAtPtrLocation(void* ptr, SIZE_T byteLen, HANDLE process, BYTEARRAY* readValueByteArray) {
     if (byteLen > MAX_VAL_SIZE) {
-        printf("readProcessMemoryAtPtrLocation() failed, byteLen too big, increase MAX_VAL_SIZE\n");
+        printf("ReadProcessMemoryAtPtrLocation() failed, byteLen too big, increase MAX_VAL_SIZE\n");
         return FALSE;
     }
     MEMORY_BASIC_INFORMATION info;
     BOOL status = VirtualQueryEx(process, ptr, &info, sizeof(info));
     if (status == 0 || info.RegionSize < byteLen || info.State != MEM_COMMIT) {
-        printf("readProcessMemoryAtPtrLocation()::VirtualQueryEx() failed\n");
+        printf("ReadProcessMemoryAtPtrLocation()::VirtualQueryEx() failed\n");
         return FALSE;
     }
     BYTE* buf = malloc(info.RegionSize);
-    size_t bytesRead;
+    SIZE_T bytesRead;
     status = ReadProcessMemory(process, ptr, buf, byteLen, &bytesRead);
     if (!status) {
         if (GetLastError() != 299) {
-            printf("readProcessMemoryAtPtrLocation()::ReadProcessMemory() failed: %d\n", GetLastError());
+            printf("ReadProcessMemoryAtPtrLocation()::ReadProcessMemory() failed: %d\n", GetLastError());
             return FALSE;
         }
     }
@@ -168,7 +189,7 @@ BOOL readProcessMemoryAtPtrLocation(void* ptr, size_t byteLen, HANDLE process, B
     return TRUE;
 }
 
-BOOL writeProcessMemoryAtPtrLocation(HANDLE process, void* baseAdress, void* value, size_t valSize) {
+BOOL WriteProcessMemoryAtPtrLocation(HANDLE process, void* baseAdress, void* value, SIZE_T valSize) {
     BOOL status =  WriteProcessMemory(process, baseAdress, value, valSize, NULL);
     if (status == 0) {
         printf("writeMemoryAtPtrLocation()::WriteProcessMemory() failed!\n");
@@ -177,31 +198,31 @@ BOOL writeProcessMemoryAtPtrLocation(HANDLE process, void* baseAdress, void* val
     return TRUE;
 }
 
-HANDLE getProcessByWindowName(const char* windowName) {
+HANDLE GetProcessByWindowName(const TCHAR* windowName) {
     HWND windowHwnd = FindWindow(0, windowName);
     if (windowHwnd == NULL) {
-        printf("getProcessByWindowName::FindWindow() returned NULL: %d\n", GetLastError());
+        printf("GetProcessByWindowName::FindWindow() returned NULL: %d\n", GetLastError());
         return NULL;
     }
     DWORD processId;
     DWORD thread = GetWindowThreadProcessId(windowHwnd, &processId);
     HANDLE process = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION | PROCESS_ALL_ACCESS, FALSE, processId);
     if (process == NULL) {
-        printf("getProcessByWindowName::OpenProcess() returned NULL: %d\n", GetLastError());
+        printf("GetProcessByWindowName::OpenProcess() returned NULL: %d\n", GetLastError());
     }
     return process;
 }
 
-HANDLE getProcessByName(const TCHAR* szProcessName) {
+HANDLE GetProcessByName(const TCHAR* szProcessName) {
     if(szProcessName == NULL) return NULL;
-    const char* strProcessName = szProcessName;
+    const TCHAR* strProcessName = szProcessName;
 
     DWORD aProcesses[1024], cbNeeded, cProcesses;
     if (!EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded)) {
         return NULL;
     }
     cProcesses = cbNeeded / sizeof(DWORD);
-    for (unsigned int i = 0; i < cProcesses; i++) {
+    for (UINT i = 0; i < cProcesses; i++) {
         DWORD dwProcessID = aProcesses[i];
         HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_ALL_ACCESS, FALSE, dwProcessID);
 
@@ -234,8 +255,8 @@ void* GetProcessBaseAddress(const HANDLE hProcess) {
 	return lphModule[0]; // Module 0 is the EXE itself, returning its address
 }
 
-void memorySnapshotToDisc(HANDLE process, const char* fileName) {
-    char* memPtrsFileName;
+BOOL MemorySnapshotToDisc(HANDLE hProcess, const TCHAR* fileName) {
+    TCHAR* memPtrsFileName;
     memPtrsFileName = malloc(strlen(fileName) + strlen(" - ptrs"));
     strcpy(memPtrsFileName, fileName);
     strcat(memPtrsFileName, " - ptrs");
@@ -243,19 +264,19 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
     FILE* memPtrFile = fopen(memPtrsFileName, "wb");
     if (dataFile == NULL) {
         printf("Could not open file %s\n", fileName);
-        exit(1);
+        return FALSE;
     }
     BYTE* p = NULL;
     MEMORY_BASIC_INFORMATION info;
-    for (p = NULL; VirtualQueryEx(process, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
+    for (p = NULL; VirtualQueryEx(hProcess, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
         if (info.State == MEM_COMMIT) {
             BYTE* buf = malloc(info.RegionSize);
-            size_t bytesRead;
-            BOOL status = ReadProcessMemory(process, p, buf, info.RegionSize, &bytesRead);
+            SIZE_T bytesRead;
+            BOOL status = ReadProcessMemory(hProcess, p, buf, info.RegionSize, &bytesRead);
             if (!status) {
                 if (GetLastError() != 299) {
-                    printf("findValueInProcess()::ReadProcessMemory() failed: %d\n", GetLastError());
-                    return;
+                    printf("FindValueInProcess()::ReadProcessMemory() failed: %d\n", GetLastError());
+                    return FAST_FAIL_LEGACY_GS_VIOLATION;
                 }
             }
             for (int i = 0; i < bytesRead; i++) {
@@ -269,6 +290,8 @@ void memorySnapshotToDisc(HANDLE process, const char* fileName) {
     fclose(dataFile);
     fclose(memPtrFile);
     free(memPtrsFileName);
+
+    return TRUE;
 }
 
 BOOL SetProcessPrivilege(LPCSTR lpszPrivilege, BOOL bEnablePrivilege) {

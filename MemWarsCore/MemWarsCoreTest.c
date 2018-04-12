@@ -2,11 +2,11 @@
 #include <windows.h>
 #include "MemWarsCore.h"
 
-void findValueInProcessTest() {
+void FindValueInProcessTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
     BYTEARRAY testValue1;
     BYTEARRAY testValue2;
@@ -16,186 +16,186 @@ void findValueInProcessTest() {
     BYTEARRAY testValue6;
     BYTEARRAY testValue7;
     BYTEARRAY testValue8;
-    intToByteArray(&testValue1, 133337);
-    intToByteArray(&testValue2, 0xB00B);
-    intToByteArray(&testValue3, 0xCFFE);
-    strToByteArray(&testValue4, "smallStr");
-    strToByteArray(&testValue5, "Can you find me too?");
-    strToByteArray(&testValue6, "And me??");
-    floatToByteArray(&testValue7, 1.375);
-    doubleToByteArray(&testValue8, 312.76493);
+    IntToByteArray(&testValue1, 133337);
+    IntToByteArray(&testValue2, 0xB00B);
+    IntToByteArray(&testValue3, 0xCFFE);
+    StrToByteArray(&testValue4, "smallStr");
+    StrToByteArray(&testValue5, "Can you find me too?");
+    StrToByteArray(&testValue6, "And me??");
+    FloatToByteArray(&testValue7, 1.375);
+    DoubleToByteArray(&testValue8, 312.76493);
 
     MEMPTRS matchingMemPtrs = {0};
     int lastSize = matchingMemPtrs.size;
-    findValueInProcess(&testValue1, process, &matchingMemPtrs);
+    FindValueInProcess(&testValue1, process, &matchingMemPtrs);
     if (lastSize >= matchingMemPtrs.size) {
-        printf("findValueInProcessTest() failed\n");
+        printf("FindValueInProcessTest() failed\n");
         goto Exit;
     }
     lastSize = matchingMemPtrs.size;
-    findValueInProcess(&testValue2, process, &matchingMemPtrs);
+    FindValueInProcess(&testValue2, process, &matchingMemPtrs);
     if (lastSize >= matchingMemPtrs.size) {
-        printf("findValueInProcessTest() failed\n");
+        printf("FindValueInProcessTest() failed\n");
         goto Exit;
     }
     lastSize = matchingMemPtrs.size;
-    findValueInProcess(&testValue3, process, &matchingMemPtrs);
+    FindValueInProcess(&testValue3, process, &matchingMemPtrs);
     if (lastSize >= matchingMemPtrs.size) {
-        printf("findValueInProcessTest() failed\n");
+        printf("FindValueInProcessTest() failed\n");
         goto Exit;
     }
     lastSize = matchingMemPtrs.size;
-    findValueInProcess(&testValue4, process, &matchingMemPtrs);
+    FindValueInProcess(&testValue4, process, &matchingMemPtrs);
     if (lastSize >= matchingMemPtrs.size) {
-        printf("findValueInProcessTest() failed\n");
+        printf("FindValueInProcessTest() failed\n");
         goto Exit;
     }
     lastSize = matchingMemPtrs.size;
-    findValueInProcess(&testValue5, process, &matchingMemPtrs);
+    FindValueInProcess(&testValue5, process, &matchingMemPtrs);
     if (lastSize >= matchingMemPtrs.size) {
-        printf("findValueInProcessTest() failed\n");
+        printf("FindValueInProcessTest() failed\n");
         goto Exit;
     }
     lastSize = matchingMemPtrs.size;
-    findValueInProcess(&testValue6, process, &matchingMemPtrs);
+    FindValueInProcess(&testValue6, process, &matchingMemPtrs);
     if (lastSize >= matchingMemPtrs.size) {
-        printf("findValueInProcessTest() failed\n");
+        printf("FindValueInProcessTest() failed\n");
         goto Exit;
     }
     lastSize = matchingMemPtrs.size;
-    findValueInProcess(&testValue7, process, &matchingMemPtrs);
+    FindValueInProcess(&testValue7, process, &matchingMemPtrs);
     if (lastSize >= matchingMemPtrs.size) {
-        printf("findValueInProcessTest() failed\n");
+        printf("FindValueInProcessTest() failed\n");
         goto Exit;
     }
     lastSize = matchingMemPtrs.size;
-    findValueInProcess(&testValue8, process, &matchingMemPtrs);
+    FindValueInProcess(&testValue8, process, &matchingMemPtrs);
     if (lastSize >= matchingMemPtrs.size) {
-        printf("findValueInProcessTest() failed\n");
+        printf("FindValueInProcessTest() failed\n");
         goto Exit;
     }
-    printf("findValueInProcessTest() success\n");
+    printf("FindValueInProcessTest() success\n");
     Exit:
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void readProcessMemoryAtPtrLocationTest() {
+void ReadProcessMemoryAtPtrLocationTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
     BYTEARRAY testValue;
-    strToByteArray(&testValue, "smallStr"); // make sure that this value actually is inside memoryTestApp.exe
+    StrToByteArray(&testValue, "smallStr"); // make sure that this value actually is inside memoryTestApp.exe
     MEMPTRS matchingMemPtrs = {0};
     int lastSize = matchingMemPtrs.size;
-    findValueInProcess(&testValue, process, &matchingMemPtrs);
+    FindValueInProcess(&testValue, process, &matchingMemPtrs);
     if (lastSize >= matchingMemPtrs.size) {
-        printf("readProcessMemoryAtPtrLocationTest()::findValueInProcess() failed\n");
+        printf("ReadProcessMemoryAtPtrLocationTest()::FindValueInProcess() failed\n");
         goto Exit;
     }
     BYTEARRAY foundValue;
-    BOOL success = readProcessMemoryAtPtrLocation(matchingMemPtrs.memPointerArray[0], testValue.size, process, &foundValue);
+    BOOL success = ReadProcessMemoryAtPtrLocation(matchingMemPtrs.memPointerArray[0], testValue.size, process, &foundValue);
     if (!success) {
-        printf("readProcessMemoryAtPtrLocationTest()::readProcessMemoryAtPtrLocation() failed\n");
+        printf("ReadProcessMemoryAtPtrLocationTest()::ReadProcessMemoryAtPtrLocation() failed\n");
         goto Exit;
     }
     // printf("%d, %d\n", foundValue.size, testValue.size);
-    if (valueIsMatching(&testValue, &foundValue)) {
-        printf("readProcessMemoryAtPtrLocationTest() success\n");
+    if (ValueIsMatching(&testValue, &foundValue)) {
+        printf("ReadProcessMemoryAtPtrLocationTest() success\n");
     } else {
-        printf("readProcessMemoryAtPtrLocationTest() failed\n");
+        printf("ReadProcessMemoryAtPtrLocationTest() failed\n");
     }
     Exit:
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void intToByteArrayTest() {
+void IntToByteArrayTest() {
     int testVal = 1337;
     BYTEARRAY bArr1;
     memcpy(bArr1.values, &testVal, sizeof(int));
     bArr1.size = sizeof(int);
     BYTEARRAY bArr;
-    intToByteArray(&bArr, testVal);
-    if (valueIsMatching(&bArr, &bArr1)) {
-        printf("intToByteArrayTest() success\n");
+    IntToByteArray(&bArr, testVal);
+    if (ValueIsMatching(&bArr, &bArr1)) {
+        printf("IntToByteArrayTest() success\n");
     } else {
-        printf("intToByteArrayTest() failed\n");
+        printf("IntToByteArrayTest() failed\n");
     }
 }
 
-void shortToByteArrayTest() {
+void ShortToByteArrayTest() {
     short testVal = 137;
     BYTEARRAY bArr1;
     memcpy(bArr1.values, &testVal, sizeof(short));
     bArr1.size = sizeof(short);
     BYTEARRAY bArr;
-    shortToByteArray(&bArr, testVal);
-    if (valueIsMatching(&bArr, &bArr1)) {
-        printf("shortToByteArrayTest() success\n");
+    ShortToByteArray(&bArr, testVal);
+    if (ValueIsMatching(&bArr, &bArr1)) {
+        printf("ShortToByteArrayTest() success\n");
     } else {
-        printf("shortToByteArrayTest() failed\n");
+        printf("ShortToByteArrayTest() failed\n");
     }
 }
 
-void byteToByteArrayTest() {
+void ByteToByteArrayTest() {
     char testVal = 255;
     BYTEARRAY bArr1;
     memcpy(bArr1.values, &testVal, sizeof(char));
     bArr1.size = sizeof(char);
     BYTEARRAY bArr;
-    byteToByteArray(&bArr, testVal);
-    if (valueIsMatching(&bArr, &bArr1)) {
-        printf("byteToByteArrayTest() success\n");
+    ByteToByteArray(&bArr, testVal);
+    if (ValueIsMatching(&bArr, &bArr1)) {
+        printf("ByteToByteArrayTest() success\n");
     } else {
-        printf("byteToByteArrayTest() failed\n");
+        printf("ByteToByteArrayTest() failed\n");
     }
 }
 
-void floatToByteArrayTest() {
+void FloatToByteArrayTest() {
     float testVal = 2.859;
     BYTEARRAY bArr1 = {0};
     bArr1.size = sizeof(testVal);
     memcpy(bArr1.values, &testVal, sizeof(testVal));
     BYTEARRAY bArr = {0};
-    floatToByteArray(&bArr, testVal);
-    if (valueIsMatching(&bArr, &bArr1)) {
-        printf("floatToByteArrayTest() success\n");
+    FloatToByteArray(&bArr, testVal);
+    if (ValueIsMatching(&bArr, &bArr1)) {
+        printf("FloatToByteArrayTest() success\n");
     } else {
-        printf("floatToByteArrayTest() failed\n");
+        printf("FloatToByteArrayTest() failed\n");
     }
 }
 
-void doubleToByteArrayTest() {
+void DoubleToByteArrayTest() {
     double testVal = 23.8591;
     BYTEARRAY bArr1 = {0};
     bArr1.size = sizeof(testVal);
     memcpy(bArr1.values, &testVal, sizeof(testVal));
     BYTEARRAY bArr = {0};
-    doubleToByteArray(&bArr, testVal);
-    if (valueIsMatching(&bArr, &bArr1)) {
-        printf("doubleToByteArrayTest() success\n");
+    DoubleToByteArray(&bArr, testVal);
+    if (ValueIsMatching(&bArr, &bArr1)) {
+        printf("DoubleToByteArrayTest() success\n");
     } else {
-        printf("doubleToByteArrayTest() failed\n");
+        printf("DoubleToByteArrayTest() failed\n");
     }
 }
 
 
-void strToByteArrayTest() {
+void StrToByteArrayTest() {
     const char* testString = "Test123";
     BYTEARRAY bArr1;
     memcpy(bArr1.values, testString, strlen("Test123"));
     bArr1.size = strlen("Test123");
     BYTEARRAY bArr;
-    strToByteArray(&bArr, testString);
-    if (valueIsMatching(&bArr, &bArr1) && bArr.size == strlen("Test123")) {
-        printf("strToByteArrayTest() success\n");
+    StrToByteArray(&bArr, testString);
+    if (ValueIsMatching(&bArr, &bArr1) && bArr.size == strlen("Test123")) {
+        printf("StrToByteArrayTest() success\n");
     } else {
-        printf("strToByteArrayTest() failed\n");
+        printf("StrToByteArrayTest() failed\n");
     }
 }
 
-void valueIsMatchingTest() {
+void ValueIsMatchingTest() {
     
     BYTEARRAY bArr;
     bArr.size = 4;
@@ -218,57 +218,57 @@ void valueIsMatchingTest() {
     bArr2.values[2] = 0x3;
     bArr2.values[3] = 0x4;
 
-    if (valueIsMatching(&bArr, &bArr1) == TRUE && valueIsMatching(&bArr, &bArr2) == FALSE) {
-        printf("valueIsMatchingTest() success\n");
+    if (ValueIsMatching(&bArr, &bArr1) == TRUE && ValueIsMatching(&bArr, &bArr2) == FALSE) {
+        printf("ValueIsMatchingTest() success\n");
     } else {
-        printf("valueIsMatchingTest() failed\n");
+        printf("ValueIsMatchingTest() failed\n");
     }
 }
 
-void concatMemPtrTest() {
+void ConcatMemPtrTest() {
     MEMPTRS memPtrs = {0};
     int testVal1 = 4;
     float testVal2 = 5;
     DWORD testVal3 = 7;
     double testVal4 = 1;
     BYTE testVal5 = 16;
-    concatMemPtr(&testVal1, &memPtrs);
-    concatMemPtr(&testVal2, &memPtrs);
-    concatMemPtr(&testVal3, &memPtrs);
-    concatMemPtr(&testVal4, &memPtrs);
-    concatMemPtr((int*)&testVal5, &memPtrs);
+    ConcatMemPtr(&testVal1, &memPtrs);
+    ConcatMemPtr(&testVal2, &memPtrs);
+    ConcatMemPtr(&testVal3, &memPtrs);
+    ConcatMemPtr(&testVal4, &memPtrs);
+    ConcatMemPtr((int*)&testVal5, &memPtrs);
     if (memPtrs.memPointerArray[0] == (BYTE*)&testVal1 &&
         memPtrs.memPointerArray[1] == (BYTE*)&testVal2 &&
         memPtrs.memPointerArray[2] == (BYTE*)&testVal3 &&
         memPtrs.memPointerArray[3] == (BYTE*)&testVal4 &&
         memPtrs.memPointerArray[4] == (BYTE*)&testVal5 &&
         memPtrs.size == 5) {
-        printf("concatMemPtrTest() success\n");
+        printf("ConcatMemPtrTest() success\n");
     } else {
-        printf("concatMemPtrTest() failed\n");
+        printf("ConcatMemPtrTest() failed\n");
     }
 }
 
-void reallocMemPtrsTest() {
+void ReallocMemPtrsTest() {
     int testVal = 16;
     MEMPTRS memPtrs = {0};
     for (int i = 0; i < 101; i++) {
-        concatMemPtr(&testVal, &memPtrs);
+        ConcatMemPtr(&testVal, &memPtrs);
     }
     for (int i = 0; i < memPtrs.size; i++) {
         if (*(int*)*(memPtrs.memPointerArray + i) != 16) {
-            printf("reallocMemPtrsTest() failed\n");
+            printf("ReallocMemPtrsTest() failed\n");
             return;
         }
     }
     if (memPtrs.size == 101) {
-        printf("reallocMemPtrsTest() success\n");
+        printf("ReallocMemPtrsTest() success\n");
     } else {
-        printf("reallocMemPtrsTest() failed\n");
+        printf("ReallocMemPtrsTest() failed\n");
     }
 }
 
-void reallocMemoryMapTest() {
+void ReallocMemoryMapTest() {
     MEMMAP memMap = {0};
     BYTEARRAY bArr;
     bArr.size = 4;
@@ -278,25 +278,25 @@ void reallocMemoryMapTest() {
     bArr.values[3] = 0x4;
     int testVal = 16;
     for (int i = 0; i < 101; i++) {
-        concatMemoryMap(&memMap, &testVal, &bArr);
+        ConcatMemoryMap(&memMap, &testVal, &bArr);
     }
     for (int i = 0; i < memMap.size; i++) {
-        if (!valueIsMatching(memMap.byteArrays[i], &bArr) || 
+        if (!ValueIsMatching(memMap.byteArrays[i], &bArr) || 
             memMap.memPtrs->memPointerArray[i] != &testVal) {
-            printf("reallocMemoryMapTest() failed\n");
+            printf("ReallocMemoryMapTest() failed\n");
             return;
         }
     }
     
     if (memMap.size == 101 && memMap.memPtrs->size == 101) {
-        printf("reallocMemoryMapTest() success\n");
+        printf("ReallocMemoryMapTest() success\n");
     } else {
-        printf("reallocMemoryMapTest() failed\n");
+        printf("ReallocMemoryMapTest() failed\n");
     }
-    freeMemMap(&memMap);
+    FreeMemMap(&memMap);
 }
 
-void concatMemoryMapTest() {
+void ConcatMemoryMapTest() {
     MEMMAP memMap = {0};
     BYTEARRAY bArr;
     bArr.size = 4;
@@ -319,31 +319,31 @@ void concatMemoryMapTest() {
     int testVal1 = 1;
     int testVal2 = 5;
     int testVal3 = 50;
-    concatMemoryMap(&memMap, &testVal1, &bArr);
-    concatMemoryMap(&memMap, &testVal2, &bArr1);
-    concatMemoryMap(&memMap, &testVal3, &bArr2);
+    ConcatMemoryMap(&memMap, &testVal1, &bArr);
+    ConcatMemoryMap(&memMap, &testVal2, &bArr1);
+    ConcatMemoryMap(&memMap, &testVal3, &bArr2);
     memMap.byteArrays[2]->values[0] = 0x1;
-    if (valueIsMatching(memMap.byteArrays[0], &bArr) &&
-        valueIsMatching(memMap.byteArrays[1], &bArr1) &&
-        !valueIsMatching(memMap.byteArrays[2], &bArr2) &&
+    if (ValueIsMatching(memMap.byteArrays[0], &bArr) &&
+        ValueIsMatching(memMap.byteArrays[1], &bArr1) &&
+        !ValueIsMatching(memMap.byteArrays[2], &bArr2) &&
         memMap.memPtrs->memPointerArray[0] == &testVal1 &&
         memMap.memPtrs->memPointerArray[1] == &testVal2 &&
         memMap.memPtrs->memPointerArray[2] == &testVal3 &&
         memMap.memPtrs->size == 3 &&
         memMap.size == 3) {
         
-        printf("concatMemoryMapTest() success\n");
+        printf("ConcatMemoryMapTest() success\n");
     } else {
-        printf("concatMemoryMapTest() failed\n");
+        printf("ConcatMemoryMapTest() failed\n");
     }
-    freeMemMap(&memMap);
+    FreeMemMap(&memMap);
 }
 
 void getProcessBaseAddressTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
     HMODULE hMod = GetProcessBaseAddress(process);
 
@@ -359,10 +359,10 @@ void memorySnapshotMemCountMatchesPtrCountTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
-        // process = (HANDLE)getProcessByName("ac_client.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
+        // process = (HANDLE)GetProcessByName("ac_client.exe");
     }
-    memorySnapshotToDisc(process, "buf.txt");
+    MemorySnapshotToDisc(process, "buf.txt");
     FILE* file1 = fopen("buf.txt", "rb");
     if (file1 == NULL) {
         printf("Could not open buf.txt\n");
@@ -415,14 +415,14 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
-    memorySnapshotToDisc(process, "buf.txt");
+    MemorySnapshotToDisc(process, "buf.txt");
 
     MEMPTRS matchingPtrs = {0};
     BYTEARRAY testVal = {0};
-    intToByteArray(&testVal, 133337);
-    findValueInProcess(&testVal, process, &matchingPtrs);
+    IntToByteArray(&testVal, 133337);
+    FindValueInProcess(&testVal, process, &matchingPtrs);
     if (matchingPtrs.size == 0) {
         printf("memorySnapshotSavesCorrectValueAndPointerTest() failed. testVal not found\n");
         goto Exit;
@@ -481,20 +481,20 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
             filebufVal.size = sizeof(void*);
             memPtrVal.size = sizeof(void*);
 
-            if (valueIsMatching(&filebufVal, &memPtrVal)) {
+            if (ValueIsMatching(&filebufVal, &memPtrVal)) {
                 BYTEARRAY buf = {0};
                 
 
                 if (sizeof(void*) == sizeof(DWORD64)) {
-                    readProcessMemoryAtPtrLocation((void*)*(((DWORD64*)fileBuf1) + i), 4, process, &buf);
+                    ReadProcessMemoryAtPtrLocation((void*)*(((DWORD64*)fileBuf1) + i), 4, process, &buf);
                 } else if (sizeof(void*) == sizeof(DWORD)) {
                     // suppress size warning since we made sure that the size is correct
                     #pragma warning(push)
                     #pragma warning(disable: 4312)
-                    readProcessMemoryAtPtrLocation((void*)*(((DWORD*)fileBuf1) + i), 4, process, &buf);
+                    ReadProcessMemoryAtPtrLocation((void*)*(((DWORD*)fileBuf1) + i), 4, process, &buf);
                     #pragma warning(pop)
                 }
-                if (valueIsMatching(&testVal, &buf)) {
+                if (ValueIsMatching(&testVal, &buf)) {
                     foundValInMemoryBySnapshotPtr = TRUE;
                 }
 
@@ -506,7 +506,7 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
                     memcpy(&buf1.values, ((DWORD*)fileBuf2 + i/sizeof(void*)), sizeof(int));
                     buf1.size = sizeof(int);
                 }
-                if (valueIsMatching(&testVal, &buf1)) {
+                if (ValueIsMatching(&testVal, &buf1)) {
                     foundValOnDisc = TRUE;
                 }
             }
@@ -527,40 +527,40 @@ void memorySnapshotSavesCorrectValueAndPointerTest() {
 }
 
 
-void writeProcessMemoryAtPtrLocationTest() {
+void WriteProcessMemoryAtPtrLocationTest() {
     
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
 
     MEMPTRS matchingPtrs = {0};
     BYTEARRAY testVal = {0};
-    uintToByteArray(&testVal, 3254963271);
-    findValueInProcess(&testVal, process, &matchingPtrs);
+    UintToByteArray(&testVal, 3254963271);
+    FindValueInProcess(&testVal, process, &matchingPtrs);
 
     BYTEARRAY testVal1 = {0};
-    uintToByteArray(&testVal1, 31111113);
+    UintToByteArray(&testVal1, 31111113);
 
     if (matchingPtrs.size == 0) {
-        printf("writeProcessMemoryAtPtrLocationTest() failed! Testvalue not in memory!\n");
+        printf("WriteProcessMemoryAtPtrLocationTest() failed! Testvalue not in memory!\n");
         goto Exit;
     }
 
     for (int i = 0; i < matchingPtrs.size; i++) {
-        writeProcessMemoryAtPtrLocation(process, *(matchingPtrs.memPointerArray + i), testVal1.values, testVal1.size);
+        WriteProcessMemoryAtPtrLocation(process, *(matchingPtrs.memPointerArray + i), testVal1.values, testVal1.size);
     }
 
     for (int i = 0; i < matchingPtrs.size; i++) {
         BYTEARRAY buf = {0};
-        readProcessMemoryAtPtrLocation(*(matchingPtrs.memPointerArray + i), sizeof(unsigned int), process, &buf);
-        if (!valueIsMatching(&buf, &testVal1)) {
-            printf("writeProcessMemoryAtPtrLocationTest() failed\n");
+        ReadProcessMemoryAtPtrLocation(*(matchingPtrs.memPointerArray + i), sizeof(unsigned int), process, &buf);
+        if (!ValueIsMatching(&buf, &testVal1)) {
+            printf("WriteProcessMemoryAtPtrLocationTest() failed\n");
             goto Exit;
         }
     }
-    printf("writeProcessMemoryAtPtrLocationTest() success\n");
+    printf("WriteProcessMemoryAtPtrLocationTest() success\n");
 
     Exit:
     system("taskkill /IM memoryTestApp.exe /F >nul");
@@ -574,23 +574,23 @@ int main() {
 
     // printf("%zu\n", sizeof(DWORD64*));
     
-    valueIsMatchingTest();
-    concatMemPtrTest();
-    reallocMemPtrsTest();
-    intToByteArrayTest();
-    shortToByteArrayTest();
-    byteToByteArrayTest();
-    strToByteArrayTest();
-    floatToByteArrayTest();
-    doubleToByteArrayTest();
-    findValueInProcessTest();
-    readProcessMemoryAtPtrLocationTest();
+    ValueIsMatchingTest();
+    ConcatMemPtrTest();
+    ReallocMemPtrsTest();
+    IntToByteArrayTest();
+    ShortToByteArrayTest();
+    ByteToByteArrayTest();
+    StrToByteArrayTest();
+    FloatToByteArrayTest();
+    DoubleToByteArrayTest();
+    FindValueInProcessTest();
+    ReadProcessMemoryAtPtrLocationTest();
     getProcessBaseAddressTest();
-    reallocMemoryMapTest();
-    concatMemoryMapTest();
+    ReallocMemoryMapTest();
+    ConcatMemoryMapTest();
     memorySnapshotMemCountMatchesPtrCountTest();
     memorySnapshotSavesCorrectValueAndPointerTest();
-    writeProcessMemoryAtPtrLocationTest();
+    WriteProcessMemoryAtPtrLocationTest();
 
     return 0;
 }
