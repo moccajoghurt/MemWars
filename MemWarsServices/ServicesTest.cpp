@@ -56,7 +56,7 @@ void GetPIDsOfProcessTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
     vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
     if (pids.empty()) {
@@ -71,7 +71,7 @@ void SMMInstall_FindUnusedExecutableMemoryTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
     StealthyMemInstaller smi;
     smi.Init(L"memoryTestApp.exe");
@@ -90,7 +90,7 @@ void SMMInstall_GetModulesNamesAndBaseAddressesTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
     StealthyMemInstaller smi;
     smi.Init(L"memoryTestApp.exe");
@@ -115,7 +115,7 @@ void SMMInstall_InstallTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
     StealthyMemInstaller smi;
     // smi.Init(L"lsass.exe"); // need to run as admin
