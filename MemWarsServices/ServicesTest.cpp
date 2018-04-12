@@ -67,7 +67,49 @@ void GetPIDsOfProcessTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
+void SMMInstall_FindUnusedExecutableMemoryTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    StealthyMemInstaller smi;
+    smi.Init(L"memoryTestApp.exe");
+    // smi.Init(L"lsass.exe");
+    vector<UNUSED_EXECUTABLE_MEM> availableExecutableMem = smi.FindExecutableMemory(process, TRUE);
 
+    if (availableExecutableMem.empty()) {
+        cout << "SMMInstall_FindUnusedExecutableMemoryTest() failed" << endl;
+    } else {
+        cout << "SMMInstall_FindUnusedExecutableMemoryTest() success" << endl;
+    }
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+void SMMInstall_GetModulesNamesAndBaseAddressesTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+    }
+    StealthyMemInstaller smi;
+    smi.Init(L"memoryTestApp.exe");
+    // smi.Init(L"lsass.exe");
+    vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
+    if (pids.empty()) {
+        cout << "SMMInstall_GetModulesNamesAndBaseAddressesTest() failed. PID not found" << endl;
+        system("taskkill /IM memoryTestApp.exe /F >nul");
+        return;
+    }
+    map<wstring, DWORD64> modsStartAddrs = smi.GetModulesNamesAndBaseAddresses(pids[0]);
+
+    if (modsStartAddrs.empty()) {
+        cout << "SMMInstall_GetModulesNamesAndBaseAddressesTest() failed" << endl;
+    } else {
+        cout << "SMMInstall_GetModulesNamesAndBaseAddressesTest() success" << endl;
+    }
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
 
 void SMMInstall_InstallTest() {
     system("start /B memoryTestApp.exe");
@@ -88,34 +130,15 @@ void SMMInstall_InstallTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void SMMInstall_FindUnusedExecutableMemoryTest() {
-    system("start /B memoryTestApp.exe");
-    HANDLE process = NULL;
-    while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
-    }
-    StealthyMemInstaller smi;
-    smi.Init(L"memoryTestApp.exe");
-    // smi.Init(L"lsass.exe");
-    vector<UNUSED_EXECUTABLE_MEM> availableExecutableMem = smi.FindExecutableMemory(process, TRUE);
-
-    if (availableExecutableMem.empty()) {
-        cout << "SMMInstall_FindUnusedExecutableMemoryTest() failed" << endl;
-    } else {
-        cout << "SMMInstall_FindUnusedExecutableMemoryTest() success" << endl;
-    }
-    // cout << availableExecutableMem.size() << endl;
-    // cout << availableExecutableMem[0].size << endl;
-
-    system("taskkill /IM memoryTestApp.exe /F >nul");
-}
-
 int main() {
     // GetPIDsOfProcessTest();
     // SMMInstall_CreateSharedFileMappingTest();
     // SMMInstall_InstanceAlreadyRunningTest();
     // SMMInstall_FindUnusedExecutableMemoryTest();
+    SMMInstall_GetModulesNamesAndBaseAddressesTest();
+
+    // todo: add test for GetThreadsStartAddresses, GetTIDChronologically and GetThreadsStartAddresses
     
     
-    SMMInstall_InstallTest();
+    // SMMInstall_InstallTest();
 }

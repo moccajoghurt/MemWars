@@ -24,6 +24,12 @@
 #include <vector>
 #include <map>
 
+#ifndef MAKEULONGLONG
+#define MAKEULONGLONG(ldw, hdw) ((ULONGLONG(hdw) << 32) | ((ldw) & 0xFFFFFFFF))
+#endif
+
+#define ThreadQuerySetWin32StartAddress 9
+
 using namespace std;
 
 struct SHARED_MEM_INFO {
@@ -48,6 +54,7 @@ public:
     vector <UNUSED_EXECUTABLE_MEM> FindExecutableMemory(const HANDLE, BOOL);
     map<wstring, DWORD64> GetModulesNamesAndBaseAddresses(DWORD);
     map<DWORD, wstring> GetTIDsModuleStartAddr(DWORD pid);
+    vector<DWORD> GetTIDChronologically(DWORD pid);
 
     // for testing
     void* getPtrLocalSharedMem() {

@@ -236,7 +236,6 @@ map<wstring, DWORD64> StealthyMemInstaller::GetModulesNamesAndBaseAddresses(DWOR
  
 		DWORD64 baseAddr = (DWORD64)modInfo.lpBaseOfDll;
         modsStartAddrs[modName] = baseAddr;
-        wcout << modName << endl;
 	}
  
 	// Release the handle to the process
@@ -244,75 +243,84 @@ map<wstring, DWORD64> StealthyMemInstaller::GetModulesNamesAndBaseAddresses(DWOR
 	return modsStartAddrs;
 }
 
-// vector<DWORD> GetTIDChronologically(DWORD pid) {
-// 	map<ULONGLONG, DWORD> tidsWithStartTimes;
-// 	vector<DWORD> tids;
+vector<DWORD> StealthyMemInstaller::GetTIDChronologically(DWORD pid) {
+	map<ULONGLONG, DWORD> tidsWithStartTimes;
+	vector<DWORD> tids;
  
-// 	if (pid == NULL)
-// 		return tids;
+	if (pid == NULL) {
+        return tids;
+    }
  
-// 	DWORD dwMainThreadID = NULL;
-// 	ULONGLONG ullMinCreateTime = MAXULONGLONG;
-// 	HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-// 	if (hThreadSnap != INVALID_HANDLE_VALUE) {
-// 		THREADENTRY32 th32;
-// 		th32.dwSize = sizeof(THREADENTRY32);
-// 		BOOL bOK = TRUE;
-// 		for (bOK = Thread32First(hThreadSnap, &th32); bOK; bOK = Thread32Next(hThreadSnap, &th32)) {
-// 			if (th32.th32OwnerProcessID == pid) {
-// 				HANDLE hThread = OpenThread(THREAD_QUERY_INFORMATION, FALSE, th32.th32ThreadID);
-// 				if (hThread) {
-// 					FILETIME afTimes[4] = { 0 };
-// 					if (GetThreadTimes(hThread, &afTimes[0], &afTimes[1], &afTimes[2], &afTimes[3])) {
-// 						ULONGLONG ullTest = MAKEULONGLONG(afTimes[0].dwLowDateTime, afTimes[0].dwHighDateTime);
-// 						tidsWithStartTimes[ullTest] = th32.th32ThreadID;
-// 					}
-// 					CloseHandle(hThread);
-// 				}
-// 			}
-// 		}
-// 		CloseHandle(hThreadSnap);
-// 	}
+	DWORD dwMainThreadID = NULL;
+	ULONGLONG ullMinCreateTime = MAXULONGLONG;
+	HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+	if (hThreadSnap != INVALID_HANDLE_VALUE) {
+		THREADENTRY32 th32;
+		th32.dwSize = sizeof(THREADENTRY32);
+		BOOL bOK = TRUE;
+		for (bOK = Thread32First(hThreadSnap, &th32); bOK; bOK = Thread32Next(hThreadSnap, &th32)) {
+			if (th32.th32OwnerProcessID == pid) {
+				HANDLE hThread = OpenThread(THREAD_QUERY_INFORMATION, FALSE, th32.th32ThreadID);
+				if (hThread) {
+					FILETIME afTimes[4] = { 0 };
+					if (GetThreadTimes(hThread, &afTimes[0], &afTimes[1], &afTimes[2], &afTimes[3])) {
+						ULONGLONG ullTest = MAKEULONGLONG(afTimes[0].dwLowDateTime, afTimes[0].dwHighDateTime);
+						tidsWithStartTimes[ullTest] = th32.th32ThreadID;
+					}
+					CloseHandle(hThread);
+				}
+			}
+		}
+		CloseHandle(hThreadSnap);
+	}
  
-// 	for (auto const& thread : tidsWithStartTimes) // maps are natively ordered by key
-// 		tids.push_back(thread.second);
+	for (auto const& thread : tidsWithStartTimes) {
+        // maps are natively ordered by key
+		tids.push_back(thread.second);
+    } 
  
-// 	return tids;
-// }
+	return tids;
+}
 
-// map<DWORD, DWORD64> GetThreadsStartAddresses(vector<DWORD> tids) {
-// 	map<DWORD, DWORD64> tidsStartAddresses;
+map<DWORD, DWORD64> GetThreadsStartAddresses(vector<DWORD> tids) {
+	map<DWORD, DWORD64> tidsStartAddresses;
  
-// 	if (tids.empty())
-// 		return tidsStartAddresses;
+	if (tids.empty()) {
+        return tidsStartAddresses;
+    }
+
+	for (int i = 0; i < tids.size(); ++i) {
+		HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, tids[i]);
+		PVOID startAddress = NULL;
+		ULONG returnLength = NULL;
+		NTSTATUS NtQIT = NtQueryInformationThread(hThread, (THREADINFOCLASS)ThreadQuerySetWin32StartAddress, &startAddress, sizeof(startAddress), &returnLength);
+		CloseHandle(hThread);
+		if (tids[i] && startAddress) {
+            tidsStartAddresses[tids[i]] = (DWORD64)startAddress;
+        }
+	}
  
-// 	for (int i(0); i < tids.size(); ++i) {
-// 		HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, tids[i]);
-// 		PVOID startAddress = NULL;
-// 		ULONG returnLength = NULL;
-// 		NTSTATUS NtQIT = NtQueryInformationThread(hThread, (THREADINFOCLASS)ThreadQuerySetWin32StartAddress, &startAddress, sizeof(startAddress), &returnLength);
-// 		CloseHandle(hThread);
-// 		if (tids[i] && startAddress)
-// 			tidsStartAddresses[tids[i]] = (DWORD64)startAddress;
-// 	}
- 
-// 	return tidsStartAddresses;
-// }
+	return tidsStartAddresses;
+}
 
 map<DWORD, wstring> StealthyMemInstaller::GetTIDsModuleStartAddr(DWORD pid) {
 	map<DWORD, wstring> tidsStartModule;
  
 	map<wstring, DWORD64> modsStartAddrs = GetModulesNamesAndBaseAddresses(pid);
-	// if (modsStartAddrs.empty())
-	// 	return tidsStartModule;
+	if (modsStartAddrs.empty()) {
+        return tidsStartModule;
+    }
  
-	// vector<DWORD> tids = GetTIDChronologically(pid);
-	// if (tids.empty())
-	// 	return tidsStartModule;
+	vector<DWORD> tids = GetTIDChronologically(pid);
+	if (tids.empty()) {
+        return tidsStartModule;
+    }
+		
  
-	// map<DWORD, DWORD64> tidsStartAddresses = GetThreadsStartAddresses(tids);
-	// if (tidsStartAddresses.empty())
-	// 	return tidsStartModule;
+	map<DWORD, DWORD64> tidsStartAddresses = GetThreadsStartAddresses(tids);
+	if (tidsStartAddresses.empty()) {
+        return tidsStartModule;
+    }
  
 	// for (auto const& thisTid : tidsStartAddresses) {
 	// 	DWORD tid = thisTid.first;
