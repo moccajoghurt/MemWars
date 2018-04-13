@@ -10,7 +10,8 @@ using namespace std;
 
 void SMMInstall_CreateSharedFileMappingTest() {
     StealthyMemInstaller smi;
-    smi.Init();
+    vector<wstring> dummy;
+    smi.Init(dummy);
     BOOL result = smi.CreateSharedFileMapping();
 
     if (!result) {
@@ -29,7 +30,8 @@ void SMMInstall_CreateSharedFileMappingTest() {
 void SMMInstall_InstanceAlreadyRunningTest() {
 
     StealthyMemInstaller smi;
-    smi.Init();
+    vector<wstring> dummy;
+    smi.Init(dummy);
     if (smi.InstanceAlreadyRunning()) {
         cout << "SMMInstall_InstanceAlreadyRunningTest() failed. " 
         << "Instance is running even though we didn't create it." << endl;
@@ -74,7 +76,8 @@ void SMMInstall_FindUnusedExecutableMemoryTest() {
         process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
     StealthyMemInstaller smi;
-    smi.Init(L"memoryTestApp.exe");
+    vector<wstring> dummy;
+    smi.Init(dummy);
     // smi.Init(L"lsass.exe");
     vector<UNUSED_EXECUTABLE_MEM> availableExecutableMem = smi.FindExecutableMemory(process, TRUE);
 
@@ -86,30 +89,106 @@ void SMMInstall_FindUnusedExecutableMemoryTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void SMMInstall_GetModulesNamesAndBaseAddressesTest() {
+void GetModulesNamesAndBaseAddressesTest() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
         process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
-    StealthyMemInstaller smi;
-    smi.Init(L"memoryTestApp.exe");
-    // smi.Init(L"lsass.exe");
     vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
     if (pids.empty()) {
-        cout << "SMMInstall_GetModulesNamesAndBaseAddressesTest() failed. PID not found" << endl;
+        cout << "GetModulesNamesAndBaseAddressesTest() failed. PID not found" << endl;
         system("taskkill /IM memoryTestApp.exe /F >nul");
         return;
     }
-    map<wstring, DWORD64> modsStartAddrs = smi.GetModulesNamesAndBaseAddresses(pids[0]);
+    map<wstring, DWORD64> modsStartAddrs = GetModulesNamesAndBaseAddresses(pids[0]);
 
     if (modsStartAddrs.empty()) {
-        cout << "SMMInstall_GetModulesNamesAndBaseAddressesTest() failed" << endl;
+        cout << "GetModulesNamesAndBaseAddressesTest() failed" << endl;
     } else {
-        cout << "SMMInstall_GetModulesNamesAndBaseAddressesTest() success" << endl;
+        cout << "GetModulesNamesAndBaseAddressesTest() success" << endl;
     }
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
+
+void GetTIDChronologicallyTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
+    }
+    vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
+    if (pids.empty()) {
+        cout << "GetTIDChronologicallyTest() failed. PID not found" << endl;
+        system("taskkill /IM memoryTestApp.exe /F >nul");
+        return;
+    }
+    vector<DWORD> tids = GetTIDChronologically(pids[0]);
+
+    if (tids.empty()) {
+        cout << "GetTIDChronologicallyTest() failed" << endl;
+    } else {
+        cout << "GetTIDChronologicallyTest() success" << endl;
+    }
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+
+
+void GetThreadsStartAddressesTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
+    }
+    vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
+    if (pids.empty()) {
+        cout << "GetThreadsStartAddressesTest() failed. PID not found" << endl;
+        system("taskkill /IM memoryTestApp.exe /F >nul");
+        return;
+    }
+    vector<DWORD> tids = GetTIDChronologically(pids[0]);
+
+    if (tids.empty()) {
+        cout << "GetThreadsStartAddressesTest() failed. TID not found" << endl;
+    }
+
+    map<DWORD, DWORD64> threadStartAddresses = GetThreadsStartAddresses(tids);
+    if (threadStartAddresses.empty()) {
+        cout << "GetThreadsStartAddressesTest() failed" << endl;
+    } else {
+        cout << "GetThreadsStartAddressesTest() success" << endl;
+    }
+
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+void GetTIDsModuleStartAddrTest() {
+    
+        system("start /B memoryTestApp.exe");
+        HANDLE process = NULL;
+        while (process == NULL) {
+            process = (HANDLE)GetProcessByName("memoryTestApp.exe");
+        }
+        vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
+        if (pids.empty()) {
+            cout << "GetTIDsModuleStartAddrTest() failed. PID not found" << endl;
+            system("taskkill /IM memoryTestApp.exe /F >nul");
+            return;
+        }
+    
+        map<DWORD, wstring> tidStartAddresses = GetTIDsModuleStartAddr(pids[0]);
+
+        if (tidStartAddresses.empty()) {
+            cout << "GetTIDsModuleStartAddrTest() failed" << endl;
+        } else {
+            cout << "GetTIDsModuleStartAddrTest() success" << endl;
+        }
+        // for (auto ws : tidStartAddresses) {
+        //     wcout << ws.second << endl;
+        // }
+        system("taskkill /IM memoryTestApp.exe /F >nul");
+    }
 
 void SMMInstall_InstallTest() {
     system("start /B memoryTestApp.exe");
@@ -119,7 +198,13 @@ void SMMInstall_InstallTest() {
     }
     StealthyMemInstaller smi;
     // smi.Init(L"lsass.exe"); // need to run as admin
-    smi.Init(L"memoryTestApp.exe");
+    vector<wstring> preferedThreadModuleNames;
+    // preferedThreadModuleNames.push_back(L"samsrv.dll");
+    // preferedThreadModuleNames.push_back(L"msvcrt.dll");
+    // preferedThreadModuleNames.push_back(L"crypt32.dll");
+    // smi.Init(preferedThreadModuleNames, L"lsass.exe");
+    preferedThreadModuleNames.push_back(L"memoryTestApp.exe");
+    smi.Init(preferedThreadModuleNames, L"memoryTestApp.exe");
     if (!smi.Install()) {
         cout << "SMMInstall_InstallTest() failed" << endl;
         goto Exit;
@@ -132,13 +217,16 @@ void SMMInstall_InstallTest() {
 
 int main() {
     // GetPIDsOfProcessTest();
+    // GetModulesNamesAndBaseAddressesTest();
+    // GetTIDChronologicallyTest();
+    // GetThreadsStartAddressesTest();
+    // GetTIDsModuleStartAddrTest();
     // SMMInstall_CreateSharedFileMappingTest();
     // SMMInstall_InstanceAlreadyRunningTest();
     // SMMInstall_FindUnusedExecutableMemoryTest();
-    SMMInstall_GetModulesNamesAndBaseAddressesTest();
 
-    // todo: add test for GetThreadsStartAddresses, GetTIDChronologically and GetThreadsStartAddresses
+    // todo: add test for GetThreadsStartAddresses and 
     
     
-    // SMMInstall_InstallTest();
+    SMMInstall_InstallTest();
 }

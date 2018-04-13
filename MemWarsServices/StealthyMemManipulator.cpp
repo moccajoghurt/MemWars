@@ -15,11 +15,14 @@
 
 using namespace std;
 
-BOOL StealthyMemInstaller::Init(wstring targetProcessName) {
-    //todo create random name at startup
+BOOL StealthyMemInstaller::Init(vector<wstring> preferedTIDsModules, wstring targetProcessName) {
+    // hiding names
     sharedMemName = 'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M';
-    globalMutex = 'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M'+'M'+'t'+'x';
-    this->targetProcessName = targetProcessName;
+	globalMutex = 'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M'+'M'+'t'+'x';
+	// explExeName = L'e'+L'x'+L'p'+L'l'+L'o'+L'r'+L'e'+L'r'+L'.'+L'e'+L'x'+L'e';
+	explExeName = L"explorer.exe";
+	this->targetProcessName = targetProcessName;
+	this->preferedTIDsModules = preferedTIDsModules;
     return TRUE;
 }
 
@@ -30,7 +33,7 @@ BOOL StealthyMemInstaller::Install() {
         return FALSE;
     }
 
-    if (!SetProcessPrivilege(SE_DEBUG_NAME)) {
+    if (!SetProcessPrivilege(SE_DEBUG_NAME, TRUE)) {
         cout << "Install() failed: Privilege failed." << endl;
         return FALSE;
     }
@@ -74,12 +77,34 @@ BOOL StealthyMemInstaller::Install() {
         cout << "Install() failed: No avaiable mem." << endl;
         return FALSE;
     }
-
     remoteExecutableMem = (void*)((DWORD64)availableExecutableMem[0].start + PADDING_IN_EXECUTABLE_MEM);
     remoteExecutableMemSize = availableExecutableMem[0].size - PADDING_IN_EXECUTABLE_MEM;
-    
-    map<DWORD, wstring> tidsStartModules = GetTIDsModuleStartAddr(targetProcessPID);
+	
+	if (!FindUsableTID()) {
+		cout << "Install() failed: No TID found." << endl;
+		return FALSE;
+	}
+	
+	hTargetThread = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, FALSE, targetTID);
+	if (!hTargetThread) {
+		cout << "Install() failed: could not open thread." << endl;
+		return FALSE;
+	}
 
+	// Creating shared memory
+	if (!CreateSharedFileMapping()) {
+		cout << "Install() failed: SharedFileMApping failed." << endl;
+		return FALSE;
+	}
+
+	// if (!CreateExternalGatekeeperHandleToFileMapping()) {
+	// 	cout << "Install() failed: Gatekeeperhandle failed." << endl;
+	// 	return FALSE;
+	// }
+
+
+	
+		
     return TRUE;
 }
 
@@ -115,7 +140,8 @@ BOOL StealthyMemInstaller::CreateSharedFileMapping() {
 	ptrLocalSharedMem = MapViewOfFile(hLocalSharedMem, FILE_MAP_ALL_ACCESS, 0, 0, sharedMemSize);
 	if (!ptrLocalSharedMem) {
         return FALSE;
-    }
+	}
+	usableSharedMemSize = sharedMemSize - sizeof(SHARED_MEM_INFO);
     return TRUE;
 }
 
@@ -196,151 +222,159 @@ vector <UNUSED_EXECUTABLE_MEM> StealthyMemInstaller::FindExecutableMemory(const 
 	return freeExecutableMems;
 }
 
-map<wstring, DWORD64> StealthyMemInstaller::GetModulesNamesAndBaseAddresses(DWORD pid) {
-	map<wstring, DWORD64> modsStartAddrs;
- 
-	if (!pid) {
-        return modsStartAddrs;
-    }
- 
-	HMODULE hMods[1024];
-	DWORD cbNeeded;
-	unsigned int i;
- 
-	HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-	if (!hProcess) {
-        return modsStartAddrs;
-    }
- 
-	// Get a list of all the modules in this process
-	if (!EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
-		CloseHandle(hProcess);
-		return modsStartAddrs;
-	}
- 
-	// Get each module's infos
-	for (i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
-		WCHAR szModName[MAX_PATH];
-		if (!GetModuleFileNameExW(hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR))) {
-            // Get the full path to the module's file
-			continue;
-        }
-		wstring modName = szModName;
-		int pos = modName.find_last_of(L"\\");
-		modName = modName.substr(pos + 1, modName.length());
- 
-		MODULEINFO modInfo;
-		if (!GetModuleInformation(hProcess, hMods[i], &modInfo, sizeof(modInfo))) {
-            continue;
-        }
- 
-		DWORD64 baseAddr = (DWORD64)modInfo.lpBaseOfDll;
-        modsStartAddrs[modName] = baseAddr;
-	}
- 
-	// Release the handle to the process
-	CloseHandle(hProcess);
-	return modsStartAddrs;
-}
-
-vector<DWORD> StealthyMemInstaller::GetTIDChronologically(DWORD pid) {
-	map<ULONGLONG, DWORD> tidsWithStartTimes;
-	vector<DWORD> tids;
- 
-	if (pid == NULL) {
-        return tids;
-    }
- 
-	DWORD dwMainThreadID = NULL;
-	ULONGLONG ullMinCreateTime = MAXULONGLONG;
-	HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-	if (hThreadSnap != INVALID_HANDLE_VALUE) {
-		THREADENTRY32 th32;
-		th32.dwSize = sizeof(THREADENTRY32);
-		BOOL bOK = TRUE;
-		for (bOK = Thread32First(hThreadSnap, &th32); bOK; bOK = Thread32Next(hThreadSnap, &th32)) {
-			if (th32.th32OwnerProcessID == pid) {
-				HANDLE hThread = OpenThread(THREAD_QUERY_INFORMATION, FALSE, th32.th32ThreadID);
-				if (hThread) {
-					FILETIME afTimes[4] = { 0 };
-					if (GetThreadTimes(hThread, &afTimes[0], &afTimes[1], &afTimes[2], &afTimes[3])) {
-						ULONGLONG ullTest = MAKEULONGLONG(afTimes[0].dwLowDateTime, afTimes[0].dwHighDateTime);
-						tidsWithStartTimes[ullTest] = th32.th32ThreadID;
-					}
-					CloseHandle(hThread);
-				}
+BOOL StealthyMemInstaller::FindUsableTID() {
+	map<DWORD, wstring> tidsStartModules = GetTIDsModuleStartAddr(targetProcessPID);
+	wstring modName = L"";
+	for (int i = 0; i < preferedTIDsModules.size(); ++i) {
+		for (auto const& thisTid : tidsStartModules) {
+			DWORD tid = thisTid.first;
+			modName = thisTid.second;
+			if (modName == preferedTIDsModules[i]) {
+				targetTID = tid;
+				break;
 			}
 		}
-		CloseHandle(hThreadSnap);
+		if (targetTID) {
+			break;
+		}
+			
 	}
- 
-	for (auto const& thread : tidsWithStartTimes) {
-        // maps are natively ordered by key
-		tids.push_back(thread.second);
-    } 
- 
-	return tids;
+	if (!targetTID) {
+		return FALSE; // Could not find any of the threads starting in one of the target modules
+	}
+	return TRUE;
 }
 
-map<DWORD, DWORD64> GetThreadsStartAddresses(vector<DWORD> tids) {
-	map<DWORD, DWORD64> tidsStartAddresses;
- 
-	if (tids.empty()) {
-        return tidsStartAddresses;
-    }
 
-	for (int i = 0; i < tids.size(); ++i) {
-		HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, tids[i]);
-		PVOID startAddress = NULL;
-		ULONG returnLength = NULL;
-		NTSTATUS NtQIT = NtQueryInformationThread(hThread, (THREADINFOCLASS)ThreadQuerySetWin32StartAddress, &startAddress, sizeof(startAddress), &returnLength);
-		CloseHandle(hThread);
-		if (tids[i] && startAddress) {
-            tidsStartAddresses[tids[i]] = (DWORD64)startAddress;
-        }
+BOOL StealthyMemInstaller::CreateExternalGatekeeperHandleToFileMapping() {
+	vector<DWORD> explorerPIDs = GetPIDsOfProcess(explExeName);
+	if (explorerPIDs.empty()) {
+		cout << "here" << endl;
+		return FALSE;
 	}
- 
-	return tidsStartAddresses;
+		
+	hGateKeeperProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, explorerPIDs[0]);
+	if (!hGateKeeperProcess) {
+		return FALSE;
+	}
+	HANDLE hGateKeeper = NULL;
+	if (!DuplicateHandle(
+		GetCurrentProcess(), 
+		hLocalSharedMem, 
+		hGateKeeperProcess, 
+		&hGateKeeper, 
+		NULL, 
+		FALSE, 
+		DUPLICATE_SAME_ACCESS)
+	) {
+		return FALSE;
+	}
+	CloseHandle(hGateKeeperProcess);
+	return TRUE;
 }
 
-map<DWORD, wstring> StealthyMemInstaller::GetTIDsModuleStartAddr(DWORD pid) {
-	map<DWORD, wstring> tidsStartModule;
- 
-	map<wstring, DWORD64> modsStartAddrs = GetModulesNamesAndBaseAddresses(pid);
-	if (modsStartAddrs.empty()) {
-        return tidsStartModule;
-    }
- 
-	vector<DWORD> tids = GetTIDChronologically(pid);
-	if (tids.empty()) {
-        return tidsStartModule;
-    }
+BOOL StealthyMemInstaller::ConnectFileMappingWithTargetThread() {
+	// Getting function addresses
+	FARPROC addrOpenFileMappingA = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "OpenFileMappingA");
+	FARPROC addrMapViewOfFile = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "MapViewOfFile");
+	FARPROC addrCloseHandle = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CloseHandle");
+	if (!addrOpenFileMappingA || !addrMapViewOfFile || !addrCloseHandle) {
+		return FALSE;
+	}
 		
  
-	map<DWORD, DWORD64> tidsStartAddresses = GetThreadsStartAddresses(tids);
-	if (tidsStartAddresses.empty()) {
-        return tidsStartModule;
-    }
+	// Get RW memory to assemble full shellcode from parts
+	void* rwMemory = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	if (rwMemory == nullptr) {
+		return FALSE;
+	}
+		
+	DWORD64 addrEndOfShellCode = (DWORD64)rwMemory;
  
-	// for (auto const& thisTid : tidsStartAddresses) {
-	// 	DWORD tid = thisTid.first;
-	// 	DWORD64 startAddress = thisTid.second;
-	// 	DWORD64 nearestModuleAtLowerAddrBase = 0;
-	// 	wstring nearestModuleAtLowerAddrName = L"";
-	// 	for (auto const& thisModule : modsStartAddrs) {
-	// 		wstring moduleName = thisModule.first;
-	// 		DWORD64 moduleBase = thisModule.second;
-	// 		if (moduleBase > startAddress)
-	// 			continue;
-	// 		if (moduleBase > nearestModuleAtLowerAddrBase) {
-	// 			nearestModuleAtLowerAddrBase = moduleBase;
-	// 			nearestModuleAtLowerAddrName = moduleName;
-	// 		}
-	// 	}
-	// 	if (nearestModuleAtLowerAddrBase > 0 && nearestModuleAtLowerAddrName != L"")
-	// 		tidsStartModule[tid] = nearestModuleAtLowerAddrName;
-	// }
+	UCHAR x64OpenFileMappingA[] = {
+		0x48, 0xc7, 0xc1, 0x1f, 0, 0x0f, 0,	// mov rcx, dwDesiredAccess			+0 (FILE_MAP_ALL_ACCESS = 0xf001f @ +3)
+		0x48, 0x31, 0xd2,					// xor rdx, rdx						+7 (bInheritHandle = FALSE)
+		0x49, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0,	// mov r8, &lpName					+10 (&lpName +12)
+		0x4d, 0x31, 0xc9,					// xor r9, r9						+20
+		0x48, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, // mov rax, addrOpenFileMappingA	+23 (addrOpenFileMappingA +25)
+		0x48, 0x83, 0xec, 0x20,				// sub rsp, 0x20					+33
+		0xff, 0xd0,							// call rax							+37
+		0x48, 0x83, 0xc4, 0x20,				// add rsp, 0x20					+39
+		0x49, 0x89, 0xc7					// mov r15, rax						+43
+	};
+	*(DWORD64*)((PUCHAR)x64OpenFileMappingA + 25) = (DWORD64)(ULONG_PTR)addrOpenFileMappingA;
+	CopyMemory((void*)addrEndOfShellCode, x64OpenFileMappingA, sizeof(x64OpenFileMappingA));
+	addrEndOfShellCode += sizeof(x64OpenFileMappingA);
  
-	return tidsStartModule;
+	UCHAR x64MapViewOfFile[] = {
+		0x48, 0x89, 0xc1,					// mov rcx, rax						+0
+		0x48, 0xc7, 0xc2, 0x1f, 0, 0x0f, 0,	// mov rdx, dwDesiredAccess			+3 (FILE_MAP_ALL_ACCESS = 0xf001f @ +6)
+		0x4d, 0x31, 0xc0,					// xor r8, r8						+10
+		0x4d, 0x31, 0xc9,					// xor r9, r9						+13
+		0x48, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, // mov rax, dwNumberOfBytesToMap	+16 (dwNumberOfBytesToMap +18)
+		0x50,								// push rax							+26
+		0x48, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0,	// mov rax, addrMapViewOfFile		+27 (addrMapViewOfFile +29)
+		0x48, 0x83, 0xec, 0x20,				// sub rsp, 0x20					+37
+		0xff, 0xd0,							// call rax							+41
+		0x48, 0x83, 0xc4, 0x28,				// add rsp, 0x28					+43
+		0x49, 0x89, 0xc6,					// mov r14, rax						+47
+		// Writing to shared memory the virtual address in pivot process
+		0x4d, 0x89, 0x36					// mov [r14], r14					+50
+	};
+	*(SIZE_T*)((PUCHAR)x64MapViewOfFile + 18) = (SIZE_T)(ULONG_PTR)sharedMemSize;
+	*(DWORD64*)((PUCHAR)x64MapViewOfFile + 29) = (DWORD64)(ULONG_PTR)addrMapViewOfFile;
+	CopyMemory((void*)addrEndOfShellCode, x64MapViewOfFile, sizeof(x64MapViewOfFile));
+	addrEndOfShellCode += sizeof(x64MapViewOfFile);
+ 
+	UCHAR x64CloseHandle[] = {
+		0x4C, 0x89, 0xF9,					// mov rcx, r15						+0
+		0x48, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0,	// mov rax, addrCloseHandle			+3 (addrCloseHandle +5)
+		0x48, 0x83, 0xec, 0x20,				// sub rsp, 0x20					+13
+		0xff, 0xd0,							// call rax							+17
+		0x48, 0x83, 0xc4, 0x20				// add rsp, 0x20					+19
+	};
+	*(DWORD64*)((PUCHAR)x64CloseHandle + 5) = (DWORD64)(ULONG_PTR)addrCloseHandle;
+	CopyMemory((void*)addrEndOfShellCode, x64CloseHandle, sizeof(x64CloseHandle));
+	addrEndOfShellCode += sizeof(x64CloseHandle);
+ 
+	UCHAR x64InfiniteLoop[] = { 0xEB, 0xFE }; // nop + jmp rel8 -2
+	CopyMemory((void*)addrEndOfShellCode, x64InfiniteLoop, sizeof(x64InfiniteLoop));
+	addrEndOfShellCode += sizeof(x64InfiniteLoop);
+ 
+	UCHAR lpNameBuffer[30];
+	SecureZeroMemory(lpNameBuffer, sizeof(lpNameBuffer));
+	CopyMemory(lpNameBuffer, sharedMemName.c_str(), sharedMemName.size());
+	CopyMemory((void*)addrEndOfShellCode, lpNameBuffer, sizeof(lpNameBuffer));
+	addrEndOfShellCode += sizeof(lpNameBuffer);
+ 
+	// Calculating full size of shellcode
+	SIZE_T fullShellcodeSize = addrEndOfShellCode - (DWORD64)rwMemory;
+ 
+	// Placing pointer to the buffer integrated with the shellcode containing the name
+	DWORD64 lpNameInRemoteExecMemory = (DWORD64)remoteExecMem + fullShellcodeSize - sizeof(lpNameBuffer);
+	CopyMemory((void*)((DWORD64)rwMemory + 12), &lpNameInRemoteExecMemory, sizeof(lpNameInRemoteExecMemory));
+ 
+	bool pushShellcodeStatus = PushShellcode(rwMemory, fullShellcodeSize);
+	VirtualFree(rwMemory, 0, MEM_RELEASE);
+	if (!pushShellcodeStatus) {
+		return FALSE;
+	}
+		
+ 
+	if (!ExecWithThreadHiJacking(fullShellcodeSize - sizeof(lpNameBuffer), false)) {
+		// The shellcode ends before since the end is just memory
+		return FALSE;
+	} 
+ 
+	CopyMemory(&ptrRemoteSharedMem, ptrLocalSharedMem, sizeof(void*));
+	if (ptrRemoteSharedMem == nullptr) {
+		return FALSE;
+	}
+	else {
+		return TRUE;
+	}
 }
 
+BOOL StealthyMemInstaller::ExecShellcodeWithHijackedThread(SIZE_T shellcodeSize, bool thenRestore) {
+	return TRUE;
+}

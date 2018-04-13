@@ -24,11 +24,6 @@
 #include <vector>
 #include <map>
 
-#ifndef MAKEULONGLONG
-#define MAKEULONGLONG(ldw, hdw) ((ULONGLONG(hdw) << 32) | ((ldw) & 0xFFFFFFFF))
-#endif
-
-#define ThreadQuerySetWin32StartAddress 9
 
 using namespace std;
 
@@ -47,14 +42,15 @@ struct UNUSED_EXECUTABLE_MEM {
 
 class StealthyMemInstaller {
 public:
-    BOOL Init(wstring targetProcessName = L"");
+    BOOL Init(vector<wstring>, wstring targetProcessName = L"");
     BOOL Install();
-    BOOL CreateSharedFileMapping();
     BOOL InstanceAlreadyRunning();
     vector <UNUSED_EXECUTABLE_MEM> FindExecutableMemory(const HANDLE, BOOL);
-    map<wstring, DWORD64> GetModulesNamesAndBaseAddresses(DWORD);
-    map<DWORD, wstring> GetTIDsModuleStartAddr(DWORD pid);
-    vector<DWORD> GetTIDChronologically(DWORD pid);
+    BOOL FindUsableTID();
+    BOOL CreateSharedFileMapping();
+    BOOL CreateExternalGatekeeperHandleToFileMapping();
+    BOOL ConnectFileMappingWithTargetThread();
+    BOOL ExecShellcodeWithHijackedThread(SIZE_T shellcodeSize, bool thenRestore);
 
     // for testing
     void* getPtrLocalSharedMem() {
@@ -70,6 +66,7 @@ private:
     void* ptrLocalSharedMem = nullptr;
     string sharedMemName;
     HANDLE hSharedMemHandle;
+    SIZE_T usableSharedMemSize = NULL;
     string globalMutex;
     HANDLE hGlobalMutex = NULL;
     wstring targetProcessName;
@@ -77,6 +74,11 @@ private:
     HANDLE hTargetProcess;
     void* remoteExecutableMem = nullptr;
     SIZE_T remoteExecutableMemSize = 0;
+    vector<wstring> preferedTIDsModules;
+    DWORD targetTID = NULL;
+    HANDLE hTargetThread = NULL;
+    wstring explExeName;
+    HANDLE hGateKeeperProcess = NULL;
 };
 
 #endif
