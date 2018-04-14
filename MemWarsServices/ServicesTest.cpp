@@ -194,21 +194,49 @@ void SMMInstall_ShellcodeHijackedThreadFileMappingTest() {
     while (process == NULL) {
         process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
-    vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
-    if (pids.empty()) {
-        cout << "GetTIDsModuleStartAddrTest() failed. PID not found" << endl;
-        system("taskkill /IM memoryTestApp.exe /F >nul");
-        return;
+    StealthyMemInstaller smi;
+    vector<wstring> preferedThreadModuleNames;
+    preferedThreadModuleNames.push_back(L"memoryTestApp.exe");
+    smi.Init(preferedThreadModuleNames, L"memoryTestApp.exe");
+
+    if (!SetProcessPrivilege(SE_DEBUG_NAME, TRUE)) {
+        cout << "SMMInstall_ShellcodeHijackedThreadFileMappingTest() failed: Privilege failed." << endl;
+        goto Exit;
+    }
+	
+	if (!smi.GetTargetProcessPID()) {
+        cout << "SMMInstall_ShellcodeHijackedThreadFileMappingTest() failed: GetTargetProcessPID failed." << endl;
+        goto Exit;
     }
 
-    map<DWORD, wstring> tidStartAddresses = GetTIDsModuleStartAddr(pids[0]);
+    if (!smi.GetTargetProcessHandle()) {
+		cout << "SMMInstall_ShellcodeHijackedThreadFileMappingTest() failed: GetTargetProcessHandle failed." << endl;
+        goto Exit;
+	}
 
-    if (tidStartAddresses.empty()) {
-        cout << "GetTIDsModuleStartAddrTest() failed" << endl;
-    } else {
-        cout << "GetTIDsModuleStartAddrTest() success" << endl;
+    if (!smi.GetRemoteExecutableMemory()) {
+		cout << "SMMInstall_ShellcodeHijackedThreadFileMappingTest() failed: GetRemoteExecutableMemory failed." << endl;
+        goto Exit;
+	}
+	
+	if (!smi.FindUsableTID()) {
+		cout << "SMMInstall_ShellcodeHijackedThreadFileMappingTest() failed: FindUsableTID failed." << endl;
+		goto Exit;
+	}
+
+	if (!smi.CreateSharedFileMapping()) {
+		cout << "SMMInstall_ShellcodeHijackedThreadFileMappingTest() failed: CreateSharedFileMapping failed." << endl;
+		goto Exit;
+    }
+    
+    if (!smi.ConnectFileMappingWithTargetThread()) {
+        cout << "SMMInstall_ShellcodeHijackedThreadFileMappingTest() failed: CreateSharedFileMapping failed." << endl;
+		goto Exit;
     }
 
+    cout << "SMMInstall_ShellcodeHijackedThreadFileMappingTest() success" << endl;
+
+    Exit:;
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
@@ -251,5 +279,5 @@ int main() {
     // todo: add test for GetThreadsStartAddresses and 
     
     
-    SMMInstall_InstallTest();
+    // SMMInstall_InstallTest();
 }

@@ -73,6 +73,11 @@ BOOL StealthyMemInstaller::Install() {
 	// 	return FALSE;
 	// }
 
+	if (!ConnectFileMappingWithTargetThread()) {
+        cout << "Install() failed: ConnectFileMappingWithTargetThread failed." << endl;
+		return FALSE;
+    }
+
 		
     return TRUE;
 }
