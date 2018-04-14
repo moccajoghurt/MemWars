@@ -40,10 +40,21 @@ struct UNUSED_EXECUTABLE_MEM {
 	SIZE_T size = NULL;
 };
 
+struct REMOTE_COMMAND_INFO {
+	DWORD64 exec = 1; // Least significant byte used to release the spinlock
+	DWORD order = 0; // 0: Read, 1: Write
+	NTSTATUS status = 0xFFFFFFFF;
+	HANDLE hProcess = NULL;
+	DWORD64 lpBaseAddress = NULL;
+	SIZE_T nSize = 0;
+	SIZE_T* nBytesReadOrWritten = 0;
+}; // Important: Must be 8 bytes aligned, otherwise garbage data is added in the structure
+
 class StealthyMemInstaller {
 public:
     BOOL Init(vector<wstring>, wstring targetProcessName = L"");
     BOOL Install();
+    // these functions are public for testing. Make private when not testing
     BOOL InstanceAlreadyRunning();
     BOOL AlreadyInstalled();
     BOOL GetTargetProcessPID();
@@ -53,10 +64,14 @@ public:
     BOOL FindUsableTID();
     BOOL CreateSharedFileMapping();
     BOOL CreateExternalGatekeeperHandleToFileMapping();
-    BOOL ConnectFileMappingWithTargetThread();
-    BOOL ExecShellcodeWithHijackedThread(SIZE_T shellcodeSize, bool thenRestore);
+    BOOL InjectFileMappingShellcodeIntoTargetThread();
+    BOOL ExecShellcodeWithHijackedThread(SIZE_T shellcodeSize, BOOL thenRestore);
+    BOOL InjectCommunicationShellcodeIntoTargetThread();
+    DWORD GetSyscallId(string strModule, string strProcName);
+    void WriteReconnectionInfoIntoSharedMemory();
+    void CleanUp();
 
-    // for testing
+    // purely for testing
     void* getPtrLocalSharedMem() {
         return ptrLocalSharedMem;
     }

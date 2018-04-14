@@ -11,7 +11,7 @@
 #include <map>
 #include "../MemWarsCore/MemWarsCore.h"
 #include "MemWarsServices.h"
-#include "StealthyMemManipulator.h"
+#include "StealthyMemManipulatorInstaller.h"
 
 using namespace std;
 
@@ -73,11 +73,19 @@ BOOL StealthyMemInstaller::Install() {
 	// 	return FALSE;
 	// }
 
-	if (!ConnectFileMappingWithTargetThread()) {
+	if (!InjectFileMappingShellcodeIntoTargetThread()) {
         cout << "Install() failed: ConnectFileMappingWithTargetThread failed." << endl;
 		return FALSE;
-    }
+	}
+	CloseHandle(hLocalSharedMem);
 
+	if (!InjectCommunicationShellcodeIntoTargetThread()) {
+		cout << "Install() failed: InjectCommunicationShellcodeIntoTargetThread failed." << endl;
+		return FALSE;
+	}
+
+	WriteReconnectionInfoIntoSharedMemory();
+	CleanUp();
 		
     return TRUE;
 }
@@ -306,7 +314,7 @@ BOOL StealthyMemInstaller::CreateExternalGatekeeperHandleToFileMapping() {
 	return TRUE;
 }
 
-BOOL StealthyMemInstaller::ConnectFileMappingWithTargetThread() {
+BOOL StealthyMemInstaller::InjectFileMappingShellcodeIntoTargetThread() {
 	// Getting function addresses
 	FARPROC addrOpenFileMappingA = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "OpenFileMappingA");
 	FARPROC addrMapViewOfFile = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "MapViewOfFile");
@@ -315,7 +323,6 @@ BOOL StealthyMemInstaller::ConnectFileMappingWithTargetThread() {
 		return FALSE;
 	}
 		
- 
 	// Get RW memory to assemble full shellcode from parts
 	void* rwMemory = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	if (rwMemory == nullptr) {
@@ -386,6 +393,9 @@ BOOL StealthyMemInstaller::ConnectFileMappingWithTargetThread() {
 	CopyMemory((void*)((DWORD64)rwMemory + 12), &lpNameInRemoteExecMemory, sizeof(lpNameInRemoteExecMemory));
  
 	// bool pushShellcodeStatus = PushShellcode(rwMemory, fullShellcodeSize);
+	if (fullShellcodeSize > remoteExecutableMemSize) {
+		return FALSE;
+	}
 	BOOL pushShellcodeStatus = WriteProcessMemoryAtPtrLocation(hTargetProcess, remoteExecutableMem, rwMemory, fullShellcodeSize);
 	VirtualFree(rwMemory, 0, MEM_RELEASE);
 	if (!pushShellcodeStatus) {
@@ -406,7 +416,7 @@ BOOL StealthyMemInstaller::ConnectFileMappingWithTargetThread() {
 	}
 }
 
-BOOL StealthyMemInstaller::ExecShellcodeWithHijackedThread(SIZE_T shellcodeSize, bool thenRestore) {
+BOOL StealthyMemInstaller::ExecShellcodeWithHijackedThread(SIZE_T shellcodeSize = NULL, BOOL thenRestore = TRUE) {
 	// Preparing for thread hijacking
 	CONTEXT tcInitial;
 	CONTEXT tcHiJack;
@@ -448,4 +458,164 @@ BOOL StealthyMemInstaller::ExecShellcodeWithHijackedThread(SIZE_T shellcodeSize,
 	}
  
 	return TRUE;
+}
+
+BOOL StealthyMemInstaller::InjectCommunicationShellcodeIntoTargetThread() {
+	// Pushing control structure into shared memory
+	REMOTE_COMMAND_INFO controlStruct;
+	void* controlLocalAddr = (void*)((DWORD64)ptrLocalSharedMem + sharedMemSize - sizeof(controlStruct));
+	CopyMemory(controlLocalAddr, &controlStruct, sizeof(controlStruct));
+	void* controlRemoteAddr = (void*)((DWORD64)ptrRemoteSharedMem + sharedMemSize - sizeof(controlStruct));
+ 
+	// Getting function addresses
+	string e = "";
+	string ntrvmNoStr = e+'N'+'t'+'R'+'e'+'a'+'d'+'V'+'i'+'r'+'t'+'u'+'a'+'l'+'M'+'e'+'m'+'o'+'r'+'y';
+	string ntwvmNoStr = e+'N'+'t'+'W'+'r'+'i'+'t'+'e'+'V'+'i'+'r'+'t'+'u'+'a'+'l'+'M'+'e'+'m'+'o'+'r'+'y';
+	DWORD syscallIndexZwRVM = GetSyscallId("ntdll.dll", ntrvmNoStr);
+	DWORD syscallIndexZwWVM = GetSyscallId("ntdll.dll", ntwvmNoStr);
+	if (!syscallIndexZwRVM || !syscallIndexZwWVM) {
+		return FALSE;
+	}
+ 
+	// Get RW memory to assemble full shellcode from parts
+	void* rwMemory = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	if (rwMemory == nullptr)
+		return FALSE;
+	DWORD64 addrEndOfShellCode = (DWORD64)rwMemory;
+ 
+	UCHAR x64Spinlock[] = {
+		0xA0, 0, 0, 0, 0, 0, 0, 0, 0,	// mov al, [&exec]
+		0x3c, 0,						// cmp al, 0
+		0xF3, 0x90,						// pause (signals the CPU that we are in a spinlock)
+		0x75, 0xF1						// jnz -14
+	};
+	*(DWORD64*)((PUCHAR)x64Spinlock + 1) = (DWORD64)(ULONG_PTR)controlRemoteAddr;
+	CopyMemory((void*)addrEndOfShellCode, x64Spinlock, sizeof(x64Spinlock));
+	addrEndOfShellCode += sizeof(x64Spinlock);
+ 
+	// Do not retrieve nbr of bytes read/written (otherwise mov rax, ptr)
+	UCHAR x64ZeroRax[] = { 0x48, 0x31, 0xC0 }; // xor rax, rax
+	CopyMemory((void*)addrEndOfShellCode, x64ZeroRax, sizeof(x64ZeroRax));
+	addrEndOfShellCode += sizeof(x64ZeroRax);
+ 
+	UCHAR x64ZwRWVM[] = {
+		// Preparing argument passing to NtRVM/NtWVM
+		0x50,								// push rax						+0 (NumberOfBytesRead, optional)
+		0x48, 0x83, 0xec, 0x28,				// sub rsp, 0x28				+1 (+8 normally the return address pushed by NtRVM call)
+		0x48, 0xa1, 0, 0, 0, 0, 0, 0, 0, 0,	// mov rax, [&hProcess]			+5 (&hProcess +7)
+		0x48, 0x89, 0xc1,					// mov rcx, rax					+15
+		0x48, 0xa1, 0, 0, 0, 0, 0, 0, 0, 0,	// mov rax, [&lpBaseAddress]	+18 (&lpBaseAddress +20)
+		0x48, 0x89, 0xc2,					// mov rdx, rax					+28
+		0x48, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0,	// mov rax, [&lpBuffer]			+31 (&lpBuffer +33)
+		0x49, 0x89, 0xc0,					// mov r8, rax					+41
+		0x48, 0xa1, 0, 0, 0, 0, 0, 0, 0, 0,	// mov rax, [&nSize]			+44 (&nSize +46)
+		0x49, 0x89, 0xc1,					// mov r9, rax					+54
+		// Loading function pointer accordingly to current order
+		0xa0, 0, 0, 0, 0, 0, 0, 0, 0,		// mov al, [&order]				+57 (&order +58)
+		0x3c, 0x0,							// cmp al, 0x0					+66
+		0x49, 0x89, 0xCA,					// mov r10, rcx					+68
+		0x75, 0x9,							// jne +9						+71
+		0xb8, 0, 0, 0, 0,					// mov eax, WZWVM_SYSCALLID		+73 (WZWVM_SYSCALLID +74)
+		0x0f, 0x05,							// syscall						+78
+		0xeb, 0x7,							// jmp +7						+80
+		0xb8, 0, 0, 0, 0,					// mov eax, WZRVM_SYSCALLID		+82 (WZRVM_SYSCALLID +83)
+		0x0f, 0x05,							// syscall						+87
+		0x48, 0x83, 0xC4, 0x30				// add rsp, 0x30				+89
+	};
+	*(DWORD64*)((PUCHAR)x64ZwRWVM + 7) = (DWORD64)(ULONG_PTR)((DWORD64)controlRemoteAddr + 16);
+	*(DWORD64*)((PUCHAR)x64ZwRWVM + 20) = (DWORD64)(ULONG_PTR)((DWORD64)controlRemoteAddr + 24);
+	*(DWORD64*)((PUCHAR)x64ZwRWVM + 33) = (DWORD64)(ULONG_PTR)ptrRemoteSharedMem;
+	*(DWORD64*)((PUCHAR)x64ZwRWVM + 46) = (DWORD64)(ULONG_PTR)((DWORD64)controlRemoteAddr + 32);
+	*(DWORD64*)((PUCHAR)x64ZwRWVM + 58) = (DWORD64)(ULONG_PTR)((DWORD64)controlRemoteAddr + 8);
+	*(DWORD*)((PUCHAR)x64ZwRWVM + 74) = (DWORD)(ULONG_PTR)syscallIndexZwRVM;
+	*(DWORD*)((PUCHAR)x64ZwRWVM + 83) = (DWORD)(ULONG_PTR)syscallIndexZwWVM;
+	CopyMemory((void*)addrEndOfShellCode, x64ZwRWVM, sizeof(x64ZwRWVM));
+	addrEndOfShellCode += sizeof(x64ZwRWVM);
+ 
+	UCHAR x64ToggleSpinlock[] = {
+		0xB0, 1,												// mov al, 1
+		0xA2, 0, 0, 0, 0, 0, 0, 0, 0							// mov [&exec], al
+	};
+	*(DWORD64*)((PUCHAR)x64ToggleSpinlock + 3) = (DWORD64)(ULONG_PTR)controlRemoteAddr;
+	CopyMemory((void*)addrEndOfShellCode, x64ToggleSpinlock, sizeof(x64ToggleSpinlock));
+	addrEndOfShellCode += sizeof(x64ToggleSpinlock);
+ 
+	// End of cycle, jump back to start
+	UCHAR x64AbsoluteJump[] = {
+		0x48, 0xb8,	0, 0, 0, 0, 0, 0, 0, 0,	// mov rax, m_remoteExecMem		+0 (m_remoteExecMem +2)
+		0xff, 0xe0							// jmp rax						+10
+	};
+	*(DWORD64*)((PUCHAR)x64AbsoluteJump + 2) = (DWORD64)(ULONG_PTR)remoteExecutableMem;
+	CopyMemory((void*)addrEndOfShellCode, x64AbsoluteJump, sizeof(x64AbsoluteJump));
+	addrEndOfShellCode += sizeof(x64AbsoluteJump);
+	
+	SIZE_T fullShellcodeSize = addrEndOfShellCode - (DWORD64)rwMemory;
+	// BOOL pushShellcodeStatus = PushShellcode(rwMemory, fullShellcodeSize);
+	if (fullShellcodeSize > remoteExecutableMemSize) {
+		return FALSE;
+	}
+	BOOL pushShellcodeStatus = WriteProcessMemoryAtPtrLocation(hTargetProcess, remoteExecutableMem, rwMemory, fullShellcodeSize);
+	VirtualFree(rwMemory, 0, MEM_RELEASE);
+	if (!pushShellcodeStatus) {
+		return FALSE;
+	}
+	if (!ExecShellcodeWithHijackedThread()) {
+		return FALSE;
+	}
+	else {
+		return TRUE;
+	}
+}
+
+DWORD StealthyMemInstaller::GetSyscallId(string strModule, string strProcName) {
+	FARPROC pFunction = GetProcAddress(GetModuleHandleA(strModule.c_str()), strProcName.c_str());
+	
+	BYTE x64PreSyscallOpcodes[] = {
+		0x4C, 0x8B, 0xD1,	// mov r10, rcx;
+		0xB8				// mov eax, XXh ; Syscall ID
+	};
+ 
+	for (int i = 0; i < 4; ++i) {
+		if (*(BYTE*)((DWORD64)pFunction + i) != x64PreSyscallOpcodes[i]) {
+			return 0; // The function has been tampered with already...
+		}
+	}
+ 
+	DWORD sysCallIndex = *(DWORD*)((DWORD64)pFunction + 4);
+	return sysCallIndex;
+}
+
+void StealthyMemInstaller::WriteReconnectionInfoIntoSharedMemory() {
+	// Pushes useful information into shared memory, in case the bypass has to reconnect
+	CONTEXT contextEmpty;
+	SecureZeroMemory(&contextEmpty, sizeof(contextEmpty));
+	SHARED_MEM_INFO cfgBackup;
+	cfgBackup.ptrRemoteSharedMem = ptrRemoteSharedMem;
+	cfgBackup.sharedMemSize = sharedMemSize;
+	cfgBackup.remoteExecMem = remoteExecutableMem;
+	cfgBackup.remoteExecMemSize = remoteExecutableMemSize;
+	void* endOfUsableLocalSharedMem = (void*)((DWORD64)ptrLocalSharedMem + sharedMemSize - sizeof(REMOTE_COMMAND_INFO));
+	void* backupAddrInSharedMem = (void*)((DWORD64)endOfUsableLocalSharedMem - sizeof(SHARED_MEM_INFO));
+	CopyMemory(backupAddrInSharedMem, &cfgBackup, sizeof(cfgBackup));
+}
+
+void StealthyMemInstaller::CleanUp() {
+	if (hSharedMemHandle) {
+		CloseHandle(hSharedMemHandle);
+	}
+	if (hTargetProcess) {
+		CloseHandle(hTargetProcess);
+	}
+	if (hTargetThread) {
+		CloseHandle(hTargetThread);
+	}
+	if (hLocalSharedMem) {
+		CloseHandle(hLocalSharedMem);
+	}
+	if (ptrLocalSharedMem) {
+		UnmapViewOfFile(ptrLocalSharedMem);
+	}
+	if (hGateKeeperProcess) {
+		CloseHandle(hGateKeeperProcess);
+	}
 }

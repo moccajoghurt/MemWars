@@ -2,7 +2,7 @@
 #include <iostream>
 #include <process.h>
 #include "../MemWarsCore/MemWarsCore.h"
-#include "StealthyMemManipulator.h"
+#include "StealthyMemManipulatorInstaller.h"
 #include "MemWarsServices.h"
 
 using namespace std;
@@ -229,8 +229,8 @@ void SMMInstall_ShellcodeHijackedThreadFileMappingTest() {
 		goto Exit;
     }
     
-    if (!smi.ConnectFileMappingWithTargetThread()) {
-        cout << "SMMInstall_ShellcodeHijackedThreadFileMappingTest() failed: CreateSharedFileMapping failed." << endl;
+    if (!smi.InjectFileMappingShellcodeIntoTargetThread()) {
+        cout << "SMMInstall_ShellcodeHijackedThreadFileMappingTest() failed: InjectFileMappingShellcodeIntoTargetThread failed." << endl;
 		goto Exit;
     }
 
@@ -275,9 +275,7 @@ int main() {
     // SMMInstall_InstanceAlreadyRunningTest();
     // SMMInstall_FindUnusedExecutableMemoryTest();
     // SMMInstall_ShellcodeHijackedThreadFileMappingTest();
-
-    // todo: add test for GetThreadsStartAddresses and 
     
-    
-    // SMMInstall_InstallTest();
+    // cannot run InstallTest() in combination with other tests because of Mutexes
+    SMMInstall_InstallTest();
 }
