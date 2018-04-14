@@ -165,30 +165,52 @@ void GetThreadsStartAddressesTest() {
 
 void GetTIDsModuleStartAddrTest() {
     
-        system("start /B memoryTestApp.exe");
-        HANDLE process = NULL;
-        while (process == NULL) {
-            process = (HANDLE)GetProcessByName("memoryTestApp.exe");
-        }
-        vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
-        if (pids.empty()) {
-            cout << "GetTIDsModuleStartAddrTest() failed. PID not found" << endl;
-            system("taskkill /IM memoryTestApp.exe /F >nul");
-            return;
-        }
-    
-        map<DWORD, wstring> tidStartAddresses = GetTIDsModuleStartAddr(pids[0]);
-
-        if (tidStartAddresses.empty()) {
-            cout << "GetTIDsModuleStartAddrTest() failed" << endl;
-        } else {
-            cout << "GetTIDsModuleStartAddrTest() success" << endl;
-        }
-        // for (auto ws : tidStartAddresses) {
-        //     wcout << ws.second << endl;
-        // }
-        system("taskkill /IM memoryTestApp.exe /F >nul");
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
+    vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
+    if (pids.empty()) {
+        cout << "GetTIDsModuleStartAddrTest() failed. PID not found" << endl;
+        system("taskkill /IM memoryTestApp.exe /F >nul");
+        return;
+    }
+
+    map<DWORD, wstring> tidStartAddresses = GetTIDsModuleStartAddr(pids[0]);
+
+    if (tidStartAddresses.empty()) {
+        cout << "GetTIDsModuleStartAddrTest() failed" << endl;
+    } else {
+        cout << "GetTIDsModuleStartAddrTest() success" << endl;
+    }
+
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+void SMMInstall_ShellcodeHijackedThreadFileMappingTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
+    }
+    vector<DWORD> pids = GetPIDsOfProcess(L"memoryTestApp.exe");
+    if (pids.empty()) {
+        cout << "GetTIDsModuleStartAddrTest() failed. PID not found" << endl;
+        system("taskkill /IM memoryTestApp.exe /F >nul");
+        return;
+    }
+
+    map<DWORD, wstring> tidStartAddresses = GetTIDsModuleStartAddr(pids[0]);
+
+    if (tidStartAddresses.empty()) {
+        cout << "GetTIDsModuleStartAddrTest() failed" << endl;
+    } else {
+        cout << "GetTIDsModuleStartAddrTest() success" << endl;
+    }
+
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
 
 void SMMInstall_InstallTest() {
     system("start /B memoryTestApp.exe");
@@ -224,6 +246,7 @@ int main() {
     // SMMInstall_CreateSharedFileMappingTest();
     // SMMInstall_InstanceAlreadyRunningTest();
     // SMMInstall_FindUnusedExecutableMemoryTest();
+    // SMMInstall_ShellcodeHijackedThreadFileMappingTest();
 
     // todo: add test for GetThreadsStartAddresses and 
     

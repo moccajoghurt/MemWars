@@ -45,6 +45,10 @@ public:
     BOOL Init(vector<wstring>, wstring targetProcessName = L"");
     BOOL Install();
     BOOL InstanceAlreadyRunning();
+    BOOL AlreadyInstalled();
+    BOOL GetTargetProcessPID();
+    BOOL GetTargetProcessHandle();
+    BOOL GetRemoteExecutableMemory();
     vector <UNUSED_EXECUTABLE_MEM> FindExecutableMemory(const HANDLE, BOOL);
     BOOL FindUsableTID();
     BOOL CreateSharedFileMapping();
@@ -64,6 +68,7 @@ private:
     SIZE_T sharedMemSize = SHARED_MEM_SIZE;
     HANDLE hLocalSharedMem = NULL;
     void* ptrLocalSharedMem = nullptr;
+    void* ptrRemoteSharedMem = nullptr;
     string sharedMemName;
     HANDLE hSharedMemHandle;
     SIZE_T usableSharedMemSize = NULL;

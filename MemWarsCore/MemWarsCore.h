@@ -39,7 +39,7 @@ BOOL ReallocMemPtrs(MEMPTRS*);
 BOOL ConcatMemPtr(void*, MEMPTRS*);
 BOOL FindValueInProcess(BYTEARRAY*, HANDLE, MEMPTRS*);
 BOOL ReadProcessMemoryAtPtrLocation(void*, SIZE_T, HANDLE, BYTEARRAY*);
-BOOL WriteProcessMemoryAtPtrLocation(HANDLE, void*, void*, SIZE_T);
+BOOL WriteProcessMemoryAtPtrLocation(HANDLE, void* baseAddr, void* valPtr, SIZE_T valSize);
 HANDLE GetProcessByWindowName(const TCHAR*);
 HANDLE GetProcessByName(const TCHAR*);
 void* GetProcessBaseAddress(HANDLE);
