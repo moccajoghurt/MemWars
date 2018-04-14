@@ -125,7 +125,6 @@ BOOL StealthyMemInstaller::GetTargetProcessPID() {
 BOOL StealthyMemInstaller::AlreadyInstalled() {
 	hSharedMemHandle = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, sharedMemName.c_str());
 	if (hSharedMemHandle) {
-        cout << "Install() failed: already installed." << endl;
         return TRUE;
 	}
 	return FALSE;
