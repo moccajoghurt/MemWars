@@ -190,7 +190,8 @@ BOOL ReadProcessMemoryAtPtrLocation(void* ptr, SIZE_T byteLen, HANDLE process, B
 }
 
 BOOL WriteProcessMemoryAtPtrLocation(HANDLE process, void* baseAdress, void* value, SIZE_T valSize) {
-    BOOL status =  WriteProcessMemory(process, baseAdress, value, valSize, NULL);
+    SIZE_T bytesWritten = 0;
+    BOOL status =  WriteProcessMemory(process, baseAdress, value, valSize, &bytesWritten);
     if (status == 0) {
         printf("writeMemoryAtPtrLocation()::WriteProcessMemory() failed!\n");
         return FALSE;

@@ -351,7 +351,7 @@ BOOL StealthyMemInstaller::ConnectFileMappingWithTargetThread() {
 	SIZE_T fullShellcodeSize = addrEndOfShellCode - (DWORD64)rwMemory;
  
 	// Placing pointer to the buffer integrated with the shellcode containing the name
-	DWORD64 lpNameInRemoteExecMemory = (DWORD64)remoteExecMem + fullShellcodeSize - sizeof(lpNameBuffer);
+	DWORD64 lpNameInRemoteExecMemory = (DWORD64)remoteExecutableMem + fullShellcodeSize - sizeof(lpNameBuffer);
 	CopyMemory((void*)((DWORD64)rwMemory + 12), &lpNameInRemoteExecMemory, sizeof(lpNameInRemoteExecMemory));
  
 	bool pushShellcodeStatus = PushShellcode(rwMemory, fullShellcodeSize);
