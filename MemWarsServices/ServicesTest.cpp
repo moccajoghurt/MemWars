@@ -2,8 +2,9 @@
 #include <iostream>
 #include <process.h>
 #include "../MemWarsCore/MemWarsCore.h"
-#include "StealthyMemManipulatorInstaller.h"
 #include "MemWarsServices.h"
+#include "StealthyMemManipulatorInstaller.h"
+#include "StealthyMemManipulatorClient.h"
 
 using namespace std;
 
@@ -249,12 +250,12 @@ void SMMInstall_InstallTest() {
     StealthyMemInstaller smi;
     // smi.Init(L"lsass.exe"); // need to run as admin
     vector<wstring> preferedThreadModuleNames;
-    // preferedThreadModuleNames.push_back(L"samsrv.dll");
-    // preferedThreadModuleNames.push_back(L"msvcrt.dll");
-    // preferedThreadModuleNames.push_back(L"crypt32.dll");
-    // smi.Init(preferedThreadModuleNames, L"lsass.exe");
-    preferedThreadModuleNames.push_back(L"memoryTestApp.exe");
-    smi.Init(preferedThreadModuleNames, L"memoryTestApp.exe");
+    preferedThreadModuleNames.push_back(L"samsrv.dll");
+    preferedThreadModuleNames.push_back(L"msvcrt.dll");
+    preferedThreadModuleNames.push_back(L"crypt32.dll");
+    smi.Init(preferedThreadModuleNames, L"lsass.exe");
+    // preferedThreadModuleNames.push_back(L"memoryTestApp.exe");
+    // smi.Init(preferedThreadModuleNames, L"memoryTestApp.exe");
     if (!smi.Install()) {
         cout << "SMMInstall_InstallTest() failed" << endl;
         goto Exit;

