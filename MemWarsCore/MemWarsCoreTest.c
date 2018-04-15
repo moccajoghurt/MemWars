@@ -195,6 +195,23 @@ void StrToByteArrayTest() {
     }
 }
 
+void BytesToByteArrayTest() {
+    BYTE arr[] = {0x0D, 0xE0, 0x0A, 0xD0, 0x0B, 0xE0, 0x0E, 0xF0};
+    SIZE_T arrLen = 8;
+    BYTEARRAY bArr1;
+    memcpy(bArr1.values, arr, arrLen);
+    bArr1.size = arrLen;
+    BYTEARRAY bArr;
+    BytesToByteArray(&bArr, arr, arrLen);
+    if (ValueIsMatching(&bArr, &bArr1) && bArr.size == arrLen) {
+        printf("BytesToByteArrayTest() success\n");
+    } else {
+        printf("BytesToByteArrayTest() failed\n");
+    }
+}
+
+
+
 void ValueIsMatchingTest() {
     
     BYTEARRAY bArr;
@@ -581,6 +598,7 @@ int main() {
     ShortToByteArrayTest();
     ByteToByteArrayTest();
     StrToByteArrayTest();
+    BytesToByteArrayTest();
     FloatToByteArrayTest();
     DoubleToByteArrayTest();
     FindValueInProcessTest();

@@ -34,6 +34,7 @@ void ByteToByteArray(BYTEARRAY* bArr, BYTE c) {
     memcpy(bArr->values, &c, sizeof(c));
 }
 
+
 void ShortToByteArray(BYTEARRAY* bArr, SHORT s) {
     bArr->size = sizeof(s);
     memcpy(bArr->values, &s, sizeof(s));
@@ -49,13 +50,24 @@ void DoubleToByteArray(BYTEARRAY* bArr, DOUBLE d) {
     memcpy(bArr->values, &d, sizeof(d));
 }
 
-void StrToByteArray(BYTEARRAY* bArr, const TCHAR* str) {
+BOOL StrToByteArray(BYTEARRAY* bArr, const TCHAR* str) {
     if (strlen(str) > MAX_VAL_SIZE) {
         printf("StrToByteArray()::String too long! Increase MAX_VAL_SIZE\n");
-        return;
+        return FALSE;
     }
     strcpy(bArr->values, str);
     bArr->size = strlen(str);
+    return TRUE;
+}
+
+BOOL BytesToByteArray(BYTEARRAY* bArr, BYTE* c, SIZE_T byteLen) {
+    if (byteLen > MAX_VAL_SIZE) {
+        printf("StrToByteArray()::Bytearray too long! Increase MAX_VAL_SIZE\n");
+        return FALSE;
+    }
+    bArr->size = byteLen;
+    memcpy(bArr->values, c, byteLen);
+    return TRUE;
 }
 
 BOOL ReallocMemPtrs(MEMPTRS* memPtrs) {
