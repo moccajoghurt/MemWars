@@ -66,7 +66,7 @@ void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName
     scanfByDatatype(c, &bArr);
 
     MEMPTRS matchingMemPtrs = {0};
-    findValueInProcess(&bArr, hProcess, &matchingMemPtrs);
+    FindValueInProcess(&bArr, hProcess, &matchingMemPtrs);
     printf("Matching pointers:\n");
     for (int i = 0; i < matchingMemPtrs.size; i++) {
         if (sizeof(void*) == sizeof(DWORD)) {
@@ -88,11 +88,11 @@ void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName
         printf("Matching pointers:\n");
         for (int i = 0; i < matchingMemPtrs.size; i++) {
             BYTEARRAY bArrBuf = {0};
-            readProcessMemoryAtPtrLocation(*(matchingMemPtrs.memPointerArray + i), dataSize, hProcess, &bArrBuf);
-            if (valueIsMatching(&bArr, &bArrBuf)) {
+            ReadProcessMemoryAtPtrLocation(*(matchingMemPtrs.memPointerArray + i), dataSize, hProcess, &bArrBuf);
+            if (ValueIsMatching(&bArr, &bArrBuf)) {
                 // printf("%#x\n", (unsigned int)*(matchingMemPtrs.memPointerArray + i));
-                printf("%s+%x\n", processName, ((unsigned int)*(matchingMemPtrs.memPointerArray + i) - (unsigned int)baseAddress));
-                concatMemPtr(*(matchingMemPtrs.memPointerArray + i), &matchingMemPtrsBuf);
+                printf("%s+%llx\n", processName, ((long long)*(matchingMemPtrs.memPointerArray + i) - (long long)baseAddress));
+                ConcatMemPtr(*(matchingMemPtrs.memPointerArray + i), &matchingMemPtrsBuf);
             }
         }
         free(matchingMemPtrs.memPointerArray);
@@ -118,7 +118,7 @@ void writeProcessMemoryRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* proc
     printf("Enter the value:\n");
     scanfByDatatype(c, &bArr);
 
-    writeProcessMemoryAtPtrLocation(hProcess, (void*)((unsigned int)baseAddress + address), bArr.values, bArr.size);
+    WriteProcessMemoryAtPtrLocation(hProcess, (void*)((unsigned int)baseAddress + address), bArr.values, bArr.size);
 }
 
 int main(int argc, char* argv[]) {
@@ -130,12 +130,12 @@ int main(int argc, char* argv[]) {
 
     TCHAR processName[MAX_PATH];
     strcpy_s(processName, MAX_PATH, argv[1]);
-    HANDLE hProcess = getProcessByName(argv[1]);
+    HANDLE hProcess = GetProcessByName(argv[1]);
     if (hProcess == NULL) {
         fprintf(stderr, "Could not find process %s\n", argv[1]);
         fprintf(stderr, "Searching for window insead\n");
 
-        hProcess = getProcessByWindowName(argv[1]);
+        hProcess = GetProcessByWindowName(argv[1]);
         if (hProcess == NULL) {
             fprintf(stderr, "Could not find window %s\n", argv[1]);
             return;
