@@ -17,6 +17,7 @@ void SMMInstall_CreateSharedFileMappingTest() {
 
     if (!result) {
         cout << "SMMInstall_CreateSharedFileMappingTest() failed" << endl;
+        return;
     }
 
     result = UnmapViewOfFile(smi.getPtrLocalSharedMem());
@@ -250,18 +251,46 @@ void SMMInstall_InstallTest() {
     StealthyMemInstaller smi;
     // smi.Init(L"lsass.exe"); // need to run as admin
     vector<wstring> preferedThreadModuleNames;
-    preferedThreadModuleNames.push_back(L"samsrv.dll");
-    preferedThreadModuleNames.push_back(L"msvcrt.dll");
-    preferedThreadModuleNames.push_back(L"crypt32.dll");
-    smi.Init(preferedThreadModuleNames, L"lsass.exe");
-    // preferedThreadModuleNames.push_back(L"memoryTestApp.exe");
-    // smi.Init(preferedThreadModuleNames, L"memoryTestApp.exe");
+    // preferedThreadModuleNames.push_back(L"samsrv.dll");
+    // preferedThreadModuleNames.push_back(L"msvcrt.dll");
+    // preferedThreadModuleNames.push_back(L"crypt32.dll");
+    // smi.Init(preferedThreadModuleNames, L"lsass.exe");
+    preferedThreadModuleNames.push_back(L"memoryTestApp.exe");
+    smi.Init(preferedThreadModuleNames, L"memoryTestApp.exe");
     if (!smi.Install()) {
         cout << "SMMInstall_InstallTest() failed" << endl;
         goto Exit;
     }
     
     cout << "SMMInstall_InstallTest() success" << endl;
+    Exit:;
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+void SMMClient_InitTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
+    }
+    StealthyMemInstaller smi;
+    vector<wstring> preferedThreadModuleNames;
+    preferedThreadModuleNames.push_back(L"memoryTestApp.exe");
+    smi.Init(preferedThreadModuleNames, L"memoryTestApp.exe");
+    if (!smi.Install()) {
+        cout << "SMMClient_InitTest() failed. Installer failed" << endl;
+        system("taskkill /IM memoryTestApp.exe /F >nul");
+        return;
+    }
+
+    StealthyMemClient smc;
+    if (!smc.Init()) {
+        cout << "SMMClient_InitTest() failed" << endl;
+        goto Exit;
+    }
+
+    cout << "SMMClient_InitTest() success" << endl;
+
     Exit:;
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
@@ -278,5 +307,6 @@ int main() {
     // SMMInstall_ShellcodeHijackedThreadFileMappingTest();
     
     // cannot run InstallTest() in combination with other tests because of Mutexes
-    SMMInstall_InstallTest();
+    // SMMInstall_InstallTest();
+    SMMClient_InitTest();
 }
