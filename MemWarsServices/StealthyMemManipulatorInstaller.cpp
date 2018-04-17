@@ -30,14 +30,14 @@ BOOL StealthyMemInstaller::Init(vector<wstring> preferedTIDsModules, wstring tar
 
 BOOL StealthyMemInstaller::Install() {
 
-	if (InstanceAlreadyRunning()) {
-        cout << "Install() failed: Instance already running." << endl;
-        return FALSE;
-	}
-	
 	if (AlreadyInstalled()) {
 		cout << "Install() failed: already installed." << endl;
         return TRUE;
+	}
+
+	if (InstanceAlreadyRunning()) {
+        cout << "Install() failed: Instance already running." << endl;
+        return FALSE;
 	}
 
     if (!SetProcessPrivilege(SE_DEBUG_NAME, TRUE)) {

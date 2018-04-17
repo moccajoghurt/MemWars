@@ -37,18 +37,28 @@ struct _SHARED_MEM_INFO {
 
 class StealthyMemClient {
 public:
-    BOOL Init();
+    // StealthyMemClient();
+	~StealthyMemClient();
+    BOOL Init(wstring pivotProcessName);
+    BOOL InstanceAlreadyRunning();
+    BOOL SetPivotProcess(wstring pivotProcessName);
+    BOOL ConnectToFileMapping();
     vector<DWORD> GetPIDs(wstring targetProcessName);
-    BOOL Reconnect(HANDLE hLocalSharedMem);
+    BOOL Reconnect();
+    BOOL Disconnect();
+    BOOL SetTargetProcessHandleStealthy(wstring targetProcessName);
 
-    NTSTATUS ReadWriteVirtualMemory(HANDLE hProcess, void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* nBytesReadOrWritten, BOOL read);
-    BOOL SetStealthyHandle(string handleName);
+    NTSTATUS ReadWriteVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* nBytesReadOrWritten, BOOL read);
+    NTSTATUS WriteVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten);
+    NTSTATUS ReadVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesRead);
 
 protected:
     HANDLE m_hMutex = NULL;
     DWORD m_pivotPID = NULL;
     void* m_ptrLocalSharedMem = nullptr;
     SIZE_T m_usableSharedMemSize = NULL;
+    HANDLE m_hHiJack = NULL;
+    HANDLE hSharedMem = NULL;
 };
 
 

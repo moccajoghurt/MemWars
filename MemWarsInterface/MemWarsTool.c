@@ -106,6 +106,7 @@ void valueSearchRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName
 
 
 void writeProcessMemoryRoutine(HANDLE hProcess, HMODULE baseAddress, TCHAR* processName) {
+    // TODO: USE uintptr_t FOR MEMORY POINTERS SINCE THEY ALWAYS HAVE THE CORRECT SIZE
     unsigned int address;
     fprintf(stderr, "Enter the pointer address\n");
     scanf(" %x", &address);

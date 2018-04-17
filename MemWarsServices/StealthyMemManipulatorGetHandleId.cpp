@@ -1,10 +1,10 @@
-#include "StealthyMemManipulatorGetHandle.h"
+#include "StealthyMemManipulatorGetHandleId.h"
  
  
 /* This function finds a handle to a process from its name.
 It can also find handles to a process belonging to other processes.
 Important: Does NOT return a valid HANDLE, it only returns the Handle ID */
-HANDLE GetHandleIdTo(std::wstring targetProcessName, DWORD pidOwner) {
+HANDLE GetHandleIdToStealthy(std::wstring targetProcessName, DWORD pidOwner) {
 	if (targetProcessName == L"")
 		return (HANDLE)0x0; // Trying to get a handle to an empty process name
  
@@ -20,14 +20,16 @@ HANDLE GetHandleIdTo(std::wstring targetProcessName, DWORD pidOwner) {
 		status = NtQuerySystemInformation((SYSTEM_INFORMATION_CLASS)SYSTEMHANDLEINFORMATION, buffer, buffersize, &buffersize);
 		if (!NT_SUCCESS(status)) {
 			if (status == STATUS_INFO_LENGTH_MISMATCH) {
-				if (buffer != NULL)
+				if (buffer != NULL) {
 					VirtualFree(buffer, 0, MEM_RELEASE);
+				}
 				buffer = VirtualAlloc(NULL, buffersize, MEM_COMMIT, PAGE_READWRITE);
 			}
 			continue;
 		}
-		else
+		else {
 			break;
+		}
 	}
  
 	// Enumerate all handles on system
@@ -56,8 +58,9 @@ HANDLE GetHandleIdTo(std::wstring targetProcessName, DWORD pidOwner) {
  
 		int trys = 0;
 		while (true) {
-			if (trys == 20)
+			if (trys == 20) {
 				break;
+			}
 			trys += 1;
  
 			/* In rare cases, when a handle has been closed between the snapshot and this NtQueryObject, the handle is not valid at that line.
@@ -65,8 +68,10 @@ HANDLE GetHandleIdTo(std::wstring targetProcessName, DWORD pidOwner) {
 			Note that this is not problematic in classic processes. */
 			status = NtQueryObject(localHandle, ObjectTypeInformation, buffer2, buffersize2, &buffersize2); // Return objecttypeinfo into buffer
 			if (!NT_SUCCESS(status)) {
-				if (buffer2 != NULL)
-					VirtualFree(buffer2, 0, MEM_RELEASE); // If buffer filled with anything, but call didnt succeed, assume its bullshit, so clear it
+				if (buffer2 != NULL) {
+					// If buffer filled with anything, but call didnt succeed, assume its bullshit, so clear it
+					VirtualFree(buffer2, 0, MEM_RELEASE); 
+				}
 				buffer2 = VirtualAlloc(NULL, buffersize2, MEM_COMMIT, PAGE_READWRITE); // Allocate with new mem
 			}
 			else {
@@ -80,21 +85,25 @@ HANDLE GetHandleIdTo(std::wstring targetProcessName, DWORD pidOwner) {
 							HANDLE handleFound = (HANDLE)Handle->HandleValue;
 							VirtualFree(buffer, 0, MEM_RELEASE); // Cleanup to avoid leaks
 							VirtualFree(buffer2, 0, MEM_RELEASE);
-							if (pidOwner != GetCurrentProcessId())
+							if (pidOwner != GetCurrentProcessId()) {
 								CloseHandle(localHandle);
+							}
 							SetPrivilege(SE_DEBUG_NAME, FALSE); // Removing special privileges to avoid detection vectors
 							return handleFound; // TODO: Improve by returning a vector of handles, there might be several with different access rights
 						}
-						else
+						else {
 							break;
+						}
 					}
 				}
-				else
+				else {
 					break;
+				}
 			}
 		}
-		if (Handle->UniqueProcessId != GetCurrentProcessId())
+		if (Handle->UniqueProcessId != GetCurrentProcessId()) {
 			CloseHandle(localHandle); // Cleanup
+		}
 		continue;
 	}
 	VirtualFree(buffer, 0, MEM_RELEASE); // Empties buffers to avoid memory leaks

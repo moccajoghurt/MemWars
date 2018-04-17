@@ -1,22 +1,42 @@
 
 #include <string>
 #include <algorithm>
+#include <iostream> // for debugging, remove later
 #include "StealthyMemManipulatorClient.h"
+#include "StealthyMemManipulatorGetHandleId.h"
 
 using namespace std;
 
-BOOL StealthyMemClient::Init() {
+BOOL StealthyMemClient::Init(wstring pivotProcessName) {
+    
+    // if (InstanceAlreadyRunning()) {
+    //     return FALSE;
+    // }
+
+	if (!SetPivotProcess(pivotProcessName)) {
+        return FALSE;
+    }
+    
+    if (!ConnectToFileMapping()) {
+        return FALSE;
+    }
+    
+	return Reconnect();
+}
+
+BOOL StealthyMemClient::InstanceAlreadyRunning() {
     string e = "";
-	string mutexNoStr = e+'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'J'+'2'+'M'+'t'+'x';
+	string mutexNoStr = e+'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M'+'M'+'t'+'x';
 	m_hMutex = CreateMutexA(NULL, TRUE, mutexNoStr.c_str());
 	if (GetLastError() == ERROR_ALREADY_EXISTS) {
         // exit(EXIT_FAILURE);
-        return FALSE;
+        return TRUE;
     }
- 
-	wstring we = L"";
-	wstring lsassNoStr = we + L'l' + L's' + L'a' + L's' + L's' + L'.' + L'e' + L'x' + L'e';
-	vector<DWORD> pidsLsass = GetPIDs(lsassNoStr);
+    return FALSE;
+}
+
+BOOL StealthyMemClient::SetPivotProcess(wstring pivotProcessName) {
+	vector<DWORD> pidsLsass = GetPIDs(pivotProcessName);
 	if (pidsLsass.empty()) {
         return FALSE;
     }
@@ -25,15 +45,19 @@ BOOL StealthyMemClient::Init() {
 	if (!m_pivotPID) {
         return FALSE;
     }
- 
-	// Test if bypass is installed with gatekeeper
+    return TRUE;
+}
+
+BOOL StealthyMemClient::ConnectToFileMapping() {
+    string e = "";
 	string sharedMemNameNoStr = e+'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M';
-	HANDLE hLocalSharedMem = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, sharedMemNameNoStr.c_str());
-	if (!hLocalSharedMem) {
+	hSharedMem = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, sharedMemNameNoStr.c_str());
+	if (!hSharedMem) {
         return FALSE;
     }
-	return Reconnect(hLocalSharedMem);
+    return TRUE;
 }
+
 
 vector<DWORD> StealthyMemClient::GetPIDs(wstring targetProcessName) {
 	vector<DWORD> pids;
@@ -54,14 +78,14 @@ vector<DWORD> StealthyMemClient::GetPIDs(wstring targetProcessName) {
 	return pids;
 }
 
-BOOL StealthyMemClient::Reconnect(HANDLE hLocalSharedMem) {
-    if (!hLocalSharedMem) {
+BOOL StealthyMemClient::Reconnect() {
+    if (!hSharedMem) {
         return FALSE;
     }
         
     // Remapping shared memory
-    m_ptrLocalSharedMem = MapViewOfFile(hLocalSharedMem, FILE_MAP_ALL_ACCESS, 0, 0, SHARED_MEM_SIZE);
-    CloseHandle(hLocalSharedMem);
+    m_ptrLocalSharedMem = MapViewOfFile(hSharedMem, FILE_MAP_ALL_ACCESS, 0, 0, SHARED_MEM_SIZE);
+    CloseHandle(hSharedMem);
     if (!m_ptrLocalSharedMem) {
         return FALSE;
     }
@@ -86,14 +110,14 @@ BOOL StealthyMemClient::Reconnect(HANDLE hLocalSharedMem) {
     return TRUE;
 }
 
-NTSTATUS StealthyMemClient::ReadWriteVirtualMemory(HANDLE hProcess, void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* nBytesReadOrWritten, BOOL read) {
-    if (!lpBuffer || !lpBaseAddress || !nSize || nSize >= m_usableSharedMemSize || !hProcess) {
+NTSTATUS StealthyMemClient::ReadWriteVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* nBytesReadOrWritten, BOOL read) {
+    if (!lpBuffer || !lpBaseAddress || !nSize || nSize >= m_usableSharedMemSize || !m_hHiJack) {
         return (NTSTATUS)0xFFFFFFFF;
     }
 
     // Preparing order structure
     _REMOTE_COMMAND_INFO rpmOrder;
-    rpmOrder.hProcess = hProcess;
+    rpmOrder.hProcess = m_hHiJack;
     rpmOrder.lpBaseAddress = (DWORD64)lpBaseAddress;
     rpmOrder.nSize = nSize;
     rpmOrder.nBytesReadOrWritten = nBytesReadOrWritten;
@@ -117,6 +141,33 @@ NTSTATUS StealthyMemClient::ReadWriteVirtualMemory(HANDLE hProcess, void* lpBase
     if (read) {
         CopyMemory(lpBuffer, m_ptrLocalSharedMem, nSize);
     }
-
     return rpmOrder.status;
+}
+
+BOOL StealthyMemClient::SetTargetProcessHandleStealthy(wstring targetProcessName) {
+    m_hHiJack = GetHandleIdToStealthy(targetProcessName, m_pivotPID);
+    
+    if (!m_hHiJack) {
+        return FALSE;
+    }
+    return TRUE;
+}
+
+NTSTATUS StealthyMemClient::ReadVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten) {
+    return ReadWriteVirtualMemory(lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesWritten, true);
+}
+
+NTSTATUS StealthyMemClient::WriteVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten) {
+    return ReadWriteVirtualMemory(lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesWritten, false);
+}
+
+
+BOOL StealthyMemClient::Disconnect() {
+	if (m_ptrLocalSharedMem)
+		UnmapViewOfFile(m_ptrLocalSharedMem);
+	return TRUE;
+}
+
+StealthyMemClient::~StealthyMemClient() {
+	Disconnect();
 }

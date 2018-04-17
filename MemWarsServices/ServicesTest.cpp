@@ -249,7 +249,6 @@ void SMMInstall_InstallTest() {
         process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
     StealthyMemInstaller smi;
-    // smi.Init(L"lsass.exe"); // need to run as admin
     vector<wstring> preferedThreadModuleNames;
     // preferedThreadModuleNames.push_back(L"samsrv.dll");
     // preferedThreadModuleNames.push_back(L"msvcrt.dll");
@@ -284,12 +283,69 @@ void SMMClient_InitTest() {
     }
 
     StealthyMemClient smc;
-    if (!smc.Init()) {
+    if (!smc.Init(L"memoryTestApp.exe")) {
         cout << "SMMClient_InitTest() failed" << endl;
         goto Exit;
     }
 
     cout << "SMMClient_InitTest() success" << endl;
+
+    Exit:;
+    system("taskkill /IM memoryTestApp.exe /F >nul");
+}
+
+void SMMClient_ReadMemoryTest() {
+    system("start /B memoryTestApp.exe");
+    HANDLE process = NULL;
+    while (process == NULL) {
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
+    }
+    StealthyMemInstaller smi;
+    vector<wstring> preferedThreadModuleNames;
+    preferedThreadModuleNames.push_back(L"samsrv.dll");
+    preferedThreadModuleNames.push_back(L"msvcrt.dll");
+    preferedThreadModuleNames.push_back(L"crypt32.dll");
+    smi.Init(preferedThreadModuleNames, L"lsass.exe");
+    if (!smi.Install()) {
+        cout << "SMMClient_ReadMemoryTest() failed. Installer failed" << endl;
+        system("taskkill /IM memoryTestApp.exe /F >nul");
+        system("taskkill /IM memoryTestApp1.exe /F >nul");
+        return;
+    }
+
+    MEMPTRS ptrBuf = {0};
+    BYTEARRAY bArr = {0};
+    BYTEARRAY bArr1 = {0};
+    SIZE_T bytesReadBuf = 0;
+
+    StealthyMemClient smc;
+    if (!smc.Init(L"lsass.exe")) {
+        cout << "SMMClient_ReadMemoryTest() failed. Init failed" << endl;
+        goto Exit;
+    }
+
+    IntToByteArray(&bArr, 133337);
+    FindValueInProcess(&bArr, process, &ptrBuf);
+
+    if (ptrBuf.size <= 0) {
+        cout << "SMMClient_ReadMemoryTest() failed. Val in TestApp not found." << endl;
+        goto Exit;
+    }
+    if (!smc.SetTargetProcessHandleStealthy(L"memoryTestApp.exe")) {
+        cout << "SMMClient_ReadMemoryTest() failed. Could not get Handle" << endl;
+        goto Exit;
+    }
+    smc.ReadVirtualMemory(ptrBuf.memPointerArray[0], bArr1.values, sizeof(int), &bytesReadBuf);
+    cout << bytesReadBuf << endl;
+    bArr1.size = sizeof(int);
+    cout << (int)*bArr.values << endl;
+    cout << (int)*bArr1.values << endl;
+    if (ValueIsMatching(&bArr, &bArr1)) {
+        cout << "SMMClient_ReadMemoryTest() success" << endl;
+    } else {
+        cout << "SMMClient_ReadMemoryTest() failed" << endl;
+    }
+    
 
     Exit:;
     system("taskkill /IM memoryTestApp.exe /F >nul");
@@ -307,6 +363,8 @@ int main() {
     // SMMInstall_ShellcodeHijackedThreadFileMappingTest();
     
     // cannot run InstallTest() in combination with other tests because of Mutexes
-    // SMMInstall_InstallTest();
-    SMMClient_InitTest();
+    // SMMInstall_InstallTest(); // need to restart explorer.exe after this test because of the handle to the file mapping in explorer.exe
+    // SMMClient_InitTest(); // need to restart explorer.exe after this test because of the handle to the file mapping in explorer.exe
+    SMMClient_ReadMemoryTest();
+    
 }
