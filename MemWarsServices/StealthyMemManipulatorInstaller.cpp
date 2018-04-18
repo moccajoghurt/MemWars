@@ -402,7 +402,6 @@ BOOL StealthyMemInstaller::InjectFileMappingShellcodeIntoTargetThread() {
 	if (!pushShellcodeStatus) {
 		return FALSE;
 	}
-		
 	
 	if (!ExecShellcodeWithHijackedThread(fullShellcodeSize - sizeof(lpNameBuffer), FALSE)) {
 		return FALSE;
@@ -481,8 +480,9 @@ BOOL StealthyMemInstaller::InjectCommunicationShellcodeIntoTargetThread() {
  
 	// Get RW memory to assemble full shellcode from parts
 	void* rwMemory = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-	if (rwMemory == nullptr)
+	if (rwMemory == nullptr) {
 		return FALSE;
+	}
 	DWORD64 addrEndOfShellCode = (DWORD64)rwMemory;
  
 	UCHAR x64Spinlock[] = {

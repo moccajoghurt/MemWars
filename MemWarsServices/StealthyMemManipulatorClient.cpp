@@ -105,7 +105,8 @@ BOOL StealthyMemClient::Reconnect() {
     ) {
         return FALSE;
     }
-    m_usableSharedMemSize = cfgBackup.sharedMemSize - sizeof(_SHARED_MEM_INFO);
+    // m_usableSharedMemSize = cfgBackup.sharedMemSize - sizeof(_SHARED_MEM_INFO);
+    m_usableSharedMemSize = cfgBackup.sharedMemSize - sizeof(_SHARED_MEM_INFO) - sizeof(_REMOTE_COMMAND_INFO);
 
     return TRUE;
 }
@@ -122,6 +123,8 @@ NTSTATUS StealthyMemClient::ReadWriteVirtualMemory(void* lpBaseAddress, void* lp
     rpmOrder.nSize = nSize;
     rpmOrder.nBytesReadOrWritten = nBytesReadOrWritten;
 
+    SecureZeroMemory(m_ptrLocalSharedMem, m_usableSharedMemSize);
+    cout << "m_ptrLocalSharedMem: " << (*(int*)m_ptrLocalSharedMem) << endl;
     // For write operations, changing order and placing data to write in shared memory
     if (!read) {
         rpmOrder.order = 1;
@@ -136,16 +139,18 @@ NTSTATUS StealthyMemClient::ReadWriteVirtualMemory(void* lpBaseAddress, void* lp
     BYTE exec = 0;
     CopyMemory(controlLocalAddr, &exec, sizeof(exec));
     SpinLockByte(controlLocalAddr, 1);
-
     // Moving from shared memory to lpBuffer and returning
     if (read) {
         CopyMemory(lpBuffer, m_ptrLocalSharedMem, nSize);
     }
+    cout << "m_ptrLocalSharedMem: " << (*(int*)m_ptrLocalSharedMem) << endl;
+
+
     return rpmOrder.status;
 }
 
-BOOL StealthyMemClient::SetTargetProcessHandleStealthy(wstring targetProcessName) {
-    m_hHiJack = GetHandleIdToStealthy(targetProcessName, m_pivotPID);
+BOOL StealthyMemClient::SetTargetProcessHandle(wstring targetProcessName) {
+    m_hHiJack = GetHandleToId(targetProcessName, m_pivotPID);
     
     if (!m_hHiJack) {
         return FALSE;
@@ -153,18 +158,19 @@ BOOL StealthyMemClient::SetTargetProcessHandleStealthy(wstring targetProcessName
     return TRUE;
 }
 
-NTSTATUS StealthyMemClient::ReadVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten) {
-    return ReadWriteVirtualMemory(lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesWritten, true);
+NTSTATUS StealthyMemClient::ReadVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesRead) {
+    return ReadWriteVirtualMemory(lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesRead, TRUE);
 }
 
 NTSTATUS StealthyMemClient::WriteVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten) {
-    return ReadWriteVirtualMemory(lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesWritten, false);
+    return ReadWriteVirtualMemory(lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesWritten, FALSE);
 }
 
 
 BOOL StealthyMemClient::Disconnect() {
-	if (m_ptrLocalSharedMem)
-		UnmapViewOfFile(m_ptrLocalSharedMem);
+	if (m_ptrLocalSharedMem) {
+        UnmapViewOfFile(m_ptrLocalSharedMem);
+    }
 	return TRUE;
 }
 

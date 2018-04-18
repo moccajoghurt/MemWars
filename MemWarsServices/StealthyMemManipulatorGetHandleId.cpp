@@ -8,7 +8,7 @@ using namespace std;
 /* This function finds a handle to a process from its name.
 It can also find handles to a process belonging to other processes.
 Important: Does NOT return a valid HANDLE, it only returns the Handle ID */
-HANDLE GetHandleIdToStealthy(std::wstring targetProcessName, DWORD pidOwner) {
+HANDLE GetHandleToId(std::wstring targetProcessName, DWORD pidOwner) {
 	if (targetProcessName == L"") {
 		return (HANDLE)0x0; // Trying to get a handle to an empty process name
 	}

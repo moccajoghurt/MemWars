@@ -46,7 +46,7 @@ public:
     vector<DWORD> GetPIDs(wstring targetProcessName);
     BOOL Reconnect();
     BOOL Disconnect();
-    BOOL SetTargetProcessHandleStealthy(wstring targetProcessName);
+    BOOL SetTargetProcessHandle(wstring targetProcessName);
 
     NTSTATUS ReadWriteVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* nBytesReadOrWritten, BOOL read);
     NTSTATUS WriteVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten);
