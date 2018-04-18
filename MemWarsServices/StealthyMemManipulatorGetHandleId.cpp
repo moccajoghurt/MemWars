@@ -1,17 +1,27 @@
 #include "StealthyMemManipulatorGetHandleId.h"
+// for debugging, remove alter
+#include <iostream>
+using namespace std;
+//debugging end
  
  
 /* This function finds a handle to a process from its name.
 It can also find handles to a process belonging to other processes.
 Important: Does NOT return a valid HANDLE, it only returns the Handle ID */
 HANDLE GetHandleIdToStealthy(std::wstring targetProcessName, DWORD pidOwner) {
-	if (targetProcessName == L"")
+	if (targetProcessName == L"") {
 		return (HANDLE)0x0; // Trying to get a handle to an empty process name
+	}
+		
  
-	SetPrivilege(SE_DEBUG_NAME); // Getting required privileges
+	if (!SetPrivilege(SE_DEBUG_NAME)) {
+		return (HANDLE)0x0;
+	}
  
-	if (pidOwner == NULL) // No owner PID for the handle specified, assuming we are looking for a handle belonging to this program
+	if (pidOwner == NULL) {
+		// No owner PID for the handle specified, assuming we are looking for a handle belonging to this program
 		pidOwner = GetCurrentProcessId();
+	} 
  
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	PVOID buffer = NULL;
@@ -39,21 +49,27 @@ HANDLE GetHandleIdToStealthy(std::wstring targetProcessName, DWORD pidOwner) {
 	ULONG buffersize2 = 0;
 	for (ULONG i = 0; i < handleInfo->HandleCount; i++) {
 		PSYSTEM_HANDLE_TABLE_ENTRY_INFO Handle = (PSYSTEM_HANDLE_TABLE_ENTRY_INFO)&handleInfo->Handles[i];
-		if (!Handle)
-			continue; // Error, no handle
-		if (!Handle->HandleValue)
+		if (!Handle) {
+			continue;
+		}
+		if (!Handle->HandleValue) {
 			continue; // Error, empty handle value
-		if (Handle->UniqueProcessId != pidOwner)
+		}
+		if (Handle->UniqueProcessId != pidOwner) {
 			continue; // The handle doesn't belong to the owner we target
+		}
  
 		HANDLE localHandle = (HANDLE)Handle->HandleValue;
-		if (pidOwner != GetCurrentProcessId()) { // Only if trying to get handle from another process (OpenProcess + DuplicateHandle)
+		if (pidOwner != GetCurrentProcessId()) {
+			// Only if trying to get handle from another process (OpenProcess + DuplicateHandle)
 			HANDLE hProcessHandleOwner = OpenProcess(PROCESS_DUP_HANDLE, FALSE, pidOwner);
 			//BOOL dupStatus = DuplicateHandle(hProcessHandleOwner, HANDLE(Handle->HandleValue), GetCurrentProcess(), &localHandle, PROCESS_QUERY_LIMITED_INFORMATION, FALSE, 0); // Can do with normal method instead of using native function
 			NTSTATUS dupStatus = NtDuplicateObject(hProcessHandleOwner, HANDLE(Handle->HandleValue), GetCurrentProcess(), &localHandle, PROCESS_QUERY_LIMITED_INFORMATION, FALSE, 0);
 			CloseHandle(hProcessHandleOwner);
-			if (dupStatus != 0)
-				continue; // Couldn't get a handle to get info, will not be able to define if it is a handle to our process, exiting
+			if (dupStatus != 0) {
+				// Couldn't get a handle to get info, will not be able to define if it is a handle to our process, exiting
+				continue;
+			}
 		}
  
 		int trys = 0;

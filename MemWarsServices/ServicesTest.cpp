@@ -331,7 +331,8 @@ void SMMClient_ReadMemoryTest() {
         cout << "SMMClient_ReadMemoryTest() failed. Val in TestApp not found." << endl;
         goto Exit;
     }
-    if (!smc.SetTargetProcessHandleStealthy(L"memoryTestApp.exe")) {
+    if (!smc.SetTargetProcessHandleStealthy(L"chrome.exe")) {
+        // Reminder: lsass.exe does not have handles to all processes. Only to processes that do networking.
         cout << "SMMClient_ReadMemoryTest() failed. Could not get Handle" << endl;
         goto Exit;
     }
