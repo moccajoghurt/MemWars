@@ -52,6 +52,11 @@ public:
     NTSTATUS WriteVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten);
     NTSTATUS ReadVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesRead);
 
+    // for debugging
+    HANDLE GetTargetHandle() {
+        return m_hHiJack;
+    }
+
 protected:
     HANDLE m_hMutex = NULL;
     DWORD m_pivotPID = NULL;

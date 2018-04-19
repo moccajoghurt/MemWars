@@ -295,6 +295,11 @@ void SMMClient_InitTest() {
 }
 
 void SMMClient_ReadWriteMemoryTest() {
+
+    FARPROC pFunction = GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtReadVirtualMemory");
+    cout << *(DWORD*)((DWORD64)pFunction + 4) << endl;
+
+
     HANDLE process = (HANDLE)GetProcessByName("TestPivotApp.exe");
     if (process == NULL) {
         system("start /B TestPivotApp.exe");
@@ -336,9 +341,8 @@ void SMMClient_ReadWriteMemoryTest() {
         cout << "SMMClient_ReadMemoryTest() failed. Could not get Handle" << endl;
         goto Exit;
     }
+    cout << smc.GetTargetHandle() << endl;
     smc.ReadVirtualMemory(ptrBuf.memPointerArray[0], bArr1.values, sizeof(int), &bytesReadBuf);
-    // cout << status << endl;
-    // cout << bytesReadBuf << endl;
     cout << *(int*)bArr.values << endl;
     cout << *(int*)bArr1.values << endl;
     bArr1.size = sizeof(int);
@@ -346,8 +350,7 @@ void SMMClient_ReadWriteMemoryTest() {
         cout << "SMMClient_ReadMemoryTest() failed. ReadVirtualMemory failed" << endl;
     }
     IntToByteArray(&bArr2, 733331);
-    // smc.WriteVirtualMemory(ptrBuf.memPointerArray[0], bArr2.values, sizeof(int), &bytesReadBuf);
-    // cout << status << endl;
+    smc.WriteVirtualMemory(ptrBuf.memPointerArray[0], bArr2.values, sizeof(int), &bytesReadBuf);
     bArr1 = {0};
     // ReadProcessMemoryAtPtrLocation(ptrBuf.memPointerArray[0], sizeof(int), process, &bArr1);
     smc.ReadVirtualMemory(ptrBuf.memPointerArray[0], bArr1.values, sizeof(int), &bytesReadBuf);
@@ -362,7 +365,7 @@ void SMMClient_ReadWriteMemoryTest() {
     }
 
     Exit:;
-    system("taskkill /IM memoryTestApp.exe /F >nul");
+    // system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
 int main() {

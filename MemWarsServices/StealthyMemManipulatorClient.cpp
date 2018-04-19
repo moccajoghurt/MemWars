@@ -123,7 +123,7 @@ NTSTATUS StealthyMemClient::ReadWriteVirtualMemory(void* lpBaseAddress, void* lp
     rpmOrder.nSize = nSize;
     rpmOrder.nBytesReadOrWritten = nBytesReadOrWritten;
 
-    // SecureZeroMemory(m_ptrLocalSharedMem, m_usableSharedMemSize);
+    SecureZeroMemory(m_ptrLocalSharedMem, m_usableSharedMemSize);
     // cout << "m_ptrLocalSharedMem: " << (*(int*)m_ptrLocalSharedMem) << endl;
     // For write operations, changing order and placing data to write in shared memory
     if (!read) {
