@@ -296,10 +296,6 @@ void SMMClient_InitTest() {
 
 void SMMClient_ReadWriteMemoryWithPivotTest() {
 
-    FARPROC pFunction = GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtReadVirtualMemory");
-    cout << *(DWORD*)((DWORD64)pFunction + 4) << endl;
-
-
     HANDLE process = (HANDLE)GetProcessByName("TestPivotApp.exe");
     if (process == NULL) {
         system("start /B TestPivotApp.exe");
@@ -437,7 +433,7 @@ int main() {
     // cannot run InstallTest() in combination with other tests because of Mutexes
     // SMMInstall_InstallTest(); // need to restart explorer.exe after this test because of the handle to the file mapping in explorer.exe
     // SMMClient_InitTest(); // need to restart explorer.exe after this test because of the handle to the file mapping in explorer.exe
-    // SMMClient_ReadWriteMemoryWithPivotTest();
-    SMMClient_ReadWriteMemoryWithLsass();
+    SMMClient_ReadWriteMemoryWithPivotTest();
+    // SMMClient_ReadWriteMemoryWithLsass();
     
 }
