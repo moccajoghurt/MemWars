@@ -331,6 +331,12 @@ BOOL StealthyMemInstaller::InjectFileMappingShellcodeIntoTargetThread() {
 	}
 		
 	DWORD64 addrEndOfShellCode = (DWORD64)rwMemory;
+
+	// break test
+	UCHAR x64Breakpoint[] = {0xCC};
+	CopyMemory((void*)addrEndOfShellCode, x64Breakpoint, sizeof(x64Breakpoint));
+	addrEndOfShellCode += sizeof(x64Breakpoint);
+	// break test end
  
 	UCHAR x64OpenFileMappingA[] = {
 		0x48, 0xc7, 0xc1, 0x1f, 0, 0x0f, 0,	// mov rcx, dwDesiredAccess			+0 (FILE_MAP_ALL_ACCESS = 0xf001f @ +3)
@@ -484,6 +490,12 @@ BOOL StealthyMemInstaller::InjectCommunicationShellcodeIntoTargetThread() {
 		return FALSE;
 	}
 	DWORD64 addrEndOfShellCode = (DWORD64)rwMemory;
+
+	// break test
+	UCHAR x64Breakpoint[] = {0xCC};
+	CopyMemory((void*)addrEndOfShellCode, x64Breakpoint, sizeof(x64Breakpoint));
+	addrEndOfShellCode += sizeof(x64Breakpoint);
+	// break test end
  
 	UCHAR x64Spinlock[] = {
 		0xA0, 0, 0, 0, 0, 0, 0, 0, 0,	// mov al, [&exec]
@@ -545,7 +557,7 @@ BOOL StealthyMemInstaller::InjectCommunicationShellcodeIntoTargetThread() {
 	// End of cycle, jump back to start
 	UCHAR x64AbsoluteJump[] = {
 		0x48, 0xb8,	0, 0, 0, 0, 0, 0, 0, 0,	// mov rax, m_remoteExecMem		+0 (m_remoteExecMem +2)
-		0xff, 0xe0							// jmp rax						+10
+		0xff, 0xe0							// jmp rax								+10
 	};
 	*(DWORD64*)((PUCHAR)x64AbsoluteJump + 2) = (DWORD64)(ULONG_PTR)remoteExecutableMem;
 	CopyMemory((void*)addrEndOfShellCode, x64AbsoluteJump, sizeof(x64AbsoluteJump));
