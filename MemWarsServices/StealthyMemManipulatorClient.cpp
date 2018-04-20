@@ -89,7 +89,7 @@ BOOL StealthyMemClient::Reconnect() {
     if (!m_ptrLocalSharedMem) {
         return FALSE;
     }
-
+    
     // Restoring variables from backup in shared memory
     _SHARED_MEM_INFO cfgBackup;
     void* endOfUsableLocalSharedMem = (void*)((DWORD64)m_ptrLocalSharedMem + SHARED_MEM_SIZE - sizeof(_REMOTE_COMMAND_INFO));
@@ -123,7 +123,7 @@ NTSTATUS StealthyMemClient::ReadWriteVirtualMemory(void* lpBaseAddress, void* lp
     rpmOrder.nSize = nSize;
     rpmOrder.nBytesReadOrWritten = nBytesReadOrWritten;
 
-    SecureZeroMemory(m_ptrLocalSharedMem, m_usableSharedMemSize);
+    // SecureZeroMemory(m_ptrLocalSharedMem, m_usableSharedMemSize);
     // cout << "m_ptrLocalSharedMem: " << (*(int*)m_ptrLocalSharedMem) << endl;
     // For write operations, changing order and placing data to write in shared memory
     if (!read) {

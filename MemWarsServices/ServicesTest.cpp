@@ -386,10 +386,6 @@ void SMMClient_ReadWriteMemoryWithLsass() {
         return;
     }
 
-    MEMPTRS ptrBuf = {0};
-    BYTEARRAY bArr = {0};
-    BYTEARRAY bArr1 = {0};
-    SIZE_T bytesReadBuf = 0;
 
     StealthyMemClient smc;
     if (!smc.Init(L"lsass.exe")) {
@@ -397,7 +393,9 @@ void SMMClient_ReadWriteMemoryWithLsass() {
         return;
     }
 
-    IntToByteArray(&bArr, 133337);
+    MEMPTRS ptrBuf = {0};
+    BYTEARRAY bArr = {0};
+    IntToByteArray(&bArr, 25);
     FindValueInProcess(&bArr, process, &ptrBuf);
 
     if (ptrBuf.size <= 0) {
@@ -410,12 +408,30 @@ void SMMClient_ReadWriteMemoryWithLsass() {
         return;
     }
 
+    BYTEARRAY bArr1 = {0};
+    SIZE_T bytesReadBuf = 0;
     smc.ReadVirtualMemory(ptrBuf.memPointerArray[0], bArr1.values, sizeof(int), &bytesReadBuf);
-    cout << *(int*)bArr1.values << endl;
+    // cout << *(int*)bArr1.values << endl;
     bArr1.size = sizeof(int);
     if (!ValueIsMatching(&bArr, &bArr1)) {
         cout << "SMMClient_ReadMemoryTest() failed. ReadVirtualMemory failed" << endl;
         return;
+    }
+
+    BYTEARRAY bArr2 = {0};
+    IntToByteArray(&bArr2, 123456);
+    smc.WriteVirtualMemory(ptrBuf.memPointerArray[0], bArr2.values, sizeof(int), &bytesReadBuf);
+    // WriteProcessMemoryAtPtrLocation(process, ptrBuf.memPointerArray[0], bArr2.values, bArr2.size);
+
+    BYTEARRAY bArr3 = {0};
+    // smc.ReadVirtualMemory(ptrBuf.memPointerArray[0], bArr3.values, sizeof(int), &bytesReadBuf);
+    ReadProcessMemoryAtPtrLocation(ptrBuf.memPointerArray[0], sizeof(int), process, &bArr3);
+    bArr3.size = sizeof(int);
+    // cout << *(int*)bArr3.values << endl;
+    if (!ValueIsMatching(&bArr2, &bArr3)) {
+        cout << "SMMClient_ReadMemoryTest() failed. WriteVirtualMemory failed" << endl;
+    } else {
+        cout << "SMMClient_ReadMemoryTest() success" << endl;
     }
 }
 
@@ -433,7 +449,7 @@ int main() {
     // cannot run InstallTest() in combination with other tests because of Mutexes
     // SMMInstall_InstallTest(); // need to restart explorer.exe after this test because of the handle to the file mapping in explorer.exe
     // SMMClient_InitTest(); // need to restart explorer.exe after this test because of the handle to the file mapping in explorer.exe
-    SMMClient_ReadWriteMemoryWithPivotTest();
-    // SMMClient_ReadWriteMemoryWithLsass();
+    // SMMClient_ReadWriteMemoryWithPivotTest();
+    SMMClient_ReadWriteMemoryWithLsass();
     
 }

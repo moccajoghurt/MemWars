@@ -333,9 +333,9 @@ BOOL StealthyMemInstaller::InjectFileMappingShellcodeIntoTargetThread() {
 	DWORD64 addrEndOfShellCode = (DWORD64)rwMemory;
 
 	// break test
-	UCHAR x64Breakpoint[] = {0xCC};
-	CopyMemory((void*)addrEndOfShellCode, x64Breakpoint, sizeof(x64Breakpoint));
-	addrEndOfShellCode += sizeof(x64Breakpoint);
+	// UCHAR x64Breakpoint[] = {0xCC};
+	// CopyMemory((void*)addrEndOfShellCode, x64Breakpoint, sizeof(x64Breakpoint));
+	// addrEndOfShellCode += sizeof(x64Breakpoint);
 	// break test end
  
 	UCHAR x64OpenFileMappingA[] = {
@@ -492,9 +492,9 @@ BOOL StealthyMemInstaller::InjectCommunicationShellcodeIntoTargetThread() {
 	DWORD64 addrEndOfShellCode = (DWORD64)rwMemory;
 
 	// break test
-	UCHAR x64Breakpoint[] = {0xCC};
-	CopyMemory((void*)addrEndOfShellCode, x64Breakpoint, sizeof(x64Breakpoint));
-	addrEndOfShellCode += sizeof(x64Breakpoint);
+	// UCHAR x64Breakpoint[] = {0xCC};
+	// CopyMemory((void*)addrEndOfShellCode, x64Breakpoint, sizeof(x64Breakpoint));
+	// addrEndOfShellCode += sizeof(x64Breakpoint);
 	// break test end
  
 	UCHAR x64Spinlock[] = {
