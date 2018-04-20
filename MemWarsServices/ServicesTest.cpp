@@ -294,76 +294,6 @@ void SMMClient_InitTest() {
     system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
-void SMMClient_ReadWriteMemoryWithPivotTest() {
-
-    HANDLE process = (HANDLE)GetProcessByName("TestPivotApp.exe");
-    if (process == NULL) {
-        system("start /B TestPivotApp.exe");
-    }
-    while (process == NULL) {
-        process = (HANDLE)GetProcessByName("TestPivotApp.exe");
-    }
-    
-    StealthyMemInstaller smi;
-    vector<wstring> preferedThreadModuleNames;
-    preferedThreadModuleNames.push_back(L"TestPivotApp.exe");
-    smi.Init(preferedThreadModuleNames, L"TestPivotApp.exe");
-    if (!smi.Install()) {
-        cout << "SMMClient_ReadMemoryTest() failed. Installer failed" << endl;
-        return;
-    }
-
-    MEMPTRS ptrBuf = {0};
-    BYTEARRAY bArr = {0};
-    BYTEARRAY bArr1 = {0};
-    BYTEARRAY bArr2 = {0};
-    SIZE_T bytesReadBuf = 0;
-
-    StealthyMemClient smc;
-    if (!smc.Init(L"TestPivotApp.exe")) {
-        cout << "SMMClient_ReadMemoryTest() failed. Init failed" << endl;
-        goto Exit;
-    }
-
-    IntToByteArray(&bArr, 133337);
-    FindValueInProcess(&bArr, process, &ptrBuf);
-
-    if (ptrBuf.size <= 0) {
-        cout << "SMMClient_ReadMemoryTest() failed. Val in TestApp not found." << endl;
-        goto Exit;
-    }
-    if (!smc.SetTargetProcessHandle(L"memoryTestApp.exe")) {
-        // Reminder: lsass.exe does not have handles to all processes. Only to processes that do networking.
-        cout << "SMMClient_ReadMemoryTest() failed. Could not get Handle" << endl;
-        goto Exit;
-    }
-    cout << smc.GetTargetHandle() << endl;
-    smc.ReadVirtualMemory(ptrBuf.memPointerArray[0], bArr1.values, sizeof(int), &bytesReadBuf);
-    cout << *(int*)bArr.values << endl;
-    cout << *(int*)bArr1.values << endl;
-    bArr1.size = sizeof(int);
-    if (!ValueIsMatching(&bArr, &bArr1)) {
-        cout << "SMMClient_ReadMemoryTest() failed. ReadVirtualMemory failed" << endl;
-    }
-    IntToByteArray(&bArr2, 733331);
-    smc.WriteVirtualMemory(ptrBuf.memPointerArray[0], bArr2.values, sizeof(int), &bytesReadBuf);
-    bArr1 = {0};
-    // ReadProcessMemoryAtPtrLocation(ptrBuf.memPointerArray[0], sizeof(int), process, &bArr1);
-    smc.ReadVirtualMemory(ptrBuf.memPointerArray[0], bArr1.values, sizeof(int), &bytesReadBuf);
-    bArr1.size = sizeof(int);
-    cout << *(int*)bArr2.values << endl;
-    cout << *(int*)bArr1.values << endl;
-
-    if (ValueIsMatching(&bArr2, &bArr1)) {
-        cout << "SMMClient_ReadMemoryTest() success" << endl;
-    } else {
-        cout << "SMMClient_ReadMemoryTest() failed" << endl;
-    }
-
-    Exit:;
-    // system("taskkill /IM memoryTestApp.exe /F >nul");
-}
-
 void SMMClient_ReadWriteMemoryWithLsass() {
 
     HANDLE process = NULL;
@@ -449,7 +379,6 @@ int main() {
     // cannot run InstallTest() in combination with other tests because of Mutexes
     // SMMInstall_InstallTest(); // need to restart explorer.exe after this test because of the handle to the file mapping in explorer.exe
     // SMMClient_InitTest(); // need to restart explorer.exe after this test because of the handle to the file mapping in explorer.exe
-    // SMMClient_ReadWriteMemoryWithPivotTest();
     SMMClient_ReadWriteMemoryWithLsass();
     
 }
