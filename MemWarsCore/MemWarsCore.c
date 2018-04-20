@@ -205,7 +205,7 @@ BOOL WriteProcessMemoryAtPtrLocation(HANDLE process, void* baseAdress, void* val
     SIZE_T bytesWritten = 0;
     BOOL status =  WriteProcessMemory(process, baseAdress, value, valSize, &bytesWritten);
     if (status == 0) {
-        printf("writeMemoryAtPtrLocation()::WriteProcessMemory() failed!\n");
+        printf("writeMemoryAtPtrLocation()::WriteProcessMemory() failed! %d\n", GetLastError());
         return FALSE;
     }
     return TRUE;

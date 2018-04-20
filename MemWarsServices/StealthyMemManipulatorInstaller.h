@@ -20,6 +20,7 @@
 #define SHARED_MEM_SIZE 4096
 #define PADDING_IN_EXECUTABLE_MEM 8
 
+#include <windows.h>
 #include <string>
 #include <vector>
 #include <map>

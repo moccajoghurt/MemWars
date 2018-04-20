@@ -316,7 +316,6 @@ void SMMClient_ReadWriteMemoryWithLsass() {
         return;
     }
 
-
     StealthyMemClient smc;
     if (!smc.Init(L"lsass.exe")) {
         cout << "SMMClient_ReadMemoryTest() failed. Init failed" << endl;
@@ -341,7 +340,6 @@ void SMMClient_ReadWriteMemoryWithLsass() {
     BYTEARRAY bArr1 = {0};
     SIZE_T bytesReadBuf = 0;
     smc.ReadVirtualMemory(ptrBuf.memPointerArray[0], bArr1.values, sizeof(int), &bytesReadBuf);
-    // cout << *(int*)bArr1.values << endl;
     bArr1.size = sizeof(int);
     if (!ValueIsMatching(&bArr, &bArr1)) {
         cout << "SMMClient_ReadMemoryTest() failed. ReadVirtualMemory failed" << endl;
@@ -351,13 +349,10 @@ void SMMClient_ReadWriteMemoryWithLsass() {
     BYTEARRAY bArr2 = {0};
     IntToByteArray(&bArr2, 123456);
     smc.WriteVirtualMemory(ptrBuf.memPointerArray[0], bArr2.values, sizeof(int), &bytesReadBuf);
-    // WriteProcessMemoryAtPtrLocation(process, ptrBuf.memPointerArray[0], bArr2.values, bArr2.size);
 
     BYTEARRAY bArr3 = {0};
-    // smc.ReadVirtualMemory(ptrBuf.memPointerArray[0], bArr3.values, sizeof(int), &bytesReadBuf);
     ReadProcessMemoryAtPtrLocation(ptrBuf.memPointerArray[0], sizeof(int), process, &bArr3);
     bArr3.size = sizeof(int);
-    // cout << *(int*)bArr3.values << endl;
     if (!ValueIsMatching(&bArr2, &bArr3)) {
         cout << "SMMClient_ReadMemoryTest() failed. WriteVirtualMemory failed" << endl;
     } else {
