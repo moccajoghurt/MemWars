@@ -9,9 +9,9 @@ using namespace std;
 
 BOOL StealthyMemClient::Init(wstring pivotProcessName) {
     
-    // if (InstanceAlreadyRunning()) {
-    //     return FALSE;
-    // }
+    if (InstanceAlreadyRunning()) {
+        return FALSE;
+    }
 
 	if (!SetPivotProcess(pivotProcessName)) {
         return FALSE;
