@@ -105,8 +105,8 @@ BOOL StealthyMemClient::Reconnect() {
     ) {
         return FALSE;
     }
-    m_usableSharedMemSize = cfgBackup.sharedMemSize - sizeof(_SHARED_MEM_INFO);
-    // m_usableSharedMemSize = cfgBackup.sharedMemSize - sizeof(_SHARED_MEM_INFO) - sizeof(_REMOTE_COMMAND_INFO);
+    // m_usableSharedMemSize = cfgBackup.sharedMemSize - sizeof(_SHARED_MEM_INFO);
+    m_usableSharedMemSize = cfgBackup.sharedMemSize - sizeof(_SHARED_MEM_INFO) - sizeof(_REMOTE_COMMAND_INFO);
 
     return TRUE;
 }
