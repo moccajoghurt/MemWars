@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <wchar.h>
-#include "../MemWarsCore/MemWarsCore.h"
+#include "../../MemWarsCore/MemWarsCore.h"
 
 void startMemoryTestApp(void*p) {
     // system("memoryTestApp.exe");
