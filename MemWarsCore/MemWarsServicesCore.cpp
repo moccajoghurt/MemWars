@@ -3,7 +3,7 @@
 #include <Psapi.h>
 #include <Winternl.h>
 #include <iostream>
-#include "MemWarsServices.h"
+#include "MemWarsServicesCore.h"
 
 vector<DWORD> GetPIDsOfProcess(wstring targetProcessName) {
 	vector<DWORD> pids;

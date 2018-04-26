@@ -9,8 +9,8 @@
 #include <algorithm>
 #include <vector>
 #include <map>
-#include "../MemWarsCore/MemWarsCore.h"
-#include "MemWarsServices.h"
+#include "../../MemWarsCore/MemWarsCore.h"
+#include "../../MemWarsCore/MemWarsServicesCore.h"
 #include "StealthyMemManipulatorInstaller.h"
 
 using namespace std;
