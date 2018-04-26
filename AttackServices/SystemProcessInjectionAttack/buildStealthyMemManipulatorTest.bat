@@ -1,0 +1,2 @@
+@ECHO OFF
+cl.exe /EHsc ServicesTest.cpp StealthyMemManipulatorInstaller.cpp StealthyMemManipulatorClient.cpp StealthyMemManipulatorGetHandleId.cpp ../../Core/MemWarsServicesCore.cpp ../../Core/MemWarsCore.c spinlock.obj /link User32.lib Kernel32.lib Advapi32.lib Ntdll.lib

@@ -1,8 +1,8 @@
 #include <windows.h>
 #include <iostream>
 #include <process.h>
-#include "../../MemWarsCore/MemWarsCore.h"
-#include "../../MemWarsCore/MemWarsServicesCore.h"
+#include "../../Core/MemWarsCore.h"
+#include "../../Core/MemWarsServicesCore.h"
 #include "StealthyMemManipulatorInstaller.h"
 #include "StealthyMemManipulatorClient.h"
 

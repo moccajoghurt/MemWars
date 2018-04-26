@@ -1,4 +1,4 @@
-#include "../../../MemWarsAttackServices/SystemProcessInjectionAttack/StealthyMemManipulatorInstaller.h"
+#include "../../../AttackServices/SystemProcessInjectionAttack/StealthyMemManipulatorInstaller.h"
 #include <string>
 
 using namespace std;
