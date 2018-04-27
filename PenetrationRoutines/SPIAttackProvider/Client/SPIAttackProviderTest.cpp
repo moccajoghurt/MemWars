@@ -9,7 +9,7 @@ using namespace std;
 void ReadWriteValueTest() {
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)GetProcessByName("SkypeApp.exe");
+        process = (HANDLE)GetProcessHandleByName(L"SkypeApp.exe");
         if (process == NULL) {
             cout << "Open Skype to start testing..." << endl;
             Sleep(5000);
