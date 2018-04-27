@@ -9,11 +9,14 @@
 
 #define MAX_VAL_SIZE 255
 
-class SPIAttackProvider : AttackProvider {
+class SPIAttackProvider : public AttackProvider {
 public:
     BOOL Init(wstring targetProcess, wstring pivotProcess);
     BOOL ReadProcessMemory(void* address, void* readBuf, SIZE_T readSize, SIZE_T* bytesRead = NULL);
     BOOL WriteProcessMemory(void* address, void* writeBuf, SIZE_T writeSize, SIZE_T* bytesWritten = NULL);
+    SIZE_T GetUsableSharedMemSize() {
+        return smc.GetUsableSharedMemSize();
+    }
 protected:
     wstring pivotProcess;
     wstring targetProcess;

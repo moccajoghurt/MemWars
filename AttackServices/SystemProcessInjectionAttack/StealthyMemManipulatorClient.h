@@ -52,7 +52,7 @@ public:
     NTSTATUS WriteVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesWritten);
     NTSTATUS ReadVirtualMemory(void* lpBaseAddress, void* lpBuffer, SIZE_T nSize, SIZE_T* lpNumberOfBytesRead);
 
-    SIZE_T GetUsableSharedMemSize () {
+    SIZE_T GetUsableSharedMemSize() {
         return m_usableSharedMemSize;
     }
     // for debugging

@@ -6,13 +6,20 @@ BOOL ValueFinder::Init(string attackMethod, wstring targetProcess, wstring pivot
     this->attackMethod = attackMethod;
     this->targetProcess = targetProcess;
     this->pivotProcess = pivotProcess;
+
+    if (attackMethod == "SPI") {
+        SPIAttackProvider* spi = new SPIAttackProvider;
+        attackProvider = spi;
+        maxReadSize = spi->GetUsableSharedMemSize() - 5;
+    }
+
     return TRUE;
 }
 
 /////////////////////////////////////////////////////////////////////////// 
 
-
-vector<void*> FindValue(void* value, const SIZE_T size, HANDLE hProcess) {
+/*
+vector<void*> FindValueUsingVirtualAlloc(void* value, const SIZE_T size, HANDLE hProcess) {
     vector<void*> ptrs;
     if (size > MAX_VAL_SIZE) {
         cout << "Val too big" << endl;
@@ -56,6 +63,8 @@ vector<void*> FindValue(void* value, const SIZE_T size, HANDLE hProcess) {
     return ptrs;
 }
 
+/*
+
 BOOL FindValueRoutine(HANDLE hProcess, int minByteSize) {
     // Problem: using hex values works for strings but not for values where little-endian is relevant
     cout << "Enter hex value to search:" << endl;
@@ -88,7 +97,7 @@ BOOL FindValueRoutine(HANDLE hProcess, int minByteSize) {
                 // BYTE valBuf[MAX_VAL_SIZE] = {0};
                 // memcpy(valBuf, &bytes[0], bytes.size());
                 cout << *((short*)&bytes[0]) << endl;
-                if (memcmp(buf, /*valBuf*/&bytes[0], varByteSize) == 0) {
+                if (memcmp(buf, /*valBuf*//*&bytes[0], varByteSize) == 0) {
                     newVals.push_back(p);
                 }
             }
@@ -179,3 +188,4 @@ vector<BYTE> HexStringToBytes(string hexString) {
     }
     return bytes;
 }
+*/
