@@ -42,6 +42,7 @@ void ManualProcessManipulationRoutine() {
 }
 
 int main() {
+    // TODO: ValueFinder implementieren -> SPIAttackProvider Client anpassen & NoBypass Client implementieren
     cout << "Welcome to the MemWars Game Penetration Framework!" << endl;
     cout << "Choose an operation: " << endl
     << "(1) Automated penetration test of an application" << endl
