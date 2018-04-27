@@ -1,6 +1,6 @@
 #include "Client.h"
-#include "../MemWars/MemWarsCore/MemWarsCore.h"
-#include "../MemWars/MemWarsServices/MemWarsServices.h"
+#include "../../../Core/MemWarsCore.h"
+#include "../../../Core/MemWarsServicesCore.h"
 #include <iostream>
 #include <map>
 
@@ -176,27 +176,27 @@ vector<BYTE> HexStringToBytes(string hexString) {
     return bytes;
 }
 
-int main() {
+// int main() {
 
-    Client c;
-    c.Init();
+//     Client c;
+//     c.Init();
     
-    if (!c.GetMemManipClient().Init(c.GetPivotExe())) {
-        cout << "Init failed" << endl;
-        return 1;
-    }
-    if (!c.GetMemManipClient().SetTargetProcessHandle(/*c.GetwTargetProcessExe()*/L"Warcraft III.exe")) {
-        cout << "Setting Handle failed" << endl;
-        return 1;
-    }
+//     if (!c.GetMemManipClient().Init(c.GetPivotExe())) {
+//         cout << "Init failed" << endl;
+//         return 1;
+//     }
+//     if (!c.GetMemManipClient().SetTargetProcessHandle(/*c.GetwTargetProcessExe()*/L"Warcraft III.exe")) {
+//         cout << "Setting Handle failed" << endl;
+//         return 1;
+//     }
 
-    HANDLE gameHandle = GetProcessHandleByName(/*c.GetwTargetProcessExe()*/L"Warcraft III.exe");
-    if (!gameHandle) {
-        cout << "invalid handle" << endl;
-        return 1;
-    }
+//     HANDLE gameHandle = GetProcessHandleByName(/*c.GetwTargetProcessExe()*/L"Warcraft III.exe");
+//     if (!gameHandle) {
+//         cout << "invalid handle" << endl;
+//         return 1;
+//     }
 
-    c.FindValueRoutine(gameHandle);
+//     c.FindValueRoutine(gameHandle);
 
-    // c.MemoryMapRoutine();
-}
+//     // c.MemoryMapRoutine();
+// }

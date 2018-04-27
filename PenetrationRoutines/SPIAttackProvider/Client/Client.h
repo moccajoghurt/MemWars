@@ -2,9 +2,9 @@
 #include <string>
 #include <map>
 #include <vector>
-#include "../MemWars/MemWarsCore/MemWarsCore.h"
-#include "../MemWars/MemWarsServices/StealthyMemManipulatorClient.h"
-#include "../MemWars/MemWarsServices/StealthyMemManipulatorGetHandleId.h"
+#include "../../../Core/MemWarsCore.h"
+#include "../../../AttackServices/SystemProcessInjectionAttack/StealthyMemManipulatorClient.h"
+#include "../../../AttackServices/SystemProcessInjectionAttack/StealthyMemManipulatorGetHandleId.h"
 
 #define MAX_VAL_SIZE 255
 
