@@ -172,3 +172,10 @@ map<DWORD, wstring> GetTIDsModuleStartAddr(DWORD pid) {
  
 	return tidsStartModule;
 }
+
+
+HANDLE GetProcessHandleByName(wstring name, DWORD access, BOOL inheritHandle) {
+    DWORD processID = GetPIDsOfProcess(name)[0];
+    HANDLE hProc = OpenProcess(access, inheritHandle, processID);
+    return hProc;
+}

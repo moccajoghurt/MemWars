@@ -17,6 +17,7 @@ map<wstring, DWORD64> GetModulesNamesAndBaseAddresses(DWORD pid);
 vector<DWORD> GetTIDChronologically(DWORD pid);
 map<DWORD, DWORD64> GetThreadsStartAddresses(vector<DWORD> tids);
 map<DWORD, wstring> GetTIDsModuleStartAddr(DWORD tid);
+HANDLE GetProcessHandleByName(wstring name, DWORD access = PROCESS_ALL_ACCESS, BOOL inherit = FALSE);
 
 
 #endif
