@@ -1,3 +1,5 @@
+#include <iostream>
+#include <algorithm>
 #include "ValueFinder.h"
 
 using namespace std;
@@ -9,17 +11,20 @@ BOOL ValueFinder::Init(string attackMethod, wstring targetProcess, wstring pivot
 
     if (attackMethod == "SPI") {
         SPIAttackProvider* spi = new SPIAttackProvider;
+        if (!spi->Init(targetProcess, pivotProcess)) {
+            return FALSE;
+        }
         attackProvider = spi;
-        maxReadSize = spi->GetUsableSharedMemSize() - 5;
+        maxReadSize = spi->GetUsableSharedMemSize() - MAX_VAL_SIZE;
+    } else {
+        return FALSE;
     }
 
     return TRUE;
 }
 
-/////////////////////////////////////////////////////////////////////////// 
 
-/*
-vector<void*> FindValueUsingVirtualAlloc(void* value, const SIZE_T size, HANDLE hProcess) {
+vector<void*> ValueFinder::FindValueUsingVirtualQuery(void* value, const SIZE_T size, HANDLE hProcess) {
     vector<void*> ptrs;
     if (size > MAX_VAL_SIZE) {
         cout << "Val too big" << endl;
@@ -28,30 +33,48 @@ vector<void*> FindValueUsingVirtualAlloc(void* value, const SIZE_T size, HANDLE 
     MEMORY_BASIC_INFORMATION info;
     for (PBYTE p = NULL; VirtualQueryEx(hProcess, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
         if (info.State == MEM_COMMIT) {
-            UINT readSize = info.RegionSize > smc.GetUsableSharedMemSize() ? smc.GetUsableSharedMemSize() : info.RegionSize;
-            readSize -= 5;
-            BYTE* buf = (BYTE*)malloc(readSize);
-            int lastIndex = 0;
-            for (int i = 0; i < info.RegionSize; i += readSize) {
-                // TODO: take care of values that lie between the readsize memory chunks
-                // possible solution: read pointer - size of value each iteration
-                if (i + size > info.RegionSize) {
+            UINT readSize = info.RegionSize > maxReadSize ? maxReadSize : info.RegionSize;
+            PBYTE buf = (PBYTE)calloc(readSize + size - 1, 1);
+            UINT lastIndex = 0;
+            for (UINT i = 0; i < info.RegionSize; i += readSize) {
+                if (i + size >= info.RegionSize) {
                     // end of memory region reached
                     break;
                 }
                 SIZE_T sizeBuf;
-                smc.ReadVirtualMemory(p + i, buf, readSize, &sizeBuf);
-                for (int n = 0; n < readSize; n++) {
+                UINT localReadSize = readSize;
+                
+                if (i != 0) {
+                    // taking care of values that lie between the readsize memory chunks
+                    // will never be joined if readSize == info.RegionSize
+                    localReadSize += size - 1;
+                    memset(buf, 0, localReadSize);
+                    attackProvider->ReadProcessMemory(p + i - size + 1, buf, localReadSize, &sizeBuf);
+                } else {
+                    attackProvider->ReadProcessMemory(p + i, buf, localReadSize, &sizeBuf);
+                }
+                
+                // memset(buf, 0, localReadSize);
+                // attackProvider->ReadProcessMemory(p + i, buf, localReadSize, &sizeBuf);
+                
+                for (UINT n = 0; n < localReadSize; n++) {
+                    if (n + size >= localReadSize) {
+                        break;
+                    }
                     if (memcmp(buf + n, value, size) == 0) {
                         ptrs.push_back((void*)(p + i + n));
                     }
                 }
                 lastIndex = i;
             }
+            
             if (lastIndex < info.RegionSize) {
                 SIZE_T sizeBuf;
-                smc.ReadVirtualMemory(p + lastIndex, buf, info.RegionSize - lastIndex, &sizeBuf);
-                for (int n = 0; n < info.RegionSize - lastIndex; n++) {
+                attackProvider->ReadProcessMemory(p + lastIndex, buf, info.RegionSize - lastIndex, &sizeBuf);
+                for (UINT n = 0; n < info.RegionSize - lastIndex; n++) {
+                    if (n + size >= info.RegionSize - lastIndex) {
+                        break;
+                    }
                     if (memcmp(buf + n, value, size) == 0) {
                         ptrs.push_back((void*)(p + lastIndex + n));
                     }
@@ -60,6 +83,7 @@ vector<void*> FindValueUsingVirtualAlloc(void* value, const SIZE_T size, HANDLE 
             free(buf);
         }
     }
+    
     return ptrs;
 }
 

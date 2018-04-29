@@ -10,14 +10,14 @@
 class ValueFinder {
 public:
     BOOL Init(string attackMethod, wstring targetProcess, wstring pivotProcess = L"");
-    vector<void*> FindValueUsingVirtualAlloc(void* value, const SIZE_T size, HANDLE hProcess);
+    vector<void*> FindValueUsingVirtualQuery(void* value, const SIZE_T size, HANDLE hProcess);
 
     ~ValueFinder() {
         delete attackProvider;
     }
 
 protected:
-    AttackProvider* attackProvider;
+    AttackProvider* attackProvider = NULL;
     UINT maxReadSize = INT_MAX;
     string attackMethod;
     wstring targetProcess;

@@ -12,8 +12,8 @@
 class SPIAttackProvider : public AttackProvider {
 public:
     BOOL Init(wstring targetProcess, wstring pivotProcess);
-    BOOL ReadProcessMemory(void* address, void* readBuf, SIZE_T readSize, SIZE_T* bytesRead = NULL);
-    BOOL WriteProcessMemory(void* address, void* writeBuf, SIZE_T writeSize, SIZE_T* bytesWritten = NULL);
+    BOOL ReadProcessMemory(void* address, void* readBuf, SIZE_T readSize, SIZE_T* bytesRead = NULL) override;
+    BOOL WriteProcessMemory(void* address, void* writeBuf, SIZE_T writeSize, SIZE_T* bytesWritten = NULL) override;
     SIZE_T GetUsableSharedMemSize() {
         return smc.GetUsableSharedMemSize();
     }
