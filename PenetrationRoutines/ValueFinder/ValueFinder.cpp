@@ -50,6 +50,22 @@ vector<void*> ValueFinder::FindValueUsingVirtualQuery(void* value, const SIZE_T 
     return ptrs;
 }
 
+void ValueFinder::RemoveNotMatchingValues(vector<void*>& memPtrs, void* value, SIZE_T size, HANDLE hProcess) {
+
+    vector<void*>::iterator it = memPtrs.begin();
+    for (; it != memPtrs.end();) {
+        PBYTE buf = (PBYTE)malloc(size);
+        SIZE_T bytesRead;
+        attackProvider->ReadProcessMemory(hProcess, *it, buf, size, &bytesRead);
+        if (memcmp(buf, value, size) == 0) {
+            it = memPtrs.erase(it);
+        } else {
+            ++it;
+        }
+        free(buf);
+    }
+}
+
 /*
 
 BOOL FindValueRoutine(HANDLE hProcess, int minByteSize) {
