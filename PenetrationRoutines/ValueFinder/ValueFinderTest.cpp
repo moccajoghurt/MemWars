@@ -20,7 +20,7 @@ void FindValueUsingVirtualAllocTest() {
     }
 
     BYTEARRAY bArr;
-    IntToByteArray(&bArr, 8);
+    IntToByteArray(&bArr, 1337);
     MEMPTRS testPtrs = {0};
     FindValueInProcess(&bArr, process, &testPtrs);
 
@@ -29,10 +29,14 @@ void FindValueUsingVirtualAllocTest() {
         return;
     }
 
-    int valBuf = 8;
+    int valBuf = 1337;
     vector<void*> ptrs = vf.FindValueUsingVirtualQuery(&valBuf, sizeof(int), process);
 
-    cout << ptrs.size() << " " << testPtrs.size << endl;
+    if (ptrs.size() == testPtrs.size) {
+        cout << "ReadWriteValueTest() success" << endl;
+    } else {
+        cout << "ReadWriteValueTest() failed. Found value amount differs" << endl;
+    }
 }
 
 int main() {

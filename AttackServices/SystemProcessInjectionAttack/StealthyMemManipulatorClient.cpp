@@ -108,6 +108,8 @@ BOOL StealthyMemClient::Reconnect() {
     // m_usableSharedMemSize = cfgBackup.sharedMemSize - sizeof(_SHARED_MEM_INFO);
     m_usableSharedMemSize = cfgBackup.sharedMemSize - sizeof(_SHARED_MEM_INFO) - sizeof(_REMOTE_COMMAND_INFO);
 
+    ptrRemoteSharedMem = cfgBackup.ptrRemoteSharedMem;
+
     return TRUE;
 }
 
@@ -121,10 +123,11 @@ NTSTATUS StealthyMemClient::ReadWriteVirtualMemory(void* lpBaseAddress, void* lp
     rpmOrder.hProcess = m_hHiJack;
     rpmOrder.lpBaseAddress = (DWORD64)lpBaseAddress;
     rpmOrder.nSize = nSize;
-    rpmOrder.nBytesReadOrWritten = nBytesReadOrWritten;
+    // rpmOrder.nBytesReadOrWritten = nBytesReadOrWritten;
+    rpmOrder.nBytesReadOrWritten = (SIZE_T*)((DWORD64)ptrRemoteSharedMem + SHARED_MEM_SIZE - sizeof(rpmOrder) + sizeof(DWORD64) +
+    sizeof(DWORD) + sizeof(NTSTATUS) + sizeof(HANDLE) + sizeof(DWORD64) + sizeof(SIZE_T));
 
-    // SecureZeroMemory(m_ptrLocalSharedMem, m_usableSharedMemSize);
-    // cout << "m_ptrLocalSharedMem: " << (*(int*)m_ptrLocalSharedMem) << endl;
+
     // For write operations, changing order and placing data to write in shared memory
     if (!read) {
         rpmOrder.order = 1;
@@ -143,7 +146,9 @@ NTSTATUS StealthyMemClient::ReadWriteVirtualMemory(void* lpBaseAddress, void* lp
     if (read) {
         CopyMemory(lpBuffer, m_ptrLocalSharedMem, nSize);
     }
-    // cout << "m_ptrLocalSharedMem: " << (*(int*)m_ptrLocalSharedMem) << endl;
+
+    *nBytesReadOrWritten =  *(SIZE_T*)((DWORD64)m_ptrLocalSharedMem + SHARED_MEM_SIZE - sizeof(rpmOrder) + sizeof(DWORD64) +
+    sizeof(DWORD) + sizeof(NTSTATUS) + sizeof(HANDLE) + sizeof(DWORD64) + sizeof(SIZE_T));
 
 
     return rpmOrder.status;

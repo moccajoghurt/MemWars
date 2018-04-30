@@ -15,7 +15,6 @@ BOOL ValueFinder::Init(string attackMethod, wstring targetProcess, wstring pivot
             return FALSE;
         }
         attackProvider = spi;
-        maxReadSize = spi->GetUsableSharedMemSize() - MAX_VAL_SIZE;
     } else {
         return FALSE;
     }
@@ -31,59 +30,23 @@ vector<void*> ValueFinder::FindValueUsingVirtualQuery(void* value, const SIZE_T 
         return ptrs;
     }
     MEMORY_BASIC_INFORMATION info;
+    
     for (PBYTE p = NULL; VirtualQueryEx(hProcess, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
         if (info.State == MEM_COMMIT) {
-            UINT readSize = info.RegionSize > maxReadSize ? maxReadSize : info.RegionSize;
-            PBYTE buf = (PBYTE)calloc(readSize + size - 1, 1);
-            UINT lastIndex = 0;
-            for (UINT i = 0; i < info.RegionSize; i += readSize) {
-                if (i + size >= info.RegionSize) {
-                    // end of memory region reached
+            PBYTE buf = (PBYTE)malloc(info.RegionSize);
+            SIZE_T bytesRead;
+            attackProvider->ReadProcessMemory(hProcess, p, buf, info.RegionSize, &bytesRead);
+            for (int i = 0; i < bytesRead; i++) {
+                if (i + size >= bytesRead) {
                     break;
                 }
-                SIZE_T sizeBuf;
-                UINT localReadSize = readSize;
-                
-                if (i != 0) {
-                    // taking care of values that lie between the readsize memory chunks
-                    // will never be joined if readSize == info.RegionSize
-                    localReadSize += size - 1;
-                    memset(buf, 0, localReadSize);
-                    attackProvider->ReadProcessMemory(p + i - size + 1, buf, localReadSize, &sizeBuf);
-                } else {
-                    attackProvider->ReadProcessMemory(p + i, buf, localReadSize, &sizeBuf);
-                }
-                
-                // memset(buf, 0, localReadSize);
-                // attackProvider->ReadProcessMemory(p + i, buf, localReadSize, &sizeBuf);
-                
-                for (UINT n = 0; n < localReadSize; n++) {
-                    if (n + size >= localReadSize) {
-                        break;
-                    }
-                    if (memcmp(buf + n, value, size) == 0) {
-                        ptrs.push_back((void*)(p + i + n));
-                    }
-                }
-                lastIndex = i;
-            }
-            
-            if (lastIndex < info.RegionSize) {
-                SIZE_T sizeBuf;
-                attackProvider->ReadProcessMemory(p + lastIndex, buf, info.RegionSize - lastIndex, &sizeBuf);
-                for (UINT n = 0; n < info.RegionSize - lastIndex; n++) {
-                    if (n + size >= info.RegionSize - lastIndex) {
-                        break;
-                    }
-                    if (memcmp(buf + n, value, size) == 0) {
-                        ptrs.push_back((void*)(p + lastIndex + n));
-                    }
+                if (memcmp(buf + i, value, size) == 0) {
+                    ptrs.push_back((void*)(p + i));
                 }
             }
             free(buf);
         }
     }
-    
     return ptrs;
 }
 

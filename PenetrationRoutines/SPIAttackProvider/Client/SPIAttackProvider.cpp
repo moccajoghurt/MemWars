@@ -6,16 +6,14 @@
 
 using namespace std;
 
-BOOL SPIAttackProvider::ReadProcessMemory(void* address, void* readBuf, SIZE_T readSize, SIZE_T* bytesRead) {
-    SIZE_T bytesReadBuf;
-    if (smc.ReadVirtualMemory(address, readBuf, readSize, &bytesReadBuf)) {
+BOOL SPIAttackProvider::ReadProcessMemory(HANDLE hProcess, void* address, void* readBuf, SIZE_T readSize, SIZE_T* bytesRead) {
+    if (smc.ReadVirtualMemory(address, readBuf, readSize, bytesRead)) {
         return TRUE;
     }
     return FALSE;
 }
-BOOL SPIAttackProvider::WriteProcessMemory(void* address, void* writeBuf, SIZE_T writeSize, SIZE_T* bytesWritten) {
-    SIZE_T bytesWrittenBuf;
-    if (smc.WriteVirtualMemory(address, writeBuf, writeSize, &bytesWrittenBuf)) {
+BOOL SPIAttackProvider::WriteProcessMemory(HANDLE hProcess, void* address, void* writeBuf, SIZE_T writeSize, SIZE_T* bytesWritten) {
+    if (smc.WriteVirtualMemory(address, writeBuf, writeSize, bytesWritten)) {
         return TRUE;
     }
     return FALSE;

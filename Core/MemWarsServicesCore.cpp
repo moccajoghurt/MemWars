@@ -175,7 +175,11 @@ map<DWORD, wstring> GetTIDsModuleStartAddr(DWORD pid) {
 
 
 HANDLE GetProcessHandleByName(wstring name, DWORD access, BOOL inheritHandle) {
-    DWORD processID = GetPIDsOfProcess(name)[0];
+	vector<DWORD> pids = GetPIDsOfProcess(name);
+	if (pids.empty()) {
+		return NULL;
+	}
+	DWORD processID = pids[0];
     HANDLE hProc = OpenProcess(access, inheritHandle, processID);
     return hProc;
 }

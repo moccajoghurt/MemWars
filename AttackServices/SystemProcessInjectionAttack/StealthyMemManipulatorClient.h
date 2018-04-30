@@ -8,7 +8,8 @@
 #ifndef _STEALTHY_MEM_MANIPULATOR_CLIENT_H
 #define _STEALTHY_MEM_MANIPULATOR_CLIENT_H
 
-#define SHARED_MEM_SIZE 4096
+// #define SHARED_MEM_SIZE 4096
+#define SHARED_MEM_SIZE 100000000 // 100mb
 
 #include <windows.h>
 #include <vector>
@@ -67,6 +68,7 @@ protected:
     SIZE_T m_usableSharedMemSize = NULL;
     HANDLE m_hHiJack = NULL;
     HANDLE hSharedMem = NULL;
+    void* ptrRemoteSharedMem = nullptr;
 };
 
 
