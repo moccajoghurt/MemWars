@@ -11,7 +11,11 @@ void FindValueRoutine(string attackMethod, wstring targetProcess, wstring pivotP
         wcin >> pivotProcess;
     }
     ValueFinder vf;
-    vf.Init(attackMethod, targetProcess, pivotProcess);
+    if (!vf.Init(attackMethod, targetProcess, pivotProcess)) {
+        cout << "Init failed" << endl;
+        return;
+    }
+
 }
 
 void ManualProcessManipulationRoutine() {
