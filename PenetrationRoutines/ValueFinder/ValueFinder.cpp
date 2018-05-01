@@ -75,61 +75,6 @@ void ValueFinder::RemoveNotMatchingValues(vector<void*>& memPtrs, void* value, S
 
 /*
 
-BOOL FindValueRoutine(HANDLE hProcess, int minByteSize) {
-    // Problem: using hex values works for strings but not for values where little-endian is relevant
-    cout << "Enter hex value to search:" << endl;
-    string hexString;
-    cin >> hexString;
-    
-    vector<BYTE> bytes = HexStringToBytes(hexString);
-    int varByteSize = bytes.size() < minByteSize ? minByteSize : bytes.size();
-    cout << *((short*)&bytes[0]) << endl;
-    vector<void*> matches = FindValue(&bytes[0], varByteSize, hProcess);
-
-    while (TRUE) {
-
-        vector<void*> newVals;
-        string hexChoice;
-        cout << "size: " << matches.size() << endl;
-        cout << "show?" << endl << "FF: yes" << endl << "other value: search for this value" << endl;
-        cin >> hexChoice;
-
-        if (hexChoice == "FF" || hexChoice == "ff") {
-            for (void* p : matches) {
-                cout << hex << p << endl;
-            }
-        } else {
-            bytes = HexStringToBytes(hexChoice);
-            for (void* p : matches) {
-                SIZE_T sizeBuf;
-                BYTE buf[MAX_VAL_SIZE];
-                smc.ReadVirtualMemory((void*)p, buf, varByteSize, &sizeBuf);
-                // BYTE valBuf[MAX_VAL_SIZE] = {0};
-                // memcpy(valBuf, &bytes[0], bytes.size());
-                cout << *((short*)&bytes[0]) << endl;
-                if (memcmp(buf, /*valBuf*//*&bytes[0], varByteSize) == 0) {
-                    newVals.push_back(p);
-                }
-            }
-            matches = newVals;
-        }
-    }
-    
-
-    return TRUE;
-}
-
-void Client::Init() {
-    wstring we = L"";
-    string e = "";
-    pivotExe = we+L'l'+L's'+L'a'+L's'+L's'+L'.'+L'e'+L'x'+L'e';
-    wTargetProcessExe = we+L'v'+L'e'+L'r'+L'm'+L'i'+L'n'+L't'+L'i'+L'd'+L'e'+L'2'+L'.'+L'e'+L'x'+L'e';
-    // wTargetProcessExe = L"RustClient.exe";
-    targetProcessExe = e+'v'+'e'+'r'+'m'+'i'+'n'+'t'+'i'+'d'+'e'+'2'+'.'+'e'+'x'+'e';
-}
-
-
-
 map<uintptr_t, BYTE> Client::GetMemoryMap(uintptr_t startAddress = 0, uintptr_t endAddress = 0) {
     map<uintptr_t, BYTE> memoryMap;
     for (uintptr_t i = startAddress; i < endAddress; i++) {
