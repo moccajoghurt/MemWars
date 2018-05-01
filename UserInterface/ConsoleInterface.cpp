@@ -141,9 +141,11 @@ void ManualProcessManipulationRoutine() {
     int operation;
     cin >> operation;
 
-    cout << "Enter the target process name" << endl;
+    cout << "Enter the target process name:" << endl;
     wstring targetProcess;
-    wcin >> targetProcess;
+    // wcin >> targetProcess;
+    cin.ignore(); // ignore pending enter
+    getline(wcin, targetProcess);
 
     if (attackMethod == 1) {
         cout << "not implemented yet" << endl;
