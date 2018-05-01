@@ -1,9 +1,94 @@
 #include <iostream>
 #include <string>
+#include <windows.h>
+#include <vector>
 #include "ConsoleInterface.h"
 #include "../PenetrationRoutines/ValueFinder/ValueFinder.h"
 
 using namespace std;
+
+vector<BYTE> HexStringToBytes(string hexString) {
+    vector<BYTE> bytes;
+    for (unsigned int i = 0; i < hexString.length(); i += 2) {
+        string byteString = hexString.substr(i, 2);
+        char byte = (char) strtol(byteString.c_str(), NULL, 16);
+        bytes.push_back(byte);
+    }
+    return bytes;
+}
+
+BOOL RequestUserValueInput(void* value, SIZE_T& valSize) {
+    cout << "Enter the value datatype:" << endl
+    << "(1) Byte" << endl
+    << "(2) 2 Bytes" << endl
+    << "(3) 4 Bytes" << endl
+    << "(4) 8 Bytes" << endl
+    << "(5) Float" << endl
+    << "(6) Double" << endl
+    << "(7) String" << endl
+    << "(8) Bytearray" << endl;
+    string choice;
+    cin >> choice;
+    cout << "Enter value:" << endl;
+    if (choice == "1") {
+        BYTE b;
+        cin >> b;
+        memcpy(value, &b, sizeof(BYTE));
+        valSize = sizeof(BYTE);
+    } else if (choice == "2") {
+        WORD w;
+        cin >> w;
+        memcpy(value, &w, sizeof(WORD));
+        valSize = sizeof(WORD);
+
+    } else if (choice == "3") {
+        DWORD dw;
+        cin >> dw;
+        memcpy(value, &dw, sizeof(DWORD));
+        valSize = sizeof(DWORD);
+
+    } else if (choice == "4") {
+        DWORD64 dw64;
+        cin >> dw64;
+        memcpy(value, &dw64, sizeof(DWORD64));
+        valSize = sizeof(DWORD64);
+
+    } else if (choice == "5") {
+        float f;
+        cin >> f;
+        memcpy(value, &f, sizeof(float));
+        valSize = sizeof(float);
+
+    } else if (choice == "6") {
+        double d;
+        cin >> d;
+        memcpy(value, &d, sizeof(double));
+        valSize = sizeof(double);
+
+    } else if (choice == "7") {
+        string s;
+        cin >> s;
+        if (s.size() > MAX_VAL_SIZE) {
+            cout << "MAX_VAL_SIZE exceeded: " << MAX_VAL_SIZE << " " << s.size() << endl;
+            return FALSE;
+        }
+        memcpy(value, &s, s.size());
+        valSize = s.size();
+
+    } else if (choice == "8") {
+        cout << "Enter the bytearray as hex values (no 0x required)" << endl;
+        string s;
+        cin >> s;
+        vector<BYTE> bytes = HexStringToBytes(s);
+        if (bytes.size() > MAX_VAL_SIZE) {
+            cout << "MAX_VAL_SIZE exceeded: " << MAX_VAL_SIZE << " " << bytes.size() << endl;
+            return FALSE;
+        }
+        memcpy(value, &bytes[0], bytes.size());
+        valSize = bytes.size();
+    }
+    return TRUE;
+}
 
 void FindValueRoutine(string attackMethod, wstring targetProcess, wstring pivotProcess) {
     if (attackMethod == "SPI") {
@@ -15,7 +100,31 @@ void FindValueRoutine(string attackMethod, wstring targetProcess, wstring pivotP
         cout << "Init failed" << endl;
         return;
     }
-
+    void* valBuf = malloc(MAX_VAL_SIZE);
+    SIZE_T valSize;
+    if (!RequestUserValueInput(valBuf, valSize)) {
+        return;
+    }
+    vector<void*> ptrs = vf.FindValueUsingVirtualQuery(valBuf, valSize);
+    while (TRUE) {
+        cout << "Found pointers: " << ptrs.size() << endl
+        << "(1) Show pointers" << endl
+        << "(2) Enter new value and remove pointers that don't match it" << endl;
+        string choice;
+        cin >> choice;
+        if (choice == "1") {
+            for (void* ptr : ptrs) {
+                cout << ptr << endl;
+            }
+    
+        } else if (choice == "2") {
+            if (!RequestUserValueInput(valBuf, valSize)) {
+                return;
+            }
+            vf.RemoveNotMatchingValues(ptrs, valBuf, valSize);
+        }
+    }
+    
 }
 
 void ManualProcessManipulationRoutine() {
@@ -46,6 +155,7 @@ void ManualProcessManipulationRoutine() {
 }
 
 int main() {
+    cout << sizeof(WORD) << endl;
     // TODO: ValueFinder implementieren -> SPIAttackProvider Client anpassen & NoBypass Client implementieren
     cout << "Welcome to the MemWars Game Penetration Framework!" << endl;
     cout << "Choose an operation: " << endl

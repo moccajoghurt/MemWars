@@ -24,7 +24,7 @@ BOOL SPIAttackProvider::Init(wstring targetProcess, wstring pivotProcess) {
     this->pivotProcess = pivotProcess;
 
     if (!smc.Init(pivotProcess)) {
-        cout << "Init failed" << endl;
+        cout << "Pivot process or HANDLE ID of target process inside pivot process not found" << endl;
         return FALSE;
     }
     if (!smc.SetTargetProcessHandle(targetProcess)) {

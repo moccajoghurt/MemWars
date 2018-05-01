@@ -9,6 +9,11 @@ BOOL ValueFinder::Init(string attackMethod, wstring targetProcess, wstring pivot
     this->targetProcess = targetProcess;
     this->pivotProcess = pivotProcess;
 
+    hProcess = GetProcessHandleByName(targetProcess, PROCESS_QUERY_INFORMATION);
+    if (!hProcess) {
+        return FALSE;
+    }
+
     if (attackMethod == "SPI") {
         SPIAttackProvider* spi = new SPIAttackProvider;
         if (!spi->Init(targetProcess, pivotProcess)) {
@@ -29,19 +34,21 @@ vector<void*> ValueFinder::FindValueUsingVirtualQuery(void* value, const SIZE_T 
         cout << "Val too big" << endl;
         return ptrs;
     }
+    if (hProcess != NULL) {
+        this->hProcess = hProcess;
+    }
     MEMORY_BASIC_INFORMATION info;
-    
-    for (PBYTE p = NULL; VirtualQueryEx(hProcess, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
+    for (PBYTE p = NULL; VirtualQueryEx(this->hProcess, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
         if (info.State == MEM_COMMIT) {
             PBYTE buf = (PBYTE)malloc(info.RegionSize);
             SIZE_T bytesRead;
-            attackProvider->ReadProcessMemory(hProcess, p, buf, info.RegionSize, &bytesRead);
+            attackProvider->ReadProcessMemory(this->hProcess, p, buf, info.RegionSize, &bytesRead);
             for (int i = 0; i < bytesRead; i++) {
                 if (i + size >= bytesRead) {
                     break;
                 }
                 if (memcmp(buf + i, value, size) == 0) {
-                    ptrs.push_back((void*)(p + i));
+                    ptrs.push_back((void*)((DWORD64)p + i));
                 }
             }
             free(buf);
@@ -50,14 +57,14 @@ vector<void*> ValueFinder::FindValueUsingVirtualQuery(void* value, const SIZE_T 
     return ptrs;
 }
 
-void ValueFinder::RemoveNotMatchingValues(vector<void*>& memPtrs, void* value, SIZE_T size, HANDLE hProcess) {
+void ValueFinder::RemoveNotMatchingValues(vector<void*>& memPtrs, void* value, SIZE_T size) {
 
     vector<void*>::iterator it = memPtrs.begin();
     for (; it != memPtrs.end();) {
         PBYTE buf = (PBYTE)malloc(size);
         SIZE_T bytesRead;
-        attackProvider->ReadProcessMemory(hProcess, *it, buf, size, &bytesRead);
-        if (memcmp(buf, value, size) == 0) {
+        attackProvider->ReadProcessMemory(this->hProcess, *it, buf, size, &bytesRead);
+        if (memcmp(buf, value, size) != 0) {
             it = memPtrs.erase(it);
         } else {
             ++it;
@@ -180,15 +187,4 @@ BOOL Client::MemoryMapRoutine(uintptr_t startAddress = 0, uintptr_t endAddress =
     return TRUE;
 }
 
-
-
-vector<BYTE> HexStringToBytes(string hexString) {
-    vector<BYTE> bytes;
-    for (unsigned int i = 0; i < hexString.length(); i += 2) {
-        string byteString = hexString.substr(i, 2);
-        char byte = (char) strtol(byteString.c_str(), NULL, 16);
-        bytes.push_back(byte);
-    }
-    return bytes;
-}
 */
