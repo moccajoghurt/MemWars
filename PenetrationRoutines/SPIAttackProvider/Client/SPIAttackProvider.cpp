@@ -24,11 +24,11 @@ BOOL SPIAttackProvider::Init(wstring targetProcess, wstring pivotProcess) {
     this->pivotProcess = pivotProcess;
 
     if (!smc.Init(pivotProcess)) {
-        cout << "Pivot process or HANDLE ID of target process inside pivot process not found" << endl;
+        cout << "SPIAttackProvider::Init Pivot process or HANDLE ID of target process inside pivot process not found" << endl;
         return FALSE;
     }
     if (!smc.SetTargetProcessHandle(targetProcess)) {
-        cout << "Setting Handle failed" << endl;
+        cout << "SPIAttackProvider::Init Setting Handle failed" << endl;
         return FALSE;
     }
     return TRUE;

@@ -90,7 +90,7 @@ BOOL RequestUserValueInput(void* value, SIZE_T& valSize) {
     return TRUE;
 }
 
-void FindValueRoutine(string attackMethod, wstring targetProcess, wstring pivotProcess) {
+BOOL FindValueRoutine(string attackMethod, wstring targetProcess, wstring pivotProcess) {
     if (attackMethod == "SPI") {
         cout << "Enter pivot process name" << endl;
         wcin >> pivotProcess;
@@ -98,12 +98,12 @@ void FindValueRoutine(string attackMethod, wstring targetProcess, wstring pivotP
     ValueFinder vf;
     if (!vf.Init(attackMethod, targetProcess, pivotProcess)) {
         cout << "Init failed" << endl;
-        return;
+        return FALSE;
     }
     void* valBuf = malloc(MAX_VAL_SIZE);
     SIZE_T valSize;
     if (!RequestUserValueInput(valBuf, valSize)) {
-        return;
+        return FALSE;
     }
     vector<void*> ptrs = vf.FindValueUsingVirtualQuery(valBuf, valSize);
     while (TRUE) {
@@ -119,26 +119,41 @@ void FindValueRoutine(string attackMethod, wstring targetProcess, wstring pivotP
     
         } else if (choice == "2") {
             if (!RequestUserValueInput(valBuf, valSize)) {
-                return;
+                return FALSE;
             }
             vf.RemoveNotMatchingValues(ptrs, valBuf, valSize);
         }
     }
-    
+    return TRUE;
 }
 
-void ManualProcessManipulationRoutine() {
+BOOL MemoryScanRoutine(string attackMethod, wstring targetProcess, wstring pivotProcess) {
+    if (attackMethod == "SPI") {
+        cout << "Enter pivot process name" << endl;
+        wcin >> pivotProcess;
+    }
+    ValueFinder vf;
+    if (!vf.Init(attackMethod, targetProcess, pivotProcess)) {
+        cout << "Init failed" << endl;
+        return FALSE;
+    }
+    vf.CreateMemoryMapUsingVirtualQuery();
+    return TRUE;
+}
+
+BOOL ManualProcessManipulationRoutine() {
     cout << "Choose the attack method: " << endl
     << "(1) No bypass attack" << endl
     << "(2) System Process Injection attack" << endl;
-    int attackMethod;
+    string attackMethod;
     cin >> attackMethod;
     
     cout << "Choose the operation:" << endl
     << "(1) Find a specific value in the process" << endl
-    << "(2) Read a value at a target address" << endl
-    << "(3) Write a value at a target address" << endl;
-    int operation;
+    << "(2) Make a general memory scan" << endl
+    << "(3) Read a value at a target address" << endl
+    << "(4) Write a value at a target address" << endl;
+    string operation;
     cin >> operation;
 
     cout << "Enter the target process name:" << endl;
@@ -147,13 +162,17 @@ void ManualProcessManipulationRoutine() {
     cin.ignore(); // ignore pending enter
     getline(wcin, targetProcess);
 
-    if (attackMethod == 1) {
+    if (attackMethod == "1") {
         cout << "not implemented yet" << endl;
-        return;
-    } else if (attackMethod == 2 && operation == 1) {
+        return FALSE;
+    } else if (attackMethod == "2" && operation == "1") {
         FindValueRoutine("SPI", targetProcess);
+    } else if (attackMethod == "2" && operation == "2") {
+        MemoryScanRoutine("SPI", targetProcess);
+    } else {
+        return FALSE;
     }
-
+    return TRUE;
 }
 
 int main() {

@@ -1,5 +1,7 @@
 #include <iostream>
 #include <algorithm>
+#include <fstream>
+#include <map>
 #include "ValueFinder.h"
 
 using namespace std;
@@ -42,13 +44,14 @@ vector<void*> ValueFinder::FindValueUsingVirtualQuery(void* value, const SIZE_T 
         if (info.State == MEM_COMMIT) {
             PBYTE buf = (PBYTE)malloc(info.RegionSize);
             SIZE_T bytesRead;
-            attackProvider->ReadProcessMemory(this->hProcess, p, buf, info.RegionSize, &bytesRead);
-            for (int i = 0; i < bytesRead; i++) {
-                if (i + size >= bytesRead) {
-                    break;
-                }
-                if (memcmp(buf + i, value, size) == 0) {
-                    ptrs.push_back((void*)((DWORD64)p + i));
+            if (attackProvider->ReadProcessMemory(this->hProcess, p, buf, info.RegionSize, &bytesRead)) {
+                for (int i = 0; i < bytesRead; i++) {
+                    if (i + size >= bytesRead) {
+                        break;
+                    }
+                    if (memcmp(buf + i, value, size) == 0) {
+                        ptrs.push_back((void*)((DWORD64)p + i));
+                    }
                 }
             }
             free(buf);
@@ -63,18 +66,56 @@ void ValueFinder::RemoveNotMatchingValues(vector<void*>& memPtrs, void* value, S
     for (; it != memPtrs.end();) {
         PBYTE buf = (PBYTE)malloc(size);
         SIZE_T bytesRead;
-        attackProvider->ReadProcessMemory(this->hProcess, *it, buf, size, &bytesRead);
-        if (memcmp(buf, value, size) != 0) {
-            it = memPtrs.erase(it);
-        } else {
-            ++it;
+        if (attackProvider->ReadProcessMemory(this->hProcess, *it, buf, size, &bytesRead)) {
+            if (memcmp(buf, value, size) != 0) {
+                it = memPtrs.erase(it);
+            } else {
+                ++it;
+            }
         }
         free(buf);
     }
 }
 
-/*
+map<void*, SIZE_T> ValueFinder::CreateMemoryMapUsingVirtualQuery(HANDLE hProcess) {
+    map<void*, SIZE_T> memoryMetaData;
+    if (hProcess != NULL) {
+        this->hProcess = hProcess;
+    }
+    ofstream memFile("memoryMap", ios::binary);
+    MEMORY_BASIC_INFORMATION info;
+    for (PBYTE p = NULL; VirtualQueryEx(this->hProcess, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
+        if (info.State == MEM_COMMIT) {
+            PBYTE buf = (PBYTE)malloc(info.RegionSize);
+            SIZE_T bytesRead;
+            if (attackProvider->ReadProcessMemory(this->hProcess, p, buf, info.RegionSize, &bytesRead)) {
+                memoryMetaData[p] = bytesRead;
+                memFile.write((const char*)buf, bytesRead);
+            }
+            free(buf);
+        }
+    }
+    memFile.close();
+    return memoryMetaData;
+}
 
+void ValueFinder::FilterMemoryMap(map<void*, SIZE_T>& memoryMapMetaData, int filterType) {
+    ofstream newMemFile("memoryMapBuf", ios::binary);
+    for (map<void*, SIZE_T>::iterator i = memoryMapMetaData.begin(); i != memoryMapMetaData.end();) {
+
+        PBYTE buf = (PBYTE)malloc(i->second);
+        SIZE_T bytesRead;
+        attackProvider->ReadProcessMemory(this->hProcess, i->first, buf, i->second, &bytesRead);
+        
+
+        
+
+    }
+}
+
+
+
+/*
 map<uintptr_t, BYTE> Client::GetMemoryMap(uintptr_t startAddress = 0, uintptr_t endAddress = 0) {
     map<uintptr_t, BYTE> memoryMap;
     for (uintptr_t i = startAddress; i < endAddress; i++) {

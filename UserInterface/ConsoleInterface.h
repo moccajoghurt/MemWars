@@ -5,7 +5,8 @@
 
 using namespace std;
 
-void ManualProcessManipulationRoutine();
-void FindValueRoutine(string attackMethod, wstring targetProcess, wstring pivotProcess = L"");
+BOOL ManualProcessManipulationRoutine();
+BOOL MemoryScanRoutine(string attackMethod, wstring targetProcess, wstring pivotProcess = L"");
+BOOL FindValueRoutine(string attackMethod, wstring targetProcess, wstring pivotProcess = L"");
 BOOL RequestUserValueInput(void* value, SIZE_T& valSize);
 vector<BYTE> HexStringToBytes(string hexString);
