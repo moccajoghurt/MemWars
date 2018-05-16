@@ -39,7 +39,7 @@ int main() {
         0x4D, 0x31, 0xC0,                           // xor    r8,r8 (8)
         0x45, 0x31, 0xC9,                           // xor    r9d,r9d (11)
         0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,         // mov    rax,addr
-        0x48, 0x83, 0xEC, 0x28,                     // sub rsp, 0x28
+        0x48, 0x83, 0xEC, 0x20,                     // sub rsp, 0x20
         0xFF, 0xD0,                                 // call   rax
         0xEB, 0xFE                                  // nop + jmp rel8 -2
     };

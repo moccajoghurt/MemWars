@@ -1,2 +1,2 @@
 @ECHO OFF
-cl.exe ShellcodeInjectionCreateFileExample.c ../MemWarsCore/MemWarsCore.c /link user32.lib
+cl.exe ShellcodeInjectionCreateFileExample.c ../Core/MemWarsCore.c /link user32.lib Advapi32.lib

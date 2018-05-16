@@ -6,20 +6,22 @@
 
 
 #include <windows.h>
-#include "../MemWarsCore/MemWarsCore.h"
+#include "../Core/MemWarsCore.h"
 
 int main() {
     system("start /B memoryTestApp.exe");
     HANDLE process = NULL;
     while (process == NULL) {
-        process = (HANDLE)getProcessByName("memoryTestApp.exe");
+        process = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
     
 	PVOID pRemoteBuffer;
 	pRemoteBuffer = VirtualAllocEx(process, NULL, 4096, (MEM_RESERVE | MEM_COMMIT), PAGE_EXECUTE_READWRITE);
 	if (!pRemoteBuffer) {
         printf("VirtualAllocEx() failed: %d", GetLastError());
-	}
+    }
+    
+    getchar();
 
 
     FARPROC addrCreateFileA = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CreateFileA");
@@ -44,7 +46,7 @@ int main() {
         0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0, // +35 mov rax, 64bit
         0x48, 0x83, 0xEC, 0x20,             // +45 sub rsp, 0x20
         0xFF, 0xD0,                         // +49 call rax
-        0x48, 0x83, 0xC4, 0x20,             // +51 add rsp, 0x20
+        0x48, 0x83, 0xC4, 0x38,             // +51 add rsp, 0x38
         0xEB, 0xFE                          // nop + jmp rel8 -2
     };
 
@@ -68,8 +70,9 @@ int main() {
 	if (!hRemoteThread) {
         printf("CreateRemoteThread() failed: %d", GetLastError());
     }
+    
 
-    Sleep(10); // give the shellcode a bit time
+    Sleep(100000000); // give the shellcode a bit time
     Exit:;
-    system("taskkill /IM memoryTestApp.exe /F >nul");
+    // system("taskkill /IM memoryTestApp.exe /F >nul");
 }

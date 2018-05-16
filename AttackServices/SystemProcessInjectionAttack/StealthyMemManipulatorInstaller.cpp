@@ -331,12 +331,6 @@ BOOL StealthyMemInstaller::InjectFileMappingShellcodeIntoTargetThread() {
 	}
 		
 	DWORD64 addrEndOfShellCode = (DWORD64)rwMemory;
-
-	// break test
-	// UCHAR x64Breakpoint[] = {0xCC};
-	// CopyMemory((void*)addrEndOfShellCode, x64Breakpoint, sizeof(x64Breakpoint));
-	// addrEndOfShellCode += sizeof(x64Breakpoint);
-	// break test end
  
 	UCHAR x64OpenFileMappingA[] = {
 		0x48, 0xc7, 0xc1, 0x1f, 0, 0x0f, 0,	// mov rcx, dwDesiredAccess			+0 (FILE_MAP_ALL_ACCESS = 0xf001f @ +3)
@@ -473,10 +467,6 @@ BOOL StealthyMemInstaller::InjectCommunicationShellcodeIntoTargetThread() {
 	CopyMemory(controlLocalAddr, &controlStruct, sizeof(controlStruct));
 	void* controlRemoteAddr = (void*)((DWORD64)ptrRemoteSharedMem + sharedMemSize - sizeof(controlStruct));
  
-	// Getting function addresses
-	// string e = "";
-	// string ntrvmNoStr = e+'N'+'t'+'R'+'e'+'a'+'d'+'V'+'i'+'r'+'t'+'u'+'a'+'l'+'M'+'e'+'m'+'o'+'r'+'y';
-	// string ntwvmNoStr = e+'N'+'t'+'W'+'r'+'i'+'t'+'e'+'V'+'i'+'r'+'t'+'u'+'a'+'l'+'M'+'e'+'m'+'o'+'r'+'y';
 	string ntrvmNoStr = "NtReadVirtualMemory";
 	string ntwvmNoStr = "NtWriteVirtualMemory";
 	DWORD syscallIndexZwRVM = GetSyscallId("ntdll.dll", ntrvmNoStr);
@@ -491,12 +481,6 @@ BOOL StealthyMemInstaller::InjectCommunicationShellcodeIntoTargetThread() {
 		return FALSE;
 	}
 	DWORD64 addrEndOfShellCode = (DWORD64)rwMemory;
-
-	// break test
-	// UCHAR x64Breakpoint[] = {0xCC};
-	// CopyMemory((void*)addrEndOfShellCode, x64Breakpoint, sizeof(x64Breakpoint));
-	// addrEndOfShellCode += sizeof(x64Breakpoint);
-	// break test end
  
 	UCHAR x64Spinlock[] = {
 		0xA0, 0, 0, 0, 0, 0, 0, 0, 0,	// mov al, [&exec]
