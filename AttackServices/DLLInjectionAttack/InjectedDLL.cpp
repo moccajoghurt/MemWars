@@ -9,9 +9,9 @@ DWORD WINAPI StartWork(LPVOID lpParam) {
 
 BOOL APIENTRY DllMain(HMODULE hinstDLL, DWORD  fdwReason, LPVOID lpReserved) {
 	switch (fdwReason) {
-	case DLL_PROCESS_ATTACH:
-		CreateThread(NULL, 0, &StartWork, NULL, 0, NULL); 
-		break;
+		case DLL_PROCESS_ATTACH:
+			CreateThread(NULL, 0, &StartWork, NULL, 0, NULL); 
+			break;
 	}
 	return TRUE;
 }
