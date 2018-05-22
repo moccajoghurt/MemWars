@@ -6,6 +6,9 @@
 
 using namespace std;
 
+LPDIRECT3DDEVICE9 hookedDevice;
+UCHAR* overwrittenBytes;
+
 template<typename T>
 T ReadMemory(void* address) {
 	return *((T*)address);
@@ -35,6 +38,7 @@ UCHAR* HookWithJump(void* hookAt, void* newFunc) {
 	DWORD oldProtection = ProtectMemory<BYTE[5]>(hookAt, PAGE_EXECUTE_READWRITE);
 	
 	UCHAR* originals = new UCHAR[5];
+	CreateFileA("Test.txt", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	for (UINT i = 0; i < 5; i++) {
 		originals[i] = ReadMemory<UCHAR>((void*)((uintptr_t)hookAt + i));
 	}
@@ -43,7 +47,19 @@ UCHAR* HookWithJump(void* hookAt, void* newFunc) {
 	WriteMemory<void*>((void*)((uintptr_t)hookAt + 1), newOffset);
 
 	ProtectMemory<BYTE[5]>((void*)((uintptr_t)hookAt + 1), oldProtection);
+	
 	return originals;
+}
+
+void UnhookWithJump(void* hookAt, UCHAR* originals) {
+	DWORD oldProtection = ProtectMemory<BYTE[5]>(hookAt, PAGE_EXECUTE_READWRITE);
+	for (UINT i = 0; i < 5; i++) {
+		WriteMemory<BYTE>((void*)((uintptr_t)hookAt + i), originals[i]);
+	}
+		
+	ProtectMemory<BYTE[5]>((void*)((uintptr_t)hookAt + 1), oldProtection);
+
+	delete [] originals;
 }
 
 // Locate the EndScene()-address inside the VF-table of our own direct3d-device.
@@ -87,11 +103,25 @@ void* LocateEndSceneAddress() {
 	return endSceneAddress;
 }
 
+void* __stdcall CaptureDevice(LPDIRECT3DDEVICE9 device) {
+	hookedDevice = device;
+	UnhookWithJump(endSceneAddress, overwrittenBytes);
+	return endSceneAddress;
+}
+
 void* CreateTrampolineFunc() {
 
 	void* trampolineAddr = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	BYTE codeCave[] = {
-		0x67, 0x48, 0x8B, 0x44, 0x24, 0x04,				// mov rax [esp + 0x4]
+		0x67, 0x48, 0x8B, 0x44, 0x24, 0x04,				// mov rax, [esp + 0x4]
+		0x50,											// push rax
+		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,				// mov rax, [reportEndScene]
+		// 0xcc,
+		0xFF, 0xD0,                         			// call rax
+		0xFF, 0xE0										// jmp rax
 	};
+	*(DWORD64*)((PUCHAR)codeCave + 9) = (DWORD64)(ULONG_PTR)CaptureDevice;
+	CopyMemory(trampolineAddr, codeCave, sizeof(codeCave));
 
+	return trampolineAddr;
 }

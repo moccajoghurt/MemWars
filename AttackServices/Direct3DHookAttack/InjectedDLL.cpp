@@ -2,8 +2,12 @@
 #include <string> // for debugging
 #include "InjectedDLLHelperFuncs.h"
 
+void* endSceneAddress;
+
 DWORD WINAPI StartWork(LPVOID lpParam) {
-    void* endScene = LocateEndSceneAddress();
+    endSceneAddress = LocateEndSceneAddress();
+    void* trampoline = CreateTrampolineFunc();
+    overwrittenBytes = HookWithJump(endSceneAddress, trampoline);
     // MessageBoxA(NULL, to_string((int)endScene).c_str(), "MemWars Framework", MB_OK | MB_TOPMOST);
     return 1;
 }

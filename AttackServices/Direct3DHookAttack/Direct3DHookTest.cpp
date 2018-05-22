@@ -11,17 +11,15 @@ void Direct3DHookTest() {
     while (hProcess == NULL) {
         hProcess = (HANDLE)GetProcessByName("Direct3DTestApp.exe");
     }
-
+    Sleep(15000);
     if (LoadDirect3DDll(hProcess, L"InjectedDLL.dll")) {
         cout << "LoadDllTest() success" << endl;
     } else {
         cout << "LoadDllTest() failed" << endl;
     }
 
-    Sleep(5000);
-
-    Exit:
-    system("taskkill /IM Direct3DTestApp.exe /F >nul");
+    // Exit:
+    // system("taskkill /IM Direct3DTestApp.exe /F >nul");
 }
 
 
