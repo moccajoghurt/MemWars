@@ -183,3 +183,4 @@ HANDLE GetProcessHandleByName(wstring name, DWORD access, BOOL inheritHandle) {
     HANDLE hProc = OpenProcess(access, inheritHandle, processID);
     return hProc;
 }
+

@@ -115,8 +115,7 @@ void* CreateTrampolineFunc() {
 	BYTE codeCave[] = {
 		0x67, 0x48, 0x8B, 0x44, 0x24, 0x04,				// mov rax, [esp + 0x4]
 		0x50,											// push rax
-		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,				// mov rax, [reportEndScene]
-		// 0xcc,
+		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,				// mov rax, [CaptureDevice]
 		0xFF, 0xD0,                         			// call rax
 		0xFF, 0xE0										// jmp rax
 	};
