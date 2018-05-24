@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <string>
+#include <iostream>
 
 using namespace std;
 
@@ -12,13 +13,18 @@ T* PointMemory(void* address);
 UCHAR* HookWithJump(void* hookAt, void* newFunc);
 void* CreateTrampolineFunc();
 
+
+PBYTE orgCode;
+void* hookAddr;
+
 DWORD WINAPI StartWork(LPVOID lpParam) {
 	
 	void* hookFunc = GetAddressForCallHook(FunctionCaller);
+	hookAddr = hookFunc;
 	void* trampoline = CreateTrampolineFunc();
 	// void* trampoline = CreateTrampolineFunc;
 	// MessageBoxA(NULL, to_string((uintptr_t)hookFunc).c_str(), "MemWars Framework", MB_OK | MB_TOPMOST);
-	HookWithJump(hookFunc, trampoline);
+	orgCode = HookWithJump(hookFunc, trampoline);
 	FunctionCaller();
     return 1;
 }
@@ -70,42 +76,48 @@ DWORD ProtectMemory(void* address, DWORD prot) {
 }
 
 UCHAR* HookWithJump(void* hookAt, void* newFunc) {
-	void* newOffset = (void*)((uintptr_t)newFunc - (uintptr_t)hookAt - 5);
-	DWORD oldProtection = ProtectMemory<BYTE[5]>(hookAt, PAGE_EXECUTE_READWRITE);
-	UCHAR* originals = new UCHAR[5];
-	for (UINT i = 0; i < 5; i++) {
-		originals[i] = ReadMemory<UCHAR>((void*)((uintptr_t)hookAt + i));
-	}
+	DWORD oldProtection = ProtectMemory<BYTE[12]>(hookAt, PAGE_EXECUTE_READWRITE);
+	PBYTE originals = new BYTE[12];
+	CopyMemory(originals, hookAt, sizeof(BYTE) * 12);
 
-	WriteMemory<BYTE>(hookAt, 0xE9);
-	WriteMemory<void*>((void*)((uintptr_t)hookAt + 1), newOffset);
-	ProtectMemory<BYTE[5]>((void*)((uintptr_t)hookAt + 1), oldProtection);
+	BYTE codeCave[] = {
+		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,		// mov rax
+		0xFF, 0xE0								// jmp rax
+	};
+	*(DWORD64*)((PUCHAR)codeCave + 2) = (DWORD64)(ULONG_PTR)newFunc;
+
+	CopyMemory(hookAt, codeCave, sizeof(codeCave));
+	ProtectMemory<BYTE[12]>(hookAt, oldProtection);
 	
 	return originals;
 }
 
-void /*__stdcall*/ HookingFunc(DWORD id) {
+void UnhookWithJump(void* hookAt, PBYTE originals) {
+	DWORD oldProtection = ProtectMemory<BYTE[12]>(hookAt, PAGE_EXECUTE_READWRITE);
+	CopyMemory(hookAt, originals, sizeof(BYTE) * 12);
+	ProtectMemory<BYTE[12]>((void*)((uintptr_t)hookAt + 1), oldProtection);
+	delete [] originals;
+}
+
+void* HookingFunc(DWORD id) {
 	MessageBoxA(NULL, "Hooking Func", "MemWars Framework", MB_OK | MB_TOPMOST);
-	// return FunctionToBeHooked;
+	UnhookWithJump(hookAddr, orgCode);
+	return FunctionToBeHooked;
 }
 
 void* CreateTrampolineFunc() {
+
 	void* trampolineAddr = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	BYTE codeCave[] = {
-		// 0x67, 0x48, 0x8B, 0x44, 0x24, 0x04,				// mov rax, [esp + 0x4]
-		// 0x50,											// push rax
 		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,				// mov rax, [HookingFunc]
 		0xFF, 0xD0,                         			// call rax
-		// 0xFF, 0xE0										// jmp rax
-		0xC3											// ret
+		0xFF, 0xE0										// jmp rax
 	};
-	*(DWORD64*)((PUCHAR)codeCave + 3) = (DWORD64)(ULONG_PTR)HookingFunc;
+	*(DWORD64*)((PUCHAR)codeCave + 2) = (DWORD64)(ULONG_PTR)HookingFunc;
 	CopyMemory(trampolineAddr, codeCave, sizeof(codeCave));
 
 	return trampolineAddr;
 }
-
-
 
 
 BOOL APIENTRY DllMain(HMODULE hinstDLL, DWORD  fdwReason, LPVOID lpReserved) {

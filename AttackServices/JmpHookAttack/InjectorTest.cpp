@@ -11,14 +11,16 @@ void JmpHookTest() {
         hProcess = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
 
+    getchar();
+
     if (LoadDll(hProcess, L"InjectedDLL.dll")) {
         cout << "LoadDllTest() success" << endl;
     } else {
         cout << "LoadDllTest() failed" << endl;
     }
 
-    Exit:
-    system("taskkill /IM memoryTestApp.exe /F >nul");
+    // Exit:
+    // system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
 int main() {
