@@ -18,7 +18,7 @@ BOOL ThreadHijack(HANDLE process, DWORD threadID) {
 	
 
 	BYTE codeCave[] = {
-		0x48, 0x83, 0xE4, 0xF0,				// +0 and rsp, 0xfffffffffffffff0 (make sure stack 16-byte aligned)
+		0x48, 0x83, 0xE4, 0xF0,				// +0 and rsp, 0x0f (make sure stack 16-byte aligned)
 		0x48, 0xB9, 0, 0, 0, 0, 0, 0, 0, 0, // +4 mov rcx (lpFileName)
         0x48, 0xBA, 0, 0, 0, 0, 0, 0, 0, 0, // +14 mov rdx (dwDesiredAccess)
         0x4D, 0x31, 0xC0,                   // +24 xor r8,r8 (dwShareMode)

@@ -1,36 +1,16 @@
 #include <windows.h>
-#include <string>
-#include <iostream>
+#include "InjectedDLL.h"
 
 using namespace std;
 
-void FunctionCaller();
-void* GetAddressForCallHook(void* functionStart);
-template<typename T>
-DWORD ProtectMemory(void* address, DWORD prot);
-template<typename T>
-T* PointMemory(void* address);
-UCHAR* HookWithJump(void* hookAt, void* newFunc);
-void* CreateTrampolineFunc();
-
-
 PBYTE orgCode;
-void* hookAddr;
+void* hookFunc;
 
-DWORD WINAPI StartWork(LPVOID lpParam) {
-	
-	void* hookFunc = GetAddressForCallHook(FunctionCaller);
-	hookAddr = hookFunc;
-	void* trampoline = CreateTrampolineFunc();
-	// void* trampoline = CreateTrampolineFunc;
-	// MessageBoxA(NULL, to_string((uintptr_t)hookFunc).c_str(), "MemWars Framework", MB_OK | MB_TOPMOST);
-	orgCode = HookWithJump(hookFunc, trampoline);
-	FunctionCaller();
-    return 1;
-}
 
 DWORD FunctionToBeHooked(DWORD id) {
-	MessageBoxA(NULL, "Original Func", "MemWars Framework", MB_OK | MB_TOPMOST);
+	if (id != 0xBEEF) {
+		DeleteFile("jmpHookConfirmationFile");
+	}
 	return 0;
 }
 
@@ -39,7 +19,7 @@ void FunctionCaller() {
 }
 
 void* GetAddressForCallHook(void* functionStart) {
-	DWORD oldProtection = ProtectMemory<BYTE[1000]>(functionStart, PAGE_EXECUTE_READ); // make sure memory is readable, just incase
+	DWORD oldProtection = ProtectMemory<BYTE[1000]>(functionStart, PAGE_EXECUTE_READ);
 	PBYTE mem = PointMemory<BYTE>(functionStart);
 
 	void* ret = 0;
@@ -49,36 +29,14 @@ void* GetAddressForCallHook(void* functionStart) {
 			break;
 		}
 	}
-	ProtectMemory<BYTE[1000]>(functionStart, oldProtection); // restore old memory protection
+	ProtectMemory<BYTE[1000]>(functionStart, oldProtection);
 	return ret;
-}
-
-template<typename T>
-T* PointMemory(void* address) {
-	return ((T*)address);
-}
-
-template<typename T>
-T ReadMemory(void* address) {
-	return *((T*)address);
-}
-
-template<typename T>
-void WriteMemory(void* address, T value) {
-	*((T*)address) = value;
-}
-
-template<typename T>
-DWORD ProtectMemory(void* address, DWORD prot) {
-	DWORD oldProt;
-	VirtualProtect(address, sizeof(T), prot, &oldProt);
-	return oldProt;
 }
 
 UCHAR* HookWithJump(void* hookAt, void* newFunc) {
 	DWORD oldProtection = ProtectMemory<BYTE[12]>(hookAt, PAGE_EXECUTE_READWRITE);
-	PBYTE originals = new BYTE[12];
-	CopyMemory(originals, hookAt, sizeof(BYTE) * 12);
+	PBYTE originalCodeBuf = new BYTE[12];
+	CopyMemory(originalCodeBuf, hookAt, sizeof(BYTE) * 12);
 
 	BYTE codeCave[] = {
 		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,		// mov rax
@@ -89,36 +47,45 @@ UCHAR* HookWithJump(void* hookAt, void* newFunc) {
 	CopyMemory(hookAt, codeCave, sizeof(codeCave));
 	ProtectMemory<BYTE[12]>(hookAt, oldProtection);
 	
-	return originals;
+	return originalCodeBuf;
 }
 
-void UnhookWithJump(void* hookAt, PBYTE originals) {
+void UnhookJump(void* hookAt, PBYTE originalCodeBuf) {
 	DWORD oldProtection = ProtectMemory<BYTE[12]>(hookAt, PAGE_EXECUTE_READWRITE);
-	CopyMemory(hookAt, originals, sizeof(BYTE) * 12);
-	ProtectMemory<BYTE[12]>((void*)((uintptr_t)hookAt + 1), oldProtection);
-	delete [] originals;
+	CopyMemory(hookAt, originalCodeBuf, sizeof(BYTE) * 12);
+	ProtectMemory<BYTE[12]>(hookAt, oldProtection);
+	delete [] originalCodeBuf;
 }
 
-void* HookingFunc(DWORD id) {
+void* HookingFunc() {
 	MessageBoxA(NULL, "Hooking Func", "MemWars Framework", MB_OK | MB_TOPMOST);
-	UnhookWithJump(hookAddr, orgCode);
-	return FunctionToBeHooked;
+	CreateFileA("jmpHookConfirmationFile", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	UnhookJump(hookFunc, orgCode);
+	return hookFunc;
 }
 
 void* CreateTrampolineFunc() {
-
 	void* trampolineAddr = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	BYTE codeCave[] = {
+		0x51,											// push rcx
 		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,				// mov rax, [HookingFunc]
 		0xFF, 0xD0,                         			// call rax
+		0x59,											// pop rcx
 		0xFF, 0xE0										// jmp rax
 	};
-	*(DWORD64*)((PUCHAR)codeCave + 2) = (DWORD64)(ULONG_PTR)HookingFunc;
+	*(DWORD64*)((PUCHAR)codeCave + 3) = (DWORD64)(ULONG_PTR)HookingFunc;
 	CopyMemory(trampolineAddr, codeCave, sizeof(codeCave));
 
 	return trampolineAddr;
 }
 
+DWORD WINAPI StartWork(LPVOID lpParam) {
+	hookFunc = GetAddressForCallHook(FunctionCaller);
+	void* trampoline = CreateTrampolineFunc();
+	orgCode = HookWithJump(hookFunc, trampoline);
+	FunctionCaller();
+    return 1;
+}
 
 BOOL APIENTRY DllMain(HMODULE hinstDLL, DWORD  fdwReason, LPVOID lpReserved) {
 	switch (fdwReason) {

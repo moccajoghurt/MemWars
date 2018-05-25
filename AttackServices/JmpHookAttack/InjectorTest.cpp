@@ -1,4 +1,5 @@
 #include <iostream>
+#include <Shlwapi.h> // PathFileExists
 #include "../../Core/MemWarsCore.h"
 #include "../DLLInjectionAttack/Injector.h"
 
@@ -13,11 +14,22 @@ void JmpHookTest() {
 
     getchar();
 
-    if (LoadDll(hProcess, L"InjectedDLL.dll")) {
-        cout << "LoadDllTest() success" << endl;
-    } else {
+    if (!LoadDll(hProcess, L"InjectedDLL.dll")) {
         cout << "LoadDllTest() failed" << endl;
+        // goto Exit;
     }
+
+    Sleep(100);
+
+    // if (!PathFileExists("jmpHookConfirmationFile")) {
+    //     cout << "JmpHookTest() failed" << endl;
+    //     goto Exit;
+    // } else {
+    //     cout << "JmpHookTest() success" << endl;
+    //     system("taskkill /IM memoryTestApp.exe /F >nul");
+    //     // DeleteFile("jmpHookConfirmationFile");
+    //     return;
+    // }
 
     // Exit:
     // system("taskkill /IM memoryTestApp.exe /F >nul");
