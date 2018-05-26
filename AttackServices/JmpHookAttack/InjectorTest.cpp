@@ -12,27 +12,25 @@ void JmpHookTest() {
         hProcess = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
 
-    getchar();
-
     if (!LoadDll(hProcess, L"InjectedDLL.dll")) {
         cout << "LoadDllTest() failed" << endl;
-        // goto Exit;
+        goto Exit;
     }
 
     Sleep(100);
 
-    // if (!PathFileExists("jmpHookConfirmationFile")) {
-    //     cout << "JmpHookTest() failed" << endl;
-    //     goto Exit;
-    // } else {
-    //     cout << "JmpHookTest() success" << endl;
-    //     system("taskkill /IM memoryTestApp.exe /F >nul");
-    //     // DeleteFile("jmpHookConfirmationFile");
-    //     return;
-    // }
+    if (!PathFileExists("jmpHookConfirmationFile")) {
+        cout << "JmpHookTest() failed" << endl;
+        goto Exit;
+    } else {
+        cout << "JmpHookTest() success" << endl;
+        system("taskkill /IM memoryTestApp.exe /F >nul");
+        DeleteFile("jmpHookConfirmationFile");
+        return;
+    }
 
-    // Exit:
-    // system("taskkill /IM memoryTestApp.exe /F >nul");
+    Exit:
+    system("taskkill /IM memoryTestApp.exe /F >nul");
 }
 
 int main() {

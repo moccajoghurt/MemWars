@@ -58,7 +58,6 @@ void UnhookJump(void* hookAt, PBYTE originalCodeBuf) {
 }
 
 void* HookingFunc() {
-	MessageBoxA(NULL, "Hooking Func", "MemWars Framework", MB_OK | MB_TOPMOST);
 	CreateFileA("jmpHookConfirmationFile", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	UnhookJump(hookFunc, orgCode);
 	return hookFunc;
@@ -68,12 +67,14 @@ void* CreateTrampolineFunc() {
 	void* trampolineAddr = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	BYTE codeCave[] = {
 		0x51,											// push rcx
+		0x48, 0x83, 0xEC, 0x8,							// sub rsp, 0x08 (stack alignment for CreateFileA)
 		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,				// mov rax, [HookingFunc]
 		0xFF, 0xD0,                         			// call rax
+		0x48, 0x83, 0xC4, 0x8,							// add rsp, 0x08
 		0x59,											// pop rcx
 		0xFF, 0xE0										// jmp rax
 	};
-	*(DWORD64*)((PUCHAR)codeCave + 3) = (DWORD64)(ULONG_PTR)HookingFunc;
+	*(DWORD64*)((PUCHAR)codeCave + 7) = (DWORD64)(ULONG_PTR)HookingFunc;
 	CopyMemory(trampolineAddr, codeCave, sizeof(codeCave));
 
 	return trampolineAddr;
