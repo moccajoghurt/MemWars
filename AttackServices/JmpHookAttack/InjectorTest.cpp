@@ -13,7 +13,7 @@ void JmpHookTest() {
     }
 
     if (!LoadDll(hProcess, L"InjectedDLL.dll")) {
-        cout << "LoadDllTest() failed" << endl;
+        cout << "JmpHookTest() failed" << endl;
         goto Exit;
     }
 
