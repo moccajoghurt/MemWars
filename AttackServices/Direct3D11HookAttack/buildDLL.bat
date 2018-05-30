@@ -1,0 +1,2 @@
+@ECHO OFF
+cl.exe /EHsc /LD InjectedDLL.cpp /I"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" /link /LTCG /LIBPATH:"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x64" /LIBPATH:"C:\Users\marius\git\MemWars\libs\Capstone\msvc\x64\Release" user32.lib d3d11.lib d3dx11.lib
