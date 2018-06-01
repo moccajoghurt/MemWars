@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <iostream>
+#include <Shlwapi.h>
 #include "../../Core/MemWarsCore.h"
 #include "Direct3DHook.h"
 
@@ -11,13 +12,25 @@ void Direct3DHookTest() {
     while (hProcess == NULL) {
         hProcess = (HANDLE)GetProcessByName("Direct3DTestApp.exe");
     }
-    // Sleep(15000);
+    
     if (!LoadDirect3DDll(hProcess, L"InjectedDLL.dll")) {
         cout << "LoadDllTest() failed" << endl;
     }
 
-    // Exit:
-    // system("taskkill /IM Direct3DTestApp.exe /F >nul");
+    Sleep(100);
+    
+    if (!PathFileExists("direct3DConfirmationFile")) {
+        cout << "Direct3DHookTest() failed" << endl;
+        goto Exit;
+    } else {
+        cout << "Direct3DHookTest() success" << endl;
+        system("taskkill /IM Direct3DTestApp.exe /F >nul");
+        DeleteFile("direct3DConfirmationFile");
+        return;
+    }
+
+    Exit:
+    system("taskkill /IM Direct3DTestApp.exe /F >nul");
 }
 
 

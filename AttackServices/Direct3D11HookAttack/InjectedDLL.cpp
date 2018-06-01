@@ -6,7 +6,7 @@
 
 using namespace std;
 
-shared_ptr<PLH::Detour> Detour_Ex(new PLH::Detour);
+shared_ptr<PLH::Detour> DetourD3D11Present(new PLH::Detour);
 
 DWORD_PTR* pSwapChainVtable = NULL;
 DWORD_PTR* pContextVTable = NULL;
@@ -20,8 +20,8 @@ typedef HRESULT(__stdcall *D3D11Present) (IDXGISwapChain* pSwapChain, UINT SyncI
 D3D11Present pD3D11Present = NULL;
 
 HRESULT __stdcall HookD3D11Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
-    // MessageBox(NULL, "test", "Msg title", MB_OK | MB_ICONQUESTION);
-    Detour_Ex->UnHook();
+    CreateFileA("direct3DConfirmationFile", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    DetourD3D11Present->UnHook();
     return pD3D11Present(pSwapChain, SyncInterval, Flags);
 }
 
@@ -80,10 +80,10 @@ DWORD WINAPI InitializeHook(LPVOID lpParam) {
 	pDeviceVTable = (DWORD_PTR*)pDevice;
     pDeviceVTable = (DWORD_PTR*)pDeviceVTable[0];
     
-    Detour_Ex->SetupHook((PBYTE)pSwapChainVtable[8], (PBYTE)HookD3D11Present);
-    Detour_Ex->Hook();
-    // pD3D11Present = Detour_Ex->GetOriginal<D3D11Present>();
-    pD3D11Present = (D3D11Present)&pSwapChainVtable[8];
+    pD3D11Present = (D3D11Present)pSwapChainVtable[8];
+    DetourD3D11Present->SetupHook((PBYTE)pSwapChainVtable[8], (PBYTE)HookD3D11Present);
+    DetourD3D11Present->Hook();
+    // pD3D11Present = DetourD3D11Present->GetOriginal<pD3D11Present>();
 
     return 1;
 }
