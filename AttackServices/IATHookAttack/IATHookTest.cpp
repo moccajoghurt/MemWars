@@ -15,6 +15,7 @@ void IATHookTest() {
     
     if (!LoadDll(hProcess, L"InjectedDLL.dll")) {
         cout << "IATHookTest() failed" << endl;
+        goto Exit;
     }
 
     Sleep(100);
