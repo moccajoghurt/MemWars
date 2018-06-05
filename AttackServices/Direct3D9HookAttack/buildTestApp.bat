@@ -1,2 +1,0 @@
-@ECHO OFF
-cl.exe Direct3DTestApp.cpp /I"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include" /link /LIBPATH:"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x64" user32.lib d3d11.lib d3dx11.lib
