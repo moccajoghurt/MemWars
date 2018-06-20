@@ -33,15 +33,13 @@ The manipulation of lsass.exe and the communication with the client is as incons
 
 - The installer looks for zeroed executable memory inside lsass.exe where it can write shellcode.
 - To execute the shellcode in lsass.exe, an existing thread of lsass.exe is captured, which is unnecessary. The dispensable threads include "samsrv.dll", "msvcrt.dll" and "crypt32.dll". Creating a new thread on lsass.exe would be another detection vector.
-- 
-After the installer is finished, the infiltrated shellcode of lsass.exe is constantly executed by one of the threads.
+- After the installer is finished, the infiltrated shellcode of lsass.exe is constantly executed by one of the threads.
 - 
 The shellcode continuously checks one bit within the file mapping to check if a new command has arrived from the client.
 
 - The file mapping contains a minimal Inter Process Communication protocol with which the client and lsass.exe communicate. The IPC contains, among other things, which process is to be read/written and which memory address is to be read/written.
 - To signal to the client that new commands can be received, the bit in the file mapping is reset to 0.
-- 
-The results of [ReadProcessMemory](https://msdn.microsoft.com/de-de/library/windows/desktop/ms680553%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396) and [WriteProcessMemory](https://msdn.microsoft.com/de-de/library/windows/desktop/ms681674(v=vs.85).aspx) are written to the file mapping
+- The results of [ReadProcessMemory](https://msdn.microsoft.com/de-de/library/windows/desktop/ms680553%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396) and [WriteProcessMemory](https://msdn.microsoft.com/de-de/library/windows/desktop/ms681674(v=vs.85).aspx) are written to the file mapping
 
 
 
