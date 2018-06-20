@@ -32,8 +32,7 @@ The manipulation of lsass.exe and the communication with the client is as incons
 - So that lsass.exe has no HANDLE on a file mapping (this is a detection vector), the file mapping is opened in the shellcode, the address of the file mapping is written to the memory of lsass.exe and the HANDLE is closed again. To ensure that file mapping continues to exist, explorer.exe is captured and a HANDLE for file mapping is created there permanently. Thus the file mapping remains without the client or lsass.exe needing a HANDLE to it. A pointer to the file mapping is sufficient for communication.
 
 - The installer looks for zeroed executable memory inside lsass.exe where it can write shellcode.
-- 
-To execute the shellcode in lsass.exe, an existing thread of lsass.exe is captured, which is unnecessary. The dispensable threads include "samsrv.dll", "msvcrt.dll" and "crypt32.dll". Creating a new thread on lsass.exe would be another detection vector.
+- To execute the shellcode in lsass.exe, an existing thread of lsass.exe is captured, which is unnecessary. The dispensable threads include "samsrv.dll", "msvcrt.dll" and "crypt32.dll". Creating a new thread on lsass.exe would be another detection vector.
 - 
 After the installer is finished, the infiltrated shellcode of lsass.exe is constantly executed by one of the threads.
 - 
