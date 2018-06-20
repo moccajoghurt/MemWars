@@ -17,6 +17,7 @@ The following attack methods are implemented:
 - (basic) [JMP Hook](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/JmpHookAttack)
 - (basic) [Thread Hijacking](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/ThreadHijackAttack)
 - (advanced) [System Process Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/SystemProcessInjectionAttack)
+- (under construction) [Capcom Driver Attack](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/CapcomDriverAttack)
 
 
 The project is still under development.
