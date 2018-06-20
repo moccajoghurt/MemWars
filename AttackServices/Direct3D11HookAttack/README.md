@@ -21,6 +21,5 @@ In this attack the Direct3D method "Present()" is hooked.
 
 
 
-The library[PolyHook](https://github.com/stevemk14ebr/PolyHook) is used to change the pointers in the Virtual Address Table.
+The library [PolyHook](https://github.com/stevemk14ebr/PolyHook) is used to change the pointers in the Virtual Address Table.
 
-Translated with www.DeepL.com/Translator
