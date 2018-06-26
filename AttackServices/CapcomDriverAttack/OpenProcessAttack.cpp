@@ -57,10 +57,10 @@ void __stdcall CapcomOpenProcess(MmGetSystemRoutineAddress_t pMmGetSystemRoutine
 
 
 
-BOOL StartAttack(HANDLE processId, ACCESS_MASK access) {
+HANDLE OpenProcessFromKernel(HANDLE processId, ACCESS_MASK access) {
 
     if (!InitDriver()) {
-        return FALSE;
+        return NULL;
     }
 
     OPENPROCESS_DATA data;
@@ -70,11 +70,5 @@ BOOL StartAttack(HANDLE processId, ACCESS_MASK access) {
 
     RunInKernel(CapcomOpenProcess, &data);
 
-    if (data.returnedHandle == NULL) {
-        return FALSE;
-    }
-
-    // cout << data.returnedHandle << endl;
-
-    return TRUE;
+    return data.returnedHandle;
 }

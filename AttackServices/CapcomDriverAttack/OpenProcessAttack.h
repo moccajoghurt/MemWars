@@ -18,4 +18,4 @@ struct OPENPROCESS_DATA {
     HANDLE returnedHandle;
 };
 
-BOOL StartAttack(HANDLE processId, ACCESS_MASK access);
+HANDLE OpenProcessFromKernel(HANDLE processId, ACCESS_MASK access);

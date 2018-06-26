@@ -23,7 +23,7 @@ void CapcomAttackTest() {
     }
     DWORD pid = pids[0];
 
-    if (!StartAttack((HANDLE)pid, PROCESS_ALL_ACCESS)) {
+    if (OpenProcessFromKernel((HANDLE)pid, PROCESS_ALL_ACCESS) == NULL) {
         cout << "CapcomAttackTest() failed" << endl;
         return;
     } else {
