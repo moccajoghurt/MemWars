@@ -6,7 +6,7 @@
 
 using namespace std;
 
-FARPROC GetRoutine(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, const wchar_t* routineName) {
+FARPROC GetKernelRoutine(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, const wchar_t* routineName) {
 	UNICODE_STRING routineNameU = { 0 };
 	RtlInitUnicodeString(&routineNameU, routineName);
 	return (FARPROC)pMmGetSystemRoutineAddress(&routineNameU);

@@ -7,27 +7,15 @@
 
 using namespace std;
  
-//Links against ntdll for RtlInitUnicodeString implementation
-// #pragma comment(lib, "ntdll.lib")
  
 BOOLEAN g_InitializationFinished = FALSE;
  
 void GetSystemRoutines(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress) {
-    UNICODE_STRING
-        usPsLookupProcessByProcessId,
-        usObDereferenceObject,
-        usPsProcessType,
-        usObOpenObjectByPointer;
- 
-    RtlInitUnicodeString(&usPsLookupProcessByProcessId, L"PsLookupProcessByProcessId");
-    RtlInitUnicodeString(&usObDereferenceObject, L"ObDereferenceObject");
-    RtlInitUnicodeString(&usPsProcessType, L"PsProcessType");
-    RtlInitUnicodeString(&usObOpenObjectByPointer, L"ObOpenObjectByPointer");
- 
-    PsLookupProcessByProcessId = (decltype(PsLookupProcessByProcessId))pMmGetSystemRoutineAddress(&usPsLookupProcessByProcessId);
-    ObDereferenceObject = (decltype(ObDereferenceObject))pMmGetSystemRoutineAddress(&usObDereferenceObject);
-    PsProcessType = (decltype(PsProcessType))pMmGetSystemRoutineAddress(&usPsProcessType);
-    ObOpenObjectByPointer = (decltype(ObOpenObjectByPointer))pMmGetSystemRoutineAddress(&usObOpenObjectByPointer);
+
+    PsLookupProcessByProcessId = (decltype(PsLookupProcessByProcessId))GetKernelRoutine(pMmGetSystemRoutineAddress, L"PsLookupProcessByProcessId");
+    ObDereferenceObject = (decltype(ObDereferenceObject))GetKernelRoutine(pMmGetSystemRoutineAddress, L"ObDereferenceObject");
+    PsProcessType = (decltype(PsProcessType))GetKernelRoutine(pMmGetSystemRoutineAddress, L"PsProcessType");
+    ObOpenObjectByPointer = (decltype(ObOpenObjectByPointer))GetKernelRoutine(pMmGetSystemRoutineAddress, L"ObOpenObjectByPointer");
  
     g_InitializationFinished = TRUE;
 }
@@ -90,17 +78,3 @@ BOOL StartAttack(HANDLE processId, ACCESS_MASK access) {
 
     return TRUE;
 }
-
-// struct Test_t {
-//     void* fpDbgPrintEx = NULL;
-// };
-
-
-// static void __stdcall TestFunc(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, PVOID customdata) {
-//     Test_t*   data    = (Test_t*)customdata;
-//     UNICODE_STRING routineNameU = { 0 };
-// 	RtlInitUnicodeString(&routineNameU, L"DbgPrintEx");
-
-// 	data->fpDbgPrintEx = (void*)pMmGetSystemRoutineAddress(&routineNameU);
-
-// }

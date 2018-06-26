@@ -18,5 +18,5 @@ struct CapcomCodePayload {
 
 
 BOOL InitDriver();
-FARPROC GetRoutine(MmGetSystemRoutineAddress_t, const wchar_t*);
+FARPROC GetKernelRoutine(MmGetSystemRoutineAddress_t, const wchar_t*);
 void RunInKernel(UserFunc func, PVOID userData);
