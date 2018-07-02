@@ -22,3 +22,8 @@ The following attack methods are implemented:
 
 
 The project is still under development.
+##TODO:
+- Finishing the [Hidden Kernel DLL Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/HiddenKernelDLLInjectionAttack)
+- Development of automated execution of attacks on a desired process
+- Development of a user interface for the framework
+- Designing an output protocol for the test results of the framework
