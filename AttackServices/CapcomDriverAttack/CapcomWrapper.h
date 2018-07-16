@@ -1,7 +1,6 @@
 #pragma once
 #include <windows.h>
 #include <iostream>
-// #include <intrin.h>
 #include "CapcomLoader.h"
 #include "CapcomLockMemory.h"
 
@@ -70,11 +69,10 @@ void RunInKernel(UserFunc func, PVOID userData) {
     VirtualFree(codePayload, sizeof(CapcomCodePayload), MEM_RELEASE);
 }
 
-/********* CALLS WITH ENABLED INTERRUPTS *********/
+/********* CALLS WITH ENABLED INTERRUPTS AND SMEP *********/
 using kernelTrampolineCall = uint64_t(*)(...);
 using kernelFuncCall = uint64_t(__fastcall*)(...);
 
-// NON_PAGED_DATA static PVOID(NTAPI* ExAllocatePoolPtr)(unsigned __int64 poolType, SIZE_T numberOfBytes);
 NON_PAGED_DATA static kernelFuncCall ExAllocatePoolPtr = 0;
 NON_PAGED_DATA static kernelTrampolineCall TrampolineFuncPtr = 0;
 
@@ -101,10 +99,8 @@ NON_PAGED_DATA static UCHAR intAndSmepHandlingTrampoline[] = {
 
 template<typename ...Params>
 NON_PAGED_CODE static uint64_t CallWithInterruptsAndSmep(PVOID ptr, Params &&... params) {
-	// this is where the crash happens, possibly because the memory that TrampolineFuncPtr points to gets paged out
 	*(PVOID*)(((PUCHAR)TrampolineFuncPtr) + intAndSmepHandlingTrampolineStoreOffset) = ptr;
 	return TrampolineFuncPtr(std::forward<Params>(params)...);
-	// return 0;
 }
 
 NON_PAGED_CODE void __stdcall CreateIntSmepTrampoline(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, PVOID userData) {
@@ -124,7 +120,6 @@ void initIntSmepTrampoline() {
 	
 	if (!(cpuInfo[1] & (1 << 7))) { // EBX : 1 << 7 = SMEP
 		// No SMEP support!
-        cout << "SMEP not supported" << endl;
 		NonPagedMemset(intAndSmepHandlingTrampoline, 0x90, intAndSmepHandlingTrampolineEnabledOffset);
 	}
 	RunInKernel(CreateIntSmepTrampoline, NULL);
