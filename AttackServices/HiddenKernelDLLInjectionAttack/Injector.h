@@ -13,23 +13,45 @@ struct ALLOCATE_DATA {
 
 void __stdcall AllocateKernelMemory(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, PVOID userData) {
     ALLOCATE_DATA* pData = (ALLOCATE_DATA*)userData;
-    pData->memPtr = ExAllocatePool(0ull, pData->size);
+    pData->memPtr = (ALLOCATE_DATA*)CallWithInterruptsAndSmep(
+        ExAllocatePool,
+        0ull, 
+        pData->size
+    );
 }
 
 PVOID AllocateKernelMemory(SIZE_T size) {
     ALLOCATE_DATA data;
     data.size = size;
     RunInKernel(AllocateKernelMemory, &data);
-    if (data.memPtr == NULL) {
-        return NULL;
-    }
     return data.memPtr;
 }
 
 BOOL ExposeKernelMemoryToProcess(PVOID memory, SIZE_T size, uint64_t eProcess) {
 
+    SetTargetEProcess(eProcess);
+    BOOL success = TRUE;
+
+    IterPhysRegion(memory, size, [&](PVOID va, uint64_t pa, SIZE_T sz) {
+		auto info = QueryPageTableInfo(va);
+
+		info.Pml4e->user = TRUE;
+		info.Pdpte->user = TRUE;
+		info.Pde->user = TRUE;
+
+		if (!info.Pde || (info.Pte && (!info.Pte->present))) {
+			success = FALSE;
+		}
+		else {
+			if (info.Pte) {
+                info.Pte->user = TRUE;
+            }
+		}
+	});
+
+    UnsetEProcess();
     
-    return TRUE;
+    return success;
 }
 
 
@@ -43,16 +65,11 @@ BOOL StealthInject(string processName, string dllPath) {
     if (kernelMemory == NULL) {
         return FALSE;
     }
+    // printf("memBegin: %16llx\n", (uint64_t)kernelMemory);
 
-    
-    // uint64_t currentEProcess = GetCurrentEProcess();
-    // printf("%16llx\n", currentEProcess);
-    // uint64_t currentPid = GetProcessId(currentEProcess);
-    // printf("%16llx\n",  currentPid);
-
-    // todo ExposeKernelMemoryToProcess benötigt EProcess
-
-    // ExposeKernelMemoryToProcess(kernelMemory, 1000, 0);
+    if (!ExposeKernelMemoryToProcess(kernelMemory, 1000, currentEProcess)) {
+        return FALSE;
+    }
 
 
     return TRUE;
