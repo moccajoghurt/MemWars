@@ -1,2 +1,2 @@
 @ECHO OFF
-cl.exe /EHsc CapcomAttackTest.cpp CapcomWrapper.cpp CapcomLoader.cpp OpenProcessAttack.cpp ../../Core/MemWarsServicesCore.cpp ../../Core/MemWarsCore.c /link user32.lib ntdll.lib Advapi32.lib Shlwapi.lib
+cl.exe /EHsc CapcomAttackTest.cpp OpenProcessAttack.cpp ../../Core/MemWarsServicesCore.cpp ../../Core/MemWarsCore.c /link user32.lib ntdll.lib Advapi32.lib Shlwapi.lib

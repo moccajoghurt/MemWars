@@ -1,8 +1,10 @@
 #pragma once
 #include <windows.h>
 #include <iostream>
+#include <intrin.h>
 #include "CapcomLoader.h"
 #include "CapcomLockMemory.h"
+#include "CapcomDriver.h"
 
 using namespace std;
 
@@ -40,7 +42,19 @@ BOOL InitDriver() {
     }
 
     initIntSmepTrampoline();
+    
+    return TRUE;
+}
 
+BOOL UnloadCapcomDriver() {
+    DecryptDriver();
+    CloseHandle(device);
+    if (UnloadDriver(globalCapcomDriverName.c_str())) {
+        return FALSE;
+    }
+    if (RemoveSimilarDrivers(CAPCOM_DRIVER)) {
+        return FALSE;
+    }
     return TRUE;
 }
 
@@ -104,10 +118,11 @@ NON_PAGED_CODE static uint64_t CallWithInterruptsAndSmep(PVOID ptr, Params &&...
 }
 
 NON_PAGED_CODE void __stdcall CreateIntSmepTrampoline(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, PVOID userData) {
+    DebugBreak();
     ExAllocatePoolPtr = (decltype(ExAllocatePoolPtr))GetKernelRoutine(pMmGetSystemRoutineAddress, L"ExAllocatePool");
-    PVOID out = (PVOID)ExAllocatePoolPtr(0ull, sizeof(intAndSmepHandlingTrampoline));
-	NonPagedMemcpy(out, intAndSmepHandlingTrampoline, sizeof(intAndSmepHandlingTrampoline));
-	TrampolineFuncPtr = (kernelTrampolineCall)out;
+    // PVOID out = (PVOID)ExAllocatePoolPtr(0ull, sizeof(intAndSmepHandlingTrampoline));
+	// NonPagedMemcpy(out, intAndSmepHandlingTrampoline, sizeof(intAndSmepHandlingTrampoline));
+	// TrampolineFuncPtr = (kernelTrampolineCall)out;
 }
 
 void initIntSmepTrampoline() {
