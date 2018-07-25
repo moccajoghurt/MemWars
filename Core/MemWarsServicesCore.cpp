@@ -3,6 +3,7 @@
 #include <Psapi.h>
 #include <Winternl.h>
 #include <iostream>
+#include <string>
 #include "MemWarsServicesCore.h"
 
 vector<DWORD> GetPIDsOfProcess(wstring targetProcessName) {
@@ -184,3 +185,20 @@ HANDLE GetProcessHandleByName(wstring name, DWORD access, BOOL inheritHandle) {
     return hProc;
 }
 
+
+uint32_t FindProcess(const std::string& name) {
+	PROCESSENTRY32 processEntry;
+	processEntry.dwSize = sizeof(PROCESSENTRY32);
+	HANDLE processSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+	if (Process32First(processSnapshot, &processEntry)) {
+		do {
+			if (!stricmp(processEntry.szExeFile, name.data())) {
+				CloseHandle(processSnapshot);
+				return processEntry.th32ProcessID;
+			}
+		}
+		while (Process32Next(processSnapshot, &processEntry));
+	}
+	CloseHandle(processSnapshot);
+	return 0;
+}
