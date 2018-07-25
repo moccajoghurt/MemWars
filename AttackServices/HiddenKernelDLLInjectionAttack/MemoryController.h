@@ -160,27 +160,6 @@ NON_PAGED_CODE void __stdcall InitKernelFunctions(MmGetSystemRoutineAddress_t pM
     MmGetPhysicalMemoryRanges = (decltype(MmGetPhysicalMemoryRanges))GetKernelRoutine(pMmGetSystemRoutineAddress, L"MmGetPhysicalMemoryRanges");
 }
 
-// NON_PAGED_CODE void __stdcall GetEProcessOffsets(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, PVOID userData) {
-//     currentEProcess = PsGetCurrentProcess();
-//     currentDirectoryBase = __readcr3();
-//     uint64_t pid = PsGetProcessId(currentEProcess);
-//     uint32_t pidOffset = *(uint32_t*)((PUCHAR)PsGetProcessId + 3);
-//     if (pidOffset < 0x400 && *(uint64_t*)(currentEProcess + pidOffset) == pid) {
-//         uniqueProcessIdOffset = pidOffset;
-//         activeProcessLinksOffset = uniqueProcessIdOffset + 0x8;
-//     }
-
-//     for (int i = 0; i < 0x400; i += 0x8) {
-//         uint64_t* ptr = (uint64_t*)(currentEProcess + i);
-//         if (!uniqueProcessIdOffset && ptr[0] & 0xFFFFFFFF == pid && (ptr[1] > 0xffff800000000000) && (ptr[2] > 0xffff800000000000) && ((ptr[1] & 0xF) == (ptr[2] & 0xF))) {
-//             uniqueProcessIdOffset = i;
-//             activeProcessLinksOffset = uniqueProcessIdOffset + 0x8;
-//         } else if (directoryTableBaseOffset && ptr[0] == __readcr3()) {
-//             directoryTableBaseOffset = i;
-//         }
-//     }
-// }
-
 NON_PAGED_CODE void __stdcall GetPhysicalMemoryData(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, PVOID userData) {
     wchar_t physicalMemoryName[] = L"\\Device\\PhysicalMemory";
 	OBJECT_ATTRIBUTES physicalMemoryAttributes;
@@ -209,7 +188,7 @@ NON_PAGED_CODE void __stdcall GetPhysicalMemoryData(MmGetSystemRoutineAddress_t 
         &physicalMemoryHandle, 
         uint64_t(SECTION_ALL_ACCESS), 
         &physicalMemoryAttributes
-    );
+   );
 
     if (status == STATUS_SUCCESS) {
 
@@ -225,7 +204,7 @@ NON_PAGED_CODE void __stdcall GetPhysicalMemoryData(MmGetSystemRoutineAddress_t 
             1ull,
             0, 
             PAGE_READWRITE
-        );
+       );
 
         if (status == STATUS_SUCCESS) {
             currentEProcess = PsGetCurrentProcess();
@@ -258,7 +237,7 @@ template<typename T> T& ReadPhysicalUnsafe(uint64_t pa) {
 }
 
 PageTableInfo QueryPageTableInfo(PVOID va) {
-    PageTableInfo Pi = { 0,0,0,0 };
+    PageTableInfo pi = { 0,0,0,0 };
 
     VIRT_ADDR Addr = { (uint64_t) va };
     PTE_CR3 Cr3 = { targetDirectoryBase };
@@ -266,42 +245,42 @@ PageTableInfo QueryPageTableInfo(PVOID va) {
     {
         uint64_t a = PFN_TO_PAGE(Cr3.pml4_p) + sizeof(PML4E) * Addr.pml4_index;
         if (a > physicalMemorySize)
-            return Pi;
+            return pi;
         PML4E& e = ReadPhysicalUnsafe<PML4E>(a);
         if (!e.present)
-            return Pi;
-        Pi.Pml4e = &e;
+            return pi;
+        pi.Pml4e = &e;
     }
     {
-        uint64_t a = PFN_TO_PAGE(Pi.Pml4e->pdpt_p) + sizeof(PDPTE) * Addr.pdpt_index;
+        uint64_t a = PFN_TO_PAGE(pi.Pml4e->pdpt_p) + sizeof(PDPTE) * Addr.pdpt_index;
         if (a > physicalMemorySize)
-            return Pi;
+            return pi;
         PDPTE& e = ReadPhysicalUnsafe<PDPTE>(a);
         if (!e.present)
-            return Pi;
-        Pi.Pdpte = &e;
+            return pi;
+        pi.Pdpte = &e;
     }
     {
-        uint64_t a = PFN_TO_PAGE(Pi.Pdpte->pd_p) + sizeof(PDE) * Addr.pd_index;
+        uint64_t a = PFN_TO_PAGE(pi.Pdpte->pd_p) + sizeof(PDE) * Addr.pd_index;
         if (a > physicalMemorySize)
-            return Pi;
+            return pi;
         PDE& e = ReadPhysicalUnsafe<PDE>(a);
         if (!e.present)
-            return Pi;
-        Pi.Pde = &e;
-        if (Pi.Pde->page_size)
-            return Pi;
+            return pi;
+        pi.Pde = &e;
+        if (pi.Pde->page_size)
+            return pi;
     }
     {
-        uint64_t a = PFN_TO_PAGE(Pi.Pde->pt_p) + sizeof(PTE) * Addr.pt_index;
+        uint64_t a = PFN_TO_PAGE(pi.Pde->pt_p) + sizeof(PTE) * Addr.pt_index;
         if (a > physicalMemorySize)
-            return Pi;
+            return pi;
         PTE& e = ReadPhysicalUnsafe<PTE>(a);
         if (!e.present)
-            return Pi;
-        Pi.Pte = &e;
+            return pi;
+        pi.Pte = &e;
     }
-    return Pi;
+    return pi;
 }
 
 uint64_t VirtToPhys(PVOID va) {
@@ -368,12 +347,54 @@ T ReadVirtual(PVOID from) {
     return *(T*)(buffer);
 }
 
+SIZE_T WriteVirtual(PVOID src, PVOID dst, SIZE_T size) {
+    PUCHAR it = (PUCHAR)src;
+    SIZE_T bytesRead = 0;
+
+    IterPhysRegion(dst, size, [&](PVOID va, uint64_t pa, SIZE_T sz) {
+        if (pa) {
+            bytesRead += sz;
+            memcpy(physicalMemoryBegin + pa, it, sz);
+            it += sz;
+        }
+    });
+
+    return bytesRead;
+}
+
+template<typename T>
+void WriteVirtual(PVOID to, const T& data) {
+    WriteVirtual((PVOID)&data, to, sizeof(T));
+}
+
 void SetTargetEProcess(uint64_t eProcess) {
     targetDirectoryBase = ReadVirtual<uint64_t>((PUCHAR)eProcess + directoryTableBaseOffset);
 }
 
 void UnsetEProcess() {
     targetDirectoryBase = currentDirectoryBase;
+}
+
+uint64_t FindEProcess(uint64_t pid) {
+    uint64_t eProcess = currentEProcess;
+
+    do {
+        if (ReadVirtual<uint64_t>((PUCHAR) eProcess + uniqueProcessIdOffset) == pid) {
+            return eProcess;
+        }
+        LIST_ENTRY le = ReadVirtual<LIST_ENTRY>((PUCHAR) eProcess + activeProcessLinksOffset);
+        eProcess = (uint64_t) le.Flink - activeProcessLinksOffset;
+    }
+    while (eProcess != currentEProcess);
+
+    return 0;
+}
+
+void SetTargetEProcessIfCanRead(uint64_t eProcess, PVOID adr) {
+    SetTargetEProcess(eProcess);
+    if (!VirtToPhys(adr)) {
+        UnsetEProcess();
+    }
 }
 
 BOOL InitMemoryController() {
@@ -387,24 +408,20 @@ BOOL InitMemoryController() {
     }
     RunInKernel(InitKernelFunctions, NULL);
     RunInKernel(GetPhysicalMemoryData, NULL);
-    if (!physicalMemoryBegin || !physicalMemorySize) {
-        return FALSE;
-    }
-    // RunInKernel(GetEProcessOffsets, NULL);
-    if (!uniqueProcessIdOffset || !activeProcessLinksOffset) {
+    if (!physicalMemoryBegin || !physicalMemorySize || !uniqueProcessIdOffset || !activeProcessLinksOffset) {
         return FALSE;
     }
     targetDirectoryBase = currentDirectoryBase;
 
 
-    printf("physicalMemoryBegin: %16llx\n", (uint64_t)physicalMemoryBegin);
-    printf("physicalMemorySize:  %16llx\n", physicalMemorySize);
-    printf("CurrentProcessCr3:   %16llx\n", currentDirectoryBase);
-	printf("CurrentEProcess:     %16llx\n", currentEProcess);
+    // printf("physicalMemoryBegin: %16llx\n", (uint64_t)physicalMemoryBegin);
+    // printf("physicalMemorySize:  %16llx\n", physicalMemorySize);
+    // printf("CurrentProcessCr3:   %16llx\n", currentDirectoryBase);
+	// printf("CurrentEProcess:     %16llx\n", currentEProcess);
 
-	printf("DirectoryTableBase  %16llx\n", directoryTableBaseOffset);
-	printf("UniqueProcessId     %16llx\n", uniqueProcessIdOffset);
-	printf("ActiveProcessLinks  %16llx\n", activeProcessLinksOffset);
+	// printf("DirectoryTableBase  %16llx\n", directoryTableBaseOffset);
+	// printf("UniqueProcessId     %16llx\n", uniqueProcessIdOffset);
+	// printf("ActiveProcessLinks  %16llx\n", activeProcessLinksOffset);
 
     return TRUE;
 }

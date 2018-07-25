@@ -14,7 +14,7 @@ void HiddenKernelDLLInjectionAttack() {
         hProcess = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
 
-    if (!StealthInject("memoryTestApp.exe", "InjectedDLL.dll")) {
+    if (!StealthInject("skypeapp.exe", "InjectedDLL.dll")) {
         cout << "HiddenKernelDLLInjectionAttack() failed" << endl;
     } else {
         cout << "HiddenKernelDLLInjectionAttack() success" << endl;
