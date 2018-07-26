@@ -138,7 +138,7 @@ NTSTATUS UnloadDriver(const wchar_t* driverName) {
 	NTSTATUS status;
 	status = NtUnloadDriver(&sourceRegistryUnicode);
 
-	printf("NtUnloadDriver(%ls) returned %08x\n", sourceRegistry.c_str(), status);
+	// printf("NtUnloadDriver(%ls) returned %08x\n", sourceRegistry.c_str(), status);
 
 	RemoveDriverFromRegistry(driverName);
 

