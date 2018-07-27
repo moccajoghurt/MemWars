@@ -225,7 +225,7 @@ BOOL StealthInject(string processName, string dllPath) {
     }
 
 		
-	cout << "Threads spinning: " << hookStatus->numThreadsWaiting << endl;
+	cout << "Threads spinning: " << (int)hookStatus->numThreadsWaiting << endl;
 
 	// // Restore Backup
 	SetTargetEProcessIfCanRead(eProcess, _TlsGetValue);

@@ -138,7 +138,7 @@ NTSTATUS UnloadDriver(const wchar_t* driverName) {
 	NTSTATUS status;
 	status = NtUnloadDriver(&sourceRegistryUnicode);
 
-	// printf("NtUnloadDriver(%ls) returned %08x\n", sourceRegistry.c_str(), status);
+	printf("NtUnloadDriver(%ls) returned %08x\n", sourceRegistry.c_str(), status);
 
 	RemoveDriverFromRegistry(driverName);
 
@@ -164,7 +164,7 @@ NTSTATUS RemoveSimilarDrivers(BYTE* driver) {
 			if (!memcmp(driver, data, 1024)) {
 				bool deleted = DeleteFileW(path.c_str());
 
-				// printf("DeleteFile (%ls) : %x\n", path.c_str(), deleted);
+				printf("DeleteFile (%ls) : %x\n", path.c_str(), deleted);
 
 				if (!deleted) {
 					int strEnd = path.find(L".sys");
@@ -173,7 +173,7 @@ NTSTATUS RemoveSimilarDrivers(BYTE* driver) {
 					UnloadDriver(driverName.c_str());
 
 					deleted = DeleteFileW(path.c_str());
-					// printf("DeleteFile2 (%ls) : %x\n", path.c_str(), deleted);
+					printf("DeleteFile2 (%ls) : %x\n", path.c_str(), deleted);
 				}
 
 				status |= !deleted;
@@ -190,7 +190,7 @@ BOOL LoadDriver() {
     DecryptDriver();
 
     if (RemoveSimilarDrivers(CAPCOM_DRIVER) != STATUS_SUCCESS) {
-		// printf("Failed to remove similar drivers!\n");
+		printf("Failed to remove similar drivers!\n");
 		return FALSE;
 	}
     
@@ -219,7 +219,7 @@ BOOL LoadDriver() {
 
     NTSTATUS status = NtLoadDriver(&sourceRegistryUnicode);
 
-    // printf("NtLoadDriver(%ls) returned %08x\n", sourceRegistry.c_str(), status);
+    printf("NtLoadDriver(%ls) returned %08x\n", sourceRegistry.c_str(), status);
 
     if (status != STATUS_SUCCESS) {
         UnloadDriver(driverName.c_str());
@@ -246,6 +246,6 @@ HANDLE OpenDevice(string driverName) {
 	if (deviceHandle == INVALID_HANDLE_VALUE) {
         deviceHandle = 0;
     }
-	// printf("[+] CreateFileA(%s) returned %p\n", completeDeviceName, deviceHandle);
+	printf("[+] CreateFileA(%s) returned %p\n", completeDeviceName, deviceHandle);
 	return deviceHandle;
 }

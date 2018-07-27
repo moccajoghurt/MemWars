@@ -27,7 +27,8 @@ The project is still under development.
 
 - Finishing the [Hidden Kernel DLL Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/HiddenKernelDLLInjectionAttack)
 	- finishing the physical memory controller that takes care of the kernel memory (done)
-	- implementing the copy on write hook that executes the DLL inside the kernel
+	- implementing the copy on write hook that executes the DLL inside the kernel (done)
+	- testing the attack method on different processes and eliminate instabilities
 - Development of automated execution of attacks on a desired process
 - Development of a user interface for the framework
 - Designing an output protocol for the test results of the framework

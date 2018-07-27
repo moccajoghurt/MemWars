@@ -8,20 +8,20 @@ using namespace std;
 
 void HiddenKernelDLLInjectionAttack() {
 
-    system("start /B memoryTestApp.exe");
+    system("start /B TestApp.exe");
     HANDLE hProcess = NULL;
     while (hProcess == NULL) {
-        hProcess = (HANDLE)GetProcessByName("memoryTestApp.exe");
+        hProcess = (HANDLE)GetProcessByName("TestApp.exe");
     }
 
-    if (!StealthInject("explorer.exe", "InjectedDLL.dll")) {
+    if (!StealthInject("TestApp.exe", "InjectedDLL.dll")) {
         cout << "HiddenKernelDLLInjectionAttack() failed" << endl;
     } else {
         cout << "HiddenKernelDLLInjectionAttack() success" << endl;
     }
     
     
-    system("taskkill /IM memoryTestApp.exe /F >nul");
+    system("taskkill /IM TestApp.exe /F >nul");
 }
 
 int main() {
