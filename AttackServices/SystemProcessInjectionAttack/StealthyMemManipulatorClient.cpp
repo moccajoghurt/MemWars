@@ -10,14 +10,17 @@ using namespace std;
 BOOL StealthyMemClient::Init(wstring pivotProcessName) {
     
     if (InstanceAlreadyRunning()) {
-        return FALSE;
+        cout << "StealthyMemClient::InstanceAlreadyRunning failed" << endl;
+        // return FALSE;
     }
 
 	if (!SetPivotProcess(pivotProcessName)) {
+        cout << "StealthyMemClient::SetPivotProcess failed" << endl;
         return FALSE;
     }
     
     if (!ConnectToFileMapping()) {
+        cout << "StealthyMemClient::ConnectToFileMapping failed" << endl;
         return FALSE;
     }
     

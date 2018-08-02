@@ -5,6 +5,7 @@
 #include <functional>  
 #include "../CapcomDriverAttack/CapcomWrapper.h"
 #include "../CapcomDriverAttack/CapcomLockMemory.h"
+#include "../../Core/MemWarsServicesCore.h"
 
 using namespace std;
 
@@ -149,16 +150,6 @@ NON_PAGED_DATA static kernelFuncCall ZwClose;
 NON_PAGED_DATA PPHYSICAL_MEMORY_RANGE(NTAPI* MmGetPhysicalMemoryRanges)(void);
 
 /** Functions executed in kernel mode **/
-
-NON_PAGED_CODE void __stdcall InitKernelFunctions(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, PVOID userData) {
-    ExAllocatePool = (kernelFuncCall)GetKernelRoutine(pMmGetSystemRoutineAddress, L"ExAllocatePool");
-    PsGetCurrentProcess = (kernelFuncCall)GetKernelRoutine(pMmGetSystemRoutineAddress, L"PsGetCurrentProcess");
-    PsGetProcessId = (kernelFuncCall)GetKernelRoutine(pMmGetSystemRoutineAddress, L"PsGetProcessId");
-    ZwOpenSection = (kernelFuncCall)GetKernelRoutine(pMmGetSystemRoutineAddress, L"ZwOpenSection");
-    ZwMapViewOfSection = (kernelFuncCall)GetKernelRoutine(pMmGetSystemRoutineAddress, L"ZwMapViewOfSection");
-    ZwClose = (kernelFuncCall)GetKernelRoutine(pMmGetSystemRoutineAddress, L"ZwClose");
-    MmGetPhysicalMemoryRanges = (decltype(MmGetPhysicalMemoryRanges))GetKernelRoutine(pMmGetSystemRoutineAddress, L"MmGetPhysicalMemoryRanges");
-}
 
 NON_PAGED_CODE void __stdcall GetPhysicalMemoryData(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, PVOID userData) {
     wchar_t physicalMemoryName[] = L"\\Device\\PhysicalMemory";
@@ -397,17 +388,35 @@ void SetTargetEProcessIfCanRead(uint64_t eProcess, PVOID adr) {
     }
 }
 
+void InitKernelFunctions() {
+    ExAllocatePool = GetKernelProcAddress<>("ExAllocatePool");
+    PsGetCurrentProcess = GetKernelProcAddress<>("PsGetCurrentProcess");
+    PsGetProcessId = GetKernelProcAddress<>("PsGetProcessId");
+    ZwOpenSection = GetKernelProcAddress<>("ZwOpenSection");
+    ZwMapViewOfSection = GetKernelProcAddress<>("ZwMapViewOfSection");
+    ZwClose = GetKernelProcAddress<>("ZwClose");
+    MmGetPhysicalMemoryRanges = GetKernelProcAddress<PPHYSICAL_MEMORY_RANGE(*)()>("MmGetPhysicalMemoryRanges");
+}
+
 BOOL InitMemoryController() {
 
-    if (!LockMemorySections()) {
+    if (!InitKernelModuleInfo()) {
         return FALSE;
     }
+    InitKernelFunctions();
 
     if (!InitDriver()) {
         return FALSE;
     }
-    RunInKernel(InitKernelFunctions, NULL);
+    cout << "about to init kernel funcs" << endl;
+    system("PAUSE");
+    // RunInKernel(InitKernelFunctions, NULL);
+    cout << "done init kernel funcs" << endl;
+    system("PAUSE");
+    cout << "about to GetPhysicalMemoryData" << endl;
     RunInKernel(GetPhysicalMemoryData, NULL);
+    cout << "done GetPhysicalMemoryData" << endl;
+    system("PAUSE");
     if (!physicalMemoryBegin || !physicalMemorySize || !uniqueProcessIdOffset || !activeProcessLinksOffset) {
         return FALSE;
     }

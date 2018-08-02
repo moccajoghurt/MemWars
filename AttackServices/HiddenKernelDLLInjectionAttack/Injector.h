@@ -244,7 +244,8 @@ BOOL StealthInject(string processName, string dllPath) {
 	SetTargetEProcessIfCanRead(eProcess, padSpace);
 	WriteVirtual(backup1.data(), padSpace, pidBasedHook.size());
 
-	// TODO Test with TlsGetValue programm
+	// TODO Use ntdll.dll imports instead of GetKernelRoutine() and see if it's still crashing on PC
+	// first try NON_PAGED_CODE and NON_PAGED_DATA if possible
 
     return TRUE;
 }

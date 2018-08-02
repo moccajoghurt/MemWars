@@ -198,15 +198,18 @@ BOOL LoadDriver() {
 	globalCapcomDriverName = driverName;
     
     if (!CreateDriverFile(driverName.c_str())) {
+		cout << "LoadDriver::CreateDriverFile failed" << endl;
         return FALSE;
     }
 
     BOOLEAN alreadyEnabled = FALSE;
     if (RtlAdjustPrivilege(SeLoadDriverPrivilege, 1ull, AdjustCurrentProcess, &alreadyEnabled) != STATUS_SUCCESS && !alreadyEnabled) {
+		cout << "LoadDriver::RtlAdjustPrivilege failed" << endl;
         return FALSE;
     }
     
     if (AddServiceToRegistry(driverName.c_str()) != STATUS_SUCCESS) {
+		cout << "LoadDriver::AddServiceToRegistry failed" << endl;
         return FALSE;
     }
     

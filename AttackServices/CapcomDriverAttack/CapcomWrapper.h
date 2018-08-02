@@ -5,6 +5,7 @@
 #include "CapcomLoader.h"
 #include "CapcomLockMemory.h"
 #include "CapcomDriver.h"
+#include "../../Core/MemWarsServicesCore.h"
 
 using namespace std;
 
@@ -22,14 +23,14 @@ struct CapcomCodePayload {
     BYTE  payload[PAYLOAD_BUFFER_SIZE];
 };
 
-FARPROC GetKernelRoutine(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, const wchar_t* routineName) {
-	UNICODE_STRING routineNameU = { 0 };
-	RtlInitUnicodeString(&routineNameU, routineName);
-	return (FARPROC)pMmGetSystemRoutineAddress(&routineNameU);
-}
-
 void initIntSmepTrampoline();
 BOOL InitDriver() {
+
+    if (!LockMemorySections()) {
+        cout << "InitDriver::LockMemorySections failed!" << endl;
+        return FALSE;
+    }
+
     if (!LoadDriver()) {
         cout << "InitDriver::Loading driver failed!" << endl;
         return FALSE;
@@ -70,6 +71,16 @@ void RunInKernel(UserFunc func, PVOID userData) {
 
     *(ULONGLONG*)(codePayloadBuf + 5) = (ULONGLONG)func;
     *(ULONGLONG*)(codePayloadBuf + 15) = (ULONGLONG)userData;
+
+    // BYTE codePayloadBuf[] = {
+    //     0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // mov rax, data
+    //     0x48, 0x89, 0xC1,                                               // mov rcx, rax
+    //     0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // mov rax, destination
+    //     0xFF, 0xE0                                                      // jmp rax
+    // };
+
+    // *(ULONGLONG*)(codePayloadBuf + 2) = (ULONGLONG)userData;
+    // *(ULONGLONG*)(codePayloadBuf + 15) = (ULONGLONG)func;
 
     codePayload->pointerToPayload = codePayload->payload;
 
@@ -117,7 +128,6 @@ NON_PAGED_CODE static uint64_t CallWithInterruptsAndSmep(PVOID ptr, Params &&...
 }
 
 NON_PAGED_CODE void __stdcall CreateIntSmepTrampoline(MmGetSystemRoutineAddress_t pMmGetSystemRoutineAddress, PVOID userData) {
-    ExAllocatePoolPtr = (decltype(ExAllocatePoolPtr))GetKernelRoutine(pMmGetSystemRoutineAddress, L"ExAllocatePool");
     PVOID out = (PVOID)ExAllocatePoolPtr(0ull, sizeof(intAndSmepHandlingTrampoline));
 	NonPagedMemcpy(out, intAndSmepHandlingTrampoline, sizeof(intAndSmepHandlingTrampoline));
 	TrampolineFuncPtr = (kernelTrampolineCall)out;
@@ -135,6 +145,8 @@ void initIntSmepTrampoline() {
 		// No SMEP support!
 		NonPagedMemset(intAndSmepHandlingTrampoline, 0x90, intAndSmepHandlingTrampolineEnabledOffset);
 	}
+    InitKernelModuleInfo();
+    ExAllocatePoolPtr = GetKernelProcAddress<>("ExAllocatePool");
 	RunInKernel(CreateIntSmepTrampoline, NULL);
 }
 
