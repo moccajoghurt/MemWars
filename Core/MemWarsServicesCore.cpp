@@ -202,3 +202,36 @@ uint32_t FindProcess(const std::string& name) {
 	CloseHandle(processSnapshot);
 	return 0;
 }
+
+HMODULE ntLib;
+uint64_t ntBase;
+
+BOOL InitKernelModuleInfo() {
+	vector<BYTE> buffer(1024 * 1024);
+
+	ULONG reqSize = 0;
+
+	do {
+		if (!NtQuerySystemInformation((SYSTEM_INFORMATION_CLASS)SystemModuleInformation, buffer.data(), buffer.size(), &reqSize)) {
+			break;
+		}
+
+		buffer.resize(reqSize * 2);
+	}
+	while (reqSize > buffer.size());
+
+	SYSTEM_MODULE_INFORMATION* moduleInfo = (SYSTEM_MODULE_INFORMATION*)buffer.data();
+
+	char* kernelFileName = (char*) moduleInfo->module[0].fullPathName + moduleInfo->module[0].offsetToFileName;
+
+	ntBase = (uint64_t) moduleInfo->module[0].imageBase;
+	ntLib = LoadLibraryA(kernelFileName);
+
+	if (!ntBase || !ntLib) {
+		// printf("Failed to get kernel module information!\n");
+		return FALSE;
+	}
+
+	// printf("Kernel: %s @ %16llx\n", kernelFileName, ntBase);
+	return TRUE;
+}
