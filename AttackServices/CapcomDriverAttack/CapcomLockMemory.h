@@ -27,7 +27,7 @@ __declspec(allocate(".LTEXT$3")) static char nonPagedTextEnd = 0x0;
 
 #define NON_PAGED_DATA  __declspec(allocate(".LDATA$2"))
 #define NON_PAGED_CODE __declspec(code_seg(".LTEXT$2")) __declspec(noinline)
-#define NON_PAGED_LAMBDA(...)  [](__VA_ARGS__) NON_PAGED_CODE
+#define NON_PAGED_LAMBDA(...) [](__VA_ARGS__) NON_PAGED_CODE
 
 // Mini non-paged crt
 #define NonPagedMemcpy(dst, src, size) __movsb((BYTE*) dst, (const BYTE*) src, size)

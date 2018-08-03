@@ -145,7 +145,6 @@ void initIntSmepTrampoline() {
 		// No SMEP support!
 		NonPagedMemset(intAndSmepHandlingTrampoline, 0x90, intAndSmepHandlingTrampolineEnabledOffset);
 	}
-    InitKernelModuleInfo();
     ExAllocatePoolPtr = GetKernelProcAddress<>("ExAllocatePool");
 	RunInKernel(CreateIntSmepTrampoline, NULL);
 }
