@@ -244,8 +244,7 @@ BOOL StealthInject(string processName, string dllPath) {
 	SetTargetEProcessIfCanRead(eProcess, padSpace);
 	WriteVirtual(backup1.data(), padSpace, pidBasedHook.size());
 
-	// TODO Use ntdll.dll imports instead of GetKernelRoutine() and see if it's still crashing on PC
-	// first try NON_PAGED_CODE and NON_PAGED_DATA if possible
+	// TODO write test cases for the driver (e.g. loading & unloading 100x, init memory controller 100x, ...)
 
     return TRUE;
 }

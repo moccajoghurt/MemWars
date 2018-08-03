@@ -147,7 +147,7 @@ NON_PAGED_DATA static kernelFuncCall PsGetProcessId;
 NON_PAGED_DATA static kernelFuncCall ZwOpenSection;
 NON_PAGED_DATA static kernelFuncCall ZwMapViewOfSection;
 NON_PAGED_DATA static kernelFuncCall ZwClose;
-NON_PAGED_DATA PPHYSICAL_MEMORY_RANGE(NTAPI* MmGetPhysicalMemoryRanges)(void);
+NON_PAGED_DATA static PPHYSICAL_MEMORY_RANGE(NTAPI* MmGetPhysicalMemoryRanges)(void);
 
 /** Functions executed in kernel mode **/
 
@@ -396,30 +396,33 @@ void InitKernelFunctions() {
     ZwMapViewOfSection = GetKernelProcAddress<>("ZwMapViewOfSection");
     ZwClose = GetKernelProcAddress<>("ZwClose");
     MmGetPhysicalMemoryRanges = GetKernelProcAddress<PPHYSICAL_MEMORY_RANGE(*)()>("MmGetPhysicalMemoryRanges");
+
+    // cout << ExAllocatePool << endl;
+    // cout << PsGetCurrentProcess << endl;
+    // cout << PsGetProcessId << endl;
+    // cout << ZwOpenSection << endl;
+    // cout << ZwMapViewOfSection << endl;
+    // cout << ZwClose << endl;
+    // cout << MmGetPhysicalMemoryRanges << endl;
 }
 
 BOOL InitMemoryController() {
 
-    if (!InitKernelModuleInfo()) {
-        return FALSE;
-    }
     InitKernelFunctions();
 
+    cout << "loading driver..." << endl;
+    // system("PAUSE");
     if (!InitDriver()) {
         return FALSE;
     }
-    cout << "about to init kernel funcs" << endl;
-    system("PAUSE");
-    // RunInKernel(InitKernelFunctions, NULL);
-    cout << "done init kernel funcs" << endl;
-    system("PAUSE");
-    cout << "about to GetPhysicalMemoryData" << endl;
+    cout << "getting GetPhysicalMemoryData" << endl;
+    // system("PAUSE");
     RunInKernel(GetPhysicalMemoryData, NULL);
-    cout << "done GetPhysicalMemoryData" << endl;
-    system("PAUSE");
     if (!physicalMemoryBegin || !physicalMemorySize || !uniqueProcessIdOffset || !activeProcessLinksOffset) {
         return FALSE;
     }
+    cout << "got GetPhysicalMemoryData" << endl;
+    // system("PAUSE");
     targetDirectoryBase = currentDirectoryBase;
 
 
