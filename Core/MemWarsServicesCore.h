@@ -38,9 +38,6 @@ typedef struct _SYSTEM_MODULE_INFORMATION {
 
 #define SystemModuleInformation 0xBull
 
-extern HMODULE ntLib;
-extern uint64_t ntBase;
-
 vector<DWORD> GetPIDsOfProcess(wstring targetProcessName);
 map<wstring, DWORD64> GetModulesNamesAndBaseAddresses(DWORD pid);
 vector<DWORD> GetTIDChronologically(DWORD pid);
@@ -50,8 +47,15 @@ HANDLE GetProcessHandleByName(wstring name, DWORD access = PROCESS_ALL_ACCESS, B
 uint32_t FindProcess(const std::string& name);
 BOOL InitKernelModuleInfo();
 
+extern HMODULE ntLib;
+extern uint64_t ntBase;
+static bool kernelModuleInitialized = FALSE;
 template<typename T = fnFreeCall>
 T GetKernelProcAddress(const char* proc) {
+	if (!kernelModuleInitialized) {
+		InitKernelModuleInfo();
+		kernelModuleInitialized = TRUE;
+	}
 	FARPROC locProc = GetProcAddress(ntLib, proc);
 
 	if (!locProc) {
