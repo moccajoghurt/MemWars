@@ -88,6 +88,26 @@ void DriverLoadingTest() {
 }
 
 
+void LoadingStressTest() {
+    for (int i = 0; i < 100; i++) {
+        if (!InitDriver()) {
+            cout << "LoadingStressTest failed loading after " << i << " iterations" << endl;
+            break;
+        }
+        InitKernelFunctions();
+        RunInKernel(GetPhysicalMemoryData, NULL);
+        if (!UnloadCapcomDriver()) {
+            cout << "LoadingStressTest failed unloading after " << i << " iterations" << endl;
+            break;
+        }
+        // cout << i << endl;
+        // Sleep(2000);
+        if (i == 99) {
+            cout << "LoadingStressTest success" << endl;
+        }
+    }
+}
+
 
 void HiddenKernelDLLInjectionAttackTest() {
 
@@ -109,5 +129,7 @@ void HiddenKernelDLLInjectionAttackTest() {
 
 int main() {
     // DriverLoadingTest();
+    // LoadingStressTest();
     HiddenKernelDLLInjectionAttackTest();
+    
 }

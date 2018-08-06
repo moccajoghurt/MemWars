@@ -121,16 +121,16 @@ typedef struct _PHYSICAL_MEMORY_RANGE {
 	LARGE_INTEGER NumberOfBytes;
 } PHYSICAL_MEMORY_RANGE, *PPHYSICAL_MEMORY_RANGE;
 
-PUCHAR physicalMemoryBegin = NULL;
-SIZE_T physicalMemorySize;
+NON_PAGED_DATA PUCHAR physicalMemoryBegin = NULL;
+NON_PAGED_DATA SIZE_T physicalMemorySize;
 
-uint64_t currentEProcess;
-uint64_t currentDirectoryBase;
-uint64_t targetDirectoryBase;
+NON_PAGED_DATA uint64_t currentEProcess;
+NON_PAGED_DATA uint64_t currentDirectoryBase;
+NON_PAGED_DATA uint64_t targetDirectoryBase;
 
-uint64_t uniqueProcessIdOffset;
-uint64_t activeProcessLinksOffset;
-uint64_t directoryTableBaseOffset;
+NON_PAGED_DATA uint64_t uniqueProcessIdOffset;
+NON_PAGED_DATA uint64_t activeProcessLinksOffset;
+NON_PAGED_DATA uint64_t directoryTableBaseOffset;
 
 struct PageTableInfo {
     PML4E* Pml4e;
@@ -410,18 +410,18 @@ BOOL InitMemoryController() {
 
     InitKernelFunctions();
 
-    cout << "loading driver..." << endl;
+    // cout << "loading driver..." << endl;
     // system("PAUSE");
     if (!InitDriver()) {
         return FALSE;
     }
-    cout << "getting GetPhysicalMemoryData" << endl;
+    // cout << "getting GetPhysicalMemoryData" << endl;
     // system("PAUSE");
     RunInKernel(GetPhysicalMemoryData, NULL);
     if (!physicalMemoryBegin || !physicalMemorySize || !uniqueProcessIdOffset || !activeProcessLinksOffset) {
         return FALSE;
     }
-    cout << "got GetPhysicalMemoryData" << endl;
+    // cout << "got GetPhysicalMemoryData" << endl;
     // system("PAUSE");
     targetDirectoryBase = currentDirectoryBase;
 
