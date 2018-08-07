@@ -41,13 +41,13 @@ BOOL DLLInjectionProvider::ExecuteAttack() {
 
 
 
-int main() {
+// int main() {
 
-    DLLInjectionProvider a;
-    a.SetTargetProcessByName(L"chrome.exe");
-    a.SetTargetDLL(L"InjectedDLL.dll");
-    a.ExecuteAttack();
+//     DLLInjectionProvider a;
+//     a.SetTargetProcessByName(L"explorer.exe");
+//     a.SetTargetDLL(L"InjectedDLL.dll");
+//     a.ExecuteAttack();
 
-    cout << a.GetAttackResults() << endl;
+//     cout << a.GetAttackResults() << endl;
 
-}
+// }

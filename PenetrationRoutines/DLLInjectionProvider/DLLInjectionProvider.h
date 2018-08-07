@@ -7,8 +7,8 @@ using namespace std;
 
 class DLLInjectionProvider : public AttackProvider {
 public:
-    BOOL SetTargetProcessByName(wstring) override;
-    BOOL ExecuteAttack() override;
+    BOOL SetTargetProcessByName(wstring) ;
+    BOOL ExecuteAttack() ;
     BOOL SetTargetDLL(wstring);
     
 protected:
