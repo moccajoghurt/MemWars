@@ -117,7 +117,7 @@ void HiddenKernelDLLInjectionAttackTest() {
         hProcess = (HANDLE)GetProcessByName("TestApp.exe");
     }
 
-    if (!StealthInject("TestApp.exe", "InjectedDLL.dll")) {
+    if (!StealthInject("DarkSoulsIII.exe", "InjectedDLL.dll")) {
         cout << "HiddenKernelDLLInjectionAttack() failed" << endl;
     } else {
         cout << "HiddenKernelDLLInjectionAttack() success" << endl;

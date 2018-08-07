@@ -2,7 +2,8 @@
 #include <Shlwapi.h>
 #include "DLLInjectionProvider.h"
 
-BOOL DLLInjectionProvider::SetTargetProcessByName(wstring name) {
+bool DLLInjectionProvider::SetTargetProcessByName(const string _name) {
+    wstring name(_name.begin(), _name.end());
     hProcess = GetProcessHandleByName(name);
     if (hProcess == NULL) {
         results += "SetTargetProcessByName() failed. Could not get HANDLE to target process. System Error Code: ";
@@ -13,7 +14,8 @@ BOOL DLLInjectionProvider::SetTargetProcessByName(wstring name) {
     return TRUE;
 }
 
-BOOL DLLInjectionProvider::SetTargetDLL(wstring dllPath) {
+bool DLLInjectionProvider::SetTargetDLL(const string _dllPath) {
+    wstring dllPath(_dllPath.begin(), _dllPath.end());
     if (!PathFileExistsW(dllPath.c_str())) {
         results += "SetTargetDLL() failed. File not found. System Error Code: ";
         results += to_string(GetLastError());
@@ -24,7 +26,7 @@ BOOL DLLInjectionProvider::SetTargetDLL(wstring dllPath) {
     return TRUE;
 }
 
-BOOL DLLInjectionProvider::ExecuteAttack() {
+bool DLLInjectionProvider::ExecuteAttack() {
     if (dllPath == L"" || hProcess == NULL) {
         return FALSE;
     }

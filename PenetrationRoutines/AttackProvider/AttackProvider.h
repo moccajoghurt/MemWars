@@ -10,6 +10,7 @@ public:
     // virtual BOOL WriteProcessMemory(HANDLE hProcess, void* address, void* writeBuf, SIZE_T writeSize, SIZE_T* bytesWritten) {return TRUE;};
     // virtual BOOL SetTargetProcessByName(wstring){return FALSE;};
     // virtual BOOL ExecuteAttack(){return FALSE;};
+    AttackProvider(){}
     string GetAttackResults() {
         return results;
     };

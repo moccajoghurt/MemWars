@@ -7,9 +7,10 @@ using namespace std;
 
 class DLLInjectionProvider : public AttackProvider {
 public:
-    BOOL SetTargetProcessByName(wstring) ;
-    BOOL ExecuteAttack() ;
-    BOOL SetTargetDLL(wstring);
+    DLLInjectionProvider(){}
+    bool SetTargetProcessByName(const string);
+    bool ExecuteAttack();
+    bool SetTargetDLL(const string);
     
 protected:
     wstring dllPath = L"";
