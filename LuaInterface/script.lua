@@ -1,12 +1,9 @@
-testString = "LuaBridge works!"
-number = 42
 
--- script.lua
--- printMessage("You can call C++ functions from Lua!")
- 
--- sumNumbers = function(a,b)
---     printMessage("You can still call C++ functions from Lua functions!")
---     return a + b
--- end
 
-local i = DLLInjector()
+injector = DLLInjector()
+injector:SetTargetDLL("C:/Users/Marius/git/MemWars/AttackServices/DLLInjectionAttack/InjectedDLL.dll")
+injector:SetTargetProcessByName("chrome.exe")
+if injector:ExecuteAttack() then
+    print("success")
+end
+print(injector:GetAttackResults())
