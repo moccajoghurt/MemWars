@@ -45,7 +45,7 @@ bool DLLInjectionProvider::InjectDLL() {
         results += "[+] This indicates that the target process is protected from DLL Injections.\n";
         return FALSE;
     }
-    Sleep(10); // give the DLL time for the file creation
+    Sleep(100); // give the DLL time for the file creation
     TCHAR tempPath[MAX_PATH];
     GetTempPath(MAX_PATH, tempPath);
     lstrcatA(tempPath, "dllInjectionConfirmationFile");
@@ -55,6 +55,7 @@ bool DLLInjectionProvider::InjectDLL() {
         results += "[-] Possible reasons: \n[-] - Process and DLL differ in bit architecture (x86/x64).\n";
         results += "[-] - The DLL could not be found by the target process because the DLL path was not absolute.\n";
         results += "[-] - The DLL has already been injected to the target process.\n";
+        results += "[-] - The DLL contains runtime errors.\n";
         return FALSE;
     }
     results += "[+] InjectDLL() was successful.\n";

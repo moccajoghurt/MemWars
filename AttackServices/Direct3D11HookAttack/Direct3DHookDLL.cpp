@@ -20,7 +20,12 @@ typedef HRESULT(__stdcall *D3D11Present) (IDXGISwapChain* pSwapChain, UINT SyncI
 D3D11Present pD3D11Present = NULL;
 
 HRESULT __stdcall HookD3D11Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
-    CreateFileA("direct3DConfirmationFile", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    // CreateFileA("direct3DConfirmationFile", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    TCHAR tempPath[MAX_PATH];
+    GetTempPath(MAX_PATH, tempPath);
+    lstrcatA(tempPath, "dllInjectionConfirmationFile");
+    HANDLE h = CreateFileA(tempPath, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	CloseHandle(h);
     DetourD3D11Present->UnHook();
     return pD3D11Present(pSwapChain, SyncInterval, Flags);
 }
