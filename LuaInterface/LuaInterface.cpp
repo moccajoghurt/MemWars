@@ -14,10 +14,6 @@ extern "C" {
 using namespace luabridge;
 using namespace std;
 
-void printMessage(const std::string& s) {
-    std::cout << s << std::endl;
-}
-
 // class TestClass {
 // public:
 //     TestClass(){cout << "hi123" << endl;}
@@ -27,6 +23,7 @@ void printMessage(const std::string& s) {
 // };
 
 int main() {
+    
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
 
@@ -41,25 +38,22 @@ int main() {
         .addConstructor<void(*) (void)>()
         .addFunction ("SetTargetDLL", &DLLInjectionProvider::SetTargetDLL)
         .addFunction ("SetTargetProcessByName", &DLLInjectionProvider::SetTargetProcessByName)
-        .addFunction ("ExecuteAttack", &DLLInjectionProvider::ExecuteAttack)
+        .addFunction ("InjectDLL", &DLLInjectionProvider::InjectDLL)
     .endClass();
+
+
+
+
+
+    if (luaL_dofile(L, "script.lua") != 0) {
+        cout << "execution failure occured!" << endl;
+    }
+
+    lua_close(L);
 
     // getGlobalNamespace(L)
     // .beginClass<TestClass>("TestClass")
     //     .addConstructor<void(*) (void)>()
     //     .addFunction ("TestFunc", &TestClass::TestFunc)
     // .endClass();
-
-
-    if (luaL_dofile(L, "script.lua") != 0) {
-        cout << "execution failure occured!" << endl;
-    }
-    // lua_pcall(L, 0, 0, 0);
-    // LuaRef sumNumbers = getGlobal(L, "sumNumbers");
-    // int result = sumNumbers(5, 4);
-    // std::cout << "Result:" << result << std::endl;
-
-    lua_close(L);
-
-    // system("pause");
 }
