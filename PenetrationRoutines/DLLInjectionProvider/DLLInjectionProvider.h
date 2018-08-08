@@ -9,7 +9,7 @@ class DLLInjectionProvider : public AttackProvider {
 public:
     DLLInjectionProvider(){}
     bool SetTargetProcessByName(const string);
-    bool ExecuteAttack();
+    bool InjectDLL();
     bool SetTargetDLL(const string);
     
 protected:
