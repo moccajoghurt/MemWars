@@ -8,6 +8,7 @@ extern "C" {
 #include "../libs/LuaBridge/LuaBridge.h"
 
 #include "../PenetrationRoutines/DLLInjectionProvider/DLLInjectionProvider.h"
+#include "../PenetrationRoutines/ThreadHijackProvider/ThreadHijackProvider.h"
 
 #include <iostream>
 
@@ -39,6 +40,11 @@ int main() {
         .addFunction ("SetTargetDLL", &DLLInjectionProvider::SetTargetDLL)
         .addFunction ("SetTargetProcessByName", &DLLInjectionProvider::SetTargetProcessByName)
         .addFunction ("InjectDLL", &DLLInjectionProvider::InjectDLL)
+    .endClass()
+    .deriveClass <ThreadHijackProvider, AttackProvider>("ThreadHijacker")
+        .addConstructor<void(*) (void)>()
+        .addFunction ("SetTargetProcessByName", &ThreadHijackProvider::SetTargetProcessByName)
+        .addFunction ("HijackThread", &ThreadHijackProvider::HijackThread)
     .endClass();
 
 

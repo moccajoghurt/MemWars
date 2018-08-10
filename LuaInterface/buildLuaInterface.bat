@@ -1,2 +1,2 @@
 @ECHO OFF
-cl.exe /EHsc LuaInterface.cpp ../PenetrationRoutines/DLLInjectionProvider/DLLInjectionProvider.cpp ../AttackServices/DLLInjectionAttack/Injector.cpp ../Core/MemWarsServicesCore.cpp /link lua-5.1.5_Win64/liblua5.1.a Kernel32.lib Advapi32.lib Ntdll.lib Shlwapi.lib
+cl.exe /EHsc LuaInterface.cpp ../PenetrationRoutines/DLLInjectionProvider/DLLInjectionProvider.cpp ../AttackServices/DLLInjectionAttack/Injector.cpp ../PenetrationRoutines/ThreadHijackProvider/ThreadHijackProvider.cpp ../AttackServices/ThreadHijackAttack/ThreadHijack.cpp ../Core/MemWarsServicesCore.cpp /link lua-5.1.5_Win64/liblua5.1.a Kernel32.lib Advapi32.lib Ntdll.lib Shlwapi.lib
