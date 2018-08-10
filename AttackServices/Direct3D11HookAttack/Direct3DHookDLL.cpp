@@ -89,6 +89,8 @@ DWORD WINAPI InitializeHook(LPVOID lpParam) {
     DetourD3D11Present->SetupHook((PBYTE)pSwapChainVtable[8], (PBYTE)HookD3D11Present);
     DetourD3D11Present->Hook();
     // pD3D11Present = DetourD3D11Present->GetOriginal<pD3D11Present>();
+    Sleep(1000); // wait for D3D11Present to be called
+    FreeLibraryAndExitThread((HMODULE)lpParam, 0);
 
     return 1;
 }
@@ -97,7 +99,7 @@ DWORD WINAPI InitializeHook(LPVOID lpParam) {
 BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpvReserved) {
     switch (dwReason) {
         case DLL_PROCESS_ATTACH:
-            CreateThread(NULL, 0, &InitializeHook, NULL, 0, NULL); 
+            CreateThread(NULL, 0, &InitializeHook, hModule, 0, NULL); 
             break;
         }
     return TRUE;

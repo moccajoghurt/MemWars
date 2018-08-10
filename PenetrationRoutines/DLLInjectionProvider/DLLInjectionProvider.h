@@ -15,4 +15,5 @@ public:
 protected:
     wstring dllPath = L"";
     HANDLE hProcess = NULL;
+    string processName = "";
 };

@@ -8,6 +8,7 @@ DWORD WINAPI StartWork(LPVOID lpParam) {
     lstrcatA(tempPath, "dllInjectionConfirmationFile");
     HANDLE h = CreateFileA(tempPath, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	CloseHandle(h);
+	FreeLibraryAndExitThread((HMODULE)lpParam, 0);
     return 1;
 }
 
@@ -15,7 +16,7 @@ DWORD WINAPI StartWork(LPVOID lpParam) {
 BOOL APIENTRY DllMain(HMODULE hinstDLL, DWORD  fdwReason, LPVOID lpReserved) {
 	switch (fdwReason) {
 		case DLL_PROCESS_ATTACH:
-			CreateThread(NULL, 0, &StartWork, NULL, 0, NULL);
+			CreateThread(NULL, 0, &StartWork, hinstDLL, 0, NULL);
 			// FreeLibrary(hinstDLL);
 			break;
 		case DLL_THREAD_ATTACH:
