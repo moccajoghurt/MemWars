@@ -1,3 +1,3 @@
 #pragma once
 
-BOOL ThreadHijack(HANDLE process, DWORD threadID);
+int ThreadHijack(HANDLE process, DWORD threadID);
