@@ -1,0 +1,2 @@
+@ECHO OFF
+cl.exe /EHsc ThreadHijackProvider.cpp ../../AttackServices/ThreadHijackAttack/ThreadHijack.cpp ../../Core/MemWarsServicesCore.cpp ../../Core/MemWarsCore.c /link User32.lib Kernel32.lib Advapi32.lib Ntdll.lib Shlwapi.lib
