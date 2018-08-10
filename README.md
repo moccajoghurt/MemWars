@@ -18,17 +18,17 @@ The following attack methods are implemented:
 - (basic) [Thread Hijacking](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/ThreadHijackAttack)
 - (advanced) [System Process Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/SystemProcessInjectionAttack)
 - (advanced) [Capcom Driver Attack](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/CapcomDriverAttack)
-- (under construction) [Hidden Kernel DLL Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/HiddenKernelDLLInjectionAttack)
+- (advanced) [Hidden Kernel DLL Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/HiddenKernelDLLInjectionAttack)
 
 
 The project is still under development.
 
 ## TODO:
 
-- Finishing the [Hidden Kernel DLL Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/HiddenKernelDLLInjectionAttack)
-	- (done) finishing the physical memory controller that takes care of the kernel memory
-	- (done) implementing the copy on write hook that executes the DLL inside the kernel
-	- testing the attack method on different processes and eliminate instabilities
-- Development of automated execution of attacks on a desired process
-- Development of a user interface for the framework
-- Designing an output protocol for the test results of the framework
+- Finishing the Lua Interface for all attack methods
+	- (done) basic attack methods
+	- [System Process Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/SystemProcessInjectionAttack)
+	- [Capcom Driver Attack](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/CapcomDriverAttack)
+	- [Hidden Kernel DLL Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/HiddenKernelDLLInjectionAttack)
+- Security checks before execution of certain attacks
+- Development of exemplary anti-cheat methods that defend against attacks
