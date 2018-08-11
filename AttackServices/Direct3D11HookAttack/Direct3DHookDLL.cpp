@@ -15,6 +15,8 @@ DWORD_PTR* pDeviceVTable = NULL;
 ID3D11Device *pDevice = NULL;
 ID3D11DeviceContext *pContext = NULL;
 
+BOOL unhooked = FALSE;
+
 
 typedef HRESULT(__stdcall *D3D11Present) (IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 D3D11Present pD3D11Present = NULL;
@@ -27,6 +29,7 @@ HRESULT __stdcall HookD3D11Present(IDXGISwapChain* pSwapChain, UINT SyncInterval
     HANDLE h = CreateFileA(tempPath, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	CloseHandle(h);
     DetourD3D11Present->UnHook();
+    unhooked = TRUE;
     return pD3D11Present(pSwapChain, SyncInterval, Flags);
 }
 
@@ -89,7 +92,10 @@ DWORD WINAPI InitializeHook(LPVOID lpParam) {
     DetourD3D11Present->SetupHook((PBYTE)pSwapChainVtable[8], (PBYTE)HookD3D11Present);
     DetourD3D11Present->Hook();
     // pD3D11Present = DetourD3D11Present->GetOriginal<pD3D11Present>();
-    Sleep(1000); // wait for D3D11Present to be called
+    while (!unhooked) {
+        Sleep(1000); // wait for D3D11Present to be called
+    }
+    Sleep(1000);
     FreeLibraryAndExitThread((HMODULE)lpParam, 0);
 
     return 1;
