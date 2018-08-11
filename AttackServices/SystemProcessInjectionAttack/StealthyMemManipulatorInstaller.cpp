@@ -28,68 +28,68 @@ BOOL StealthyMemInstaller::Init(vector<wstring> preferedTIDsModules, wstring tar
     return TRUE;
 }
 
-BOOL StealthyMemInstaller::Install() {
+int StealthyMemInstaller::Install() {
 
 	if (AlreadyInstalled()) {
-		cout << "Install() failed: already installed." << endl;
-        return TRUE;
+		// cout << "Install() failed: already installed." << endl;
+        return 0;
 	}
 
 	if (InstanceAlreadyRunning()) {
-        cout << "Install() failed: Instance already running." << endl;
-        return FALSE;
+        // cout << "Install() failed: Instance already running." << endl;
+        return 1;
 	}
 
     if (!SetProcessPrivilege(SE_DEBUG_NAME, TRUE)) {
-        cout << "Install() failed: Privilege failed." << endl;
-        return FALSE;
+        // cout << "Install() failed: Privilege failed." << endl;
+        return 2;
     }
 	
 	if (!GetTargetProcessPID()) {
-        cout << "Install() failed: GetTargetProcessPID failed." << endl;
-        return FALSE;
+        // cout << "Install() failed: GetTargetProcessPID failed." << endl;
+        return 3;
     }
 
     if (!GetTargetProcessHandle()) {
-		cout << "Install() failed: GetTargetProcessHandle failed." << endl;
-        return FALSE;
+		// cout << "Install() failed: GetTargetProcessHandle failed." << endl;
+        return 4;
 	}
 
     if (!GetRemoteExecutableMemory()) {
-		cout << "Install() failed: GetRemoteExecutableMemory failed." << endl;
-        return FALSE;
+		// cout << "Install() failed: GetRemoteExecutableMemory failed." << endl;
+        return 5;
 	}
 	
 	if (!FindUsableTID()) {
-		cout << "Install() failed: FindUsableTID failed." << endl;
-		return FALSE;
+		// cout << "Install() failed: FindUsableTID failed." << endl;
+		return 6;
 	}
 
 	if (!CreateSharedFileMapping()) {
-		cout << "Install() failed: CreateSharedFileMapping failed. " << GetLastError() <<endl;
-		return FALSE;
+		// cout << "Install() failed: CreateSharedFileMapping failed. " << GetLastError() <<endl;
+		return 7;
 	}
 
 	if (!CreateExternalGatekeeperHandleToFileMapping()) {
-		cout << "Install() failed: Gatekeeperhandle failed." << endl;
-		return FALSE;
+		// cout << "Install() failed: Gatekeeperhandle failed." << endl;
+		return 8;
 	}
 
 	if (!InjectFileMappingShellcodeIntoTargetThread()) {
-        cout << "Install() failed: ConnectFileMappingWithTargetThread failed." << endl;
-		return FALSE;
+        // cout << "Install() failed: ConnectFileMappingWithTargetThread failed." << endl;
+		return 9;
 	}
 	CloseHandle(hLocalSharedMem);
 
 	if (!InjectCommunicationShellcodeIntoTargetThread()) {
-		cout << "Install() failed: InjectCommunicationShellcodeIntoTargetThread failed." << endl;
-		return FALSE;
+		// cout << "Install() failed: InjectCommunicationShellcodeIntoTargetThread failed." << endl;
+		return 10;
 	}
 
 	WriteReconnectionInfoIntoSharedMemory();
 	CleanUp();
 		
-    return TRUE;
+    return 0;
 }
 
 BOOL StealthyMemInstaller::InstanceAlreadyRunning() {
@@ -291,7 +291,6 @@ BOOL StealthyMemInstaller::FindUsableTID() {
 BOOL StealthyMemInstaller::CreateExternalGatekeeperHandleToFileMapping() {
 	vector<DWORD> explorerPIDs = GetPIDsOfProcess(explExeName);
 	if (explorerPIDs.empty()) {
-		cout << "here" << endl;
 		return FALSE;
 	}
 		

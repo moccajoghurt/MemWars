@@ -1,9 +1,10 @@
 #include "../../../AttackServices/SystemProcessInjectionAttack/StealthyMemManipulatorInstaller.h"
+#include "../../AttackProvider/AttackProvider.h"
 #include <string>
 
 using namespace std;
 
-class Installer {
+class Installer : public AttackProvider {
 public:
     void Init();
     BOOL Install();

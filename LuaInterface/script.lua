@@ -5,7 +5,7 @@ useDirect3DInjector = true
 useIATHookInjector = true
 useThreadHijacker = true
 
-targetProcessName = "memoryTestApp.exe"
+targetProcessName = "chrome.exe"
 
 if useDllInjector then
     print("#### Testing DLL Injection")
@@ -45,7 +45,7 @@ if useThreadHijacker then
     threadHijacker = ThreadHijacker()
     threadHijacker:SetTargetProcessByName(targetProcessName)
     if threadHijacker:HijackThread() then
-        print("Successfully hijacked the main thread of the target process")
+        print("Successfully hijacked the main thread of " .. targetProcessName)
     end
     print(threadHijacker:GetAttackResults())
 end

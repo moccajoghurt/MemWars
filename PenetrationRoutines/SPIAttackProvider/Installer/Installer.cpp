@@ -23,16 +23,33 @@ BOOL Installer::Install() {
         return FALSE;
     }
 
-    if (!smi.Install()) {
-        cout << "Install failed" << endl;
+    int result = smi.Install();
+    if (result != 0) {
+        results += "[-] Install() failed. System Error Code: ";
+        results += to_string(GetLastError());
+        results += "\n";
+        if (status == 1) results += "[-] An installing routine is already running.\n";
+        if (status == 2) results += "[-] Could not set process privilege to SE_DEBUG_NAME.\n";
+        if (status == 3) results += "[-] Could not retrieve target process PID.\n";
+        if (status == 4) results += "[-] Could not retrieve target process HANDLE.\n";
+        if (status == 5) results += "[-] Could not find usable executable memory in target process.\n";
+        if (status == 6) results += "[-] Could not get a usable TID.\n";
+        if (status == 7) results += "[-] Could not create a shareable file mapping.\n";
+        if (status == 8) results += "[-] Gatekeeper process (explorer.exe) could not get a HANDLE to the file mapping.\n";
+        if (status == 9) results += "[-] Could not inject file mapping shellcode into lsass.exe.\n";
+        if (status == 10) results += "[-] Could not inject communication shellcode into lsass.exe.\n";
         return FALSE;
-    } else {
-        cout << "Install success" << endl;
-        return TRUE;
     }
+    results += "[+] Successfully installed the lsass.exe attack\n";
+
+    // TODO Überlegen, wie ich installer wegen mutex mache. Ist mutex in client überhaupt nötig? eigentlich nicht
+    // da ja client wartet, bis installer fertig ist. nach installer kann spiel gestartet werden und dann client ausgeführt werden
+    // daher mutex check aus client entfernen
+
+    return TRUE;
 }
 
-int main() {
-    Installer inst;
-    inst.Install();
-}
+// int main() {
+//     Installer inst;
+//     inst.Install();
+// }

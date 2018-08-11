@@ -1,4 +1,4 @@
-
+#include <iostream>
 extern "C" {
 #include "lua-5.1.5_Win64/include/lua.h"
 #include "lua-5.1.5_Win64/include/lauxlib.h"
@@ -9,8 +9,6 @@ extern "C" {
 
 #include "../PenetrationRoutines/DLLInjectionProvider/DLLInjectionProvider.h"
 #include "../PenetrationRoutines/ThreadHijackProvider/ThreadHijackProvider.h"
-
-#include <iostream>
 
 using namespace luabridge;
 using namespace std;
@@ -33,7 +31,6 @@ int main() {
     .beginClass<AttackProvider>("AttackProvider")
         .addConstructor<void(*) (void)>()
         .addFunction ("GetAttackResults", &AttackProvider::GetAttackResults)
-        // .addData ("results", &AttackProvider::results)
     .endClass()
     .deriveClass <DLLInjectionProvider, AttackProvider>("DLLInjector")
         .addConstructor<void(*) (void)>()

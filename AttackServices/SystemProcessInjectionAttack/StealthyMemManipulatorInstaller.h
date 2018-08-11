@@ -55,7 +55,7 @@ struct REMOTE_COMMAND_INFO {
 class StealthyMemInstaller {
 public:
     BOOL Init(vector<wstring>, wstring targetProcessName = L"");
-    BOOL Install();
+    int Install();
     // these functions are public for testing. Make private when not testing
     BOOL InstanceAlreadyRunning();
     BOOL AlreadyInstalled();
