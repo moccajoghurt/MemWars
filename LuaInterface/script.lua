@@ -5,7 +5,7 @@ useDirect3DInjector = true
 useIATHookInjector = true
 useThreadHijacker = true
 
-targetProcessName = "chrome.exe"
+targetProcessName = "dota2.exe"
 
 if useDllInjector then
     print("#### Testing DLL Injection")
