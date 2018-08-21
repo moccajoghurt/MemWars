@@ -1,11 +1,11 @@
 
+useDllInjector = false
+useDirect3DInjector = false
+useIATHookInjector = false
+useThreadHijacker = false
+useLsassAttack = true
 
-useDllInjector = true
-useDirect3DInjector = true
-useIATHookInjector = true
-useThreadHijacker = true
-
-targetProcessName = "dota2.exe"
+targetProcessName = "SkypeApp.exe"
 
 if useDllInjector then
     print("#### Testing DLL Injection")
@@ -50,4 +50,35 @@ if useThreadHijacker then
     print(threadHijacker:GetAttackResults())
 end
 
+function toLittleEndian(hexString)
+    hexString = hexString:gsub("0x","", 1)
+    local buf = ""
+    for i = #hexString, 1, -1 do
+        local c = hexString:sub(i,i)
+        buf = buf .. c
+    end
+    buf = buf:gsub("(.)(.)","%2%1")
+    return buf
+end
+
+if useLsassAttack then
+    print("#### Installing lsass attack \n(this can take a few mintues since we wait for idling threads in lsass.exe)...")
+    lsassInstaller = LsassAttackInstaller()
+    if lsassInstaller:Install() then
+        print("Successfully injected shellcode into lsass.exe and prepared communication via file mapping")
+    end
+    print(lsassInstaller:GetAttackResults())
+    print("starting client...")
+    lsassAttackClient = LsassAttackClient()
+    if lsassAttackClient:SetTargetProcessByName(targetProcessName) then
+        print("Successfully setup communication with lsass.exe")
+    end
+    
+    readVal = lsassAttackClient:ReadProcessMemory("0x1c921120000", 1)
+    print(readVal)
+    lsassAttackClient:WriteProcessMemory("0x1c921130000", toLittleEndian("0xBE"))
+    readVal = lsassAttackClient:ReadProcessMemory("0x1c921130000", 1)
+    print(readVal)
+    print(lsassAttackClient:GetAttackResults())
+end
 

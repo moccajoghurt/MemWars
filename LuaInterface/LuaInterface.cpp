@@ -9,6 +9,8 @@ extern "C" {
 
 #include "../PenetrationRoutines/DLLInjectionProvider/DLLInjectionProvider.h"
 #include "../PenetrationRoutines/ThreadHijackProvider/ThreadHijackProvider.h"
+#include "../PenetrationRoutines/SPIAttackProvider/Installer/SPIInstallProvider.h"
+#include "../PenetrationRoutines/SPIAttackProvider/Client/SPIAttackProvider.h"
 
 using namespace luabridge;
 using namespace std;
@@ -42,7 +44,19 @@ int main() {
         .addConstructor<void(*) (void)>()
         .addFunction ("SetTargetProcessByName", &ThreadHijackProvider::SetTargetProcessByName)
         .addFunction ("HijackThread", &ThreadHijackProvider::HijackThread)
-    .endClass();
+    .endClass()
+    .deriveClass <SPIInstallProvider, AttackProvider>("LsassAttackInstaller")
+        .addConstructor<void(*) (void)>()
+        .addFunction ("Install", &SPIInstallProvider::Install)
+    .endClass()
+    .deriveClass <SPIAttackProvider, AttackProvider>("LsassAttackClient")
+        .addConstructor<void(*) (void)>()
+        .addFunction ("SetTargetProcessByName", &SPIAttackProvider::Init)
+        .addFunction ("ReadProcessMemory", &SPIAttackProvider::ReadProcessMemory)
+        .addFunction ("WriteProcessMemory", &SPIAttackProvider::WriteProcessMemory)
+        .addFunction ("GetUsableSharedMemSize", &SPIAttackProvider::GetUsableSharedMemSize)
+    .endClass()
+    ;
 
 
 
