@@ -117,12 +117,18 @@ void HiddenKernelDLLInjectionAttackTest() {
         hProcess = (HANDLE)GetProcessByName("TestApp.exe");
     }
 
-    if (!StealthInject("DarkSoulsIII.exe", "InjectedDLL.dll")) {
-        cout << "HiddenKernelDLLInjectionAttack() failed" << endl;
+    int status = MapDLLIntoKernel("InjectedDLL.dll");
+    if (status != 0) {
+        cout << "MapDLLIntoKernel() failed" << endl;
+        cout << "Error: " << status << endl;
+    }
+    status = InjectDLLIntoProcess("TestApp.exe");
+    if (status != 0) {
+        cout << "InjectDLLIntoProcess() failed" << endl;
+        cout << "Error: " << status << endl;
     } else {
         cout << "HiddenKernelDLLInjectionAttack() success" << endl;
     }
-    
     
     system("taskkill /IM TestApp.exe /F >nul");
 }

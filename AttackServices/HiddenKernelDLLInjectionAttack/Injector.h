@@ -1,3 +1,4 @@
+#pragma once
 #include <windows.h>
 #include <Psapi.h>
 #include <string>
@@ -95,29 +96,32 @@ PUCHAR FindKernelPadSinglePage(PUCHAR start, SIZE_T size) {
 	return 0;
 }
 
-
-BOOL StealthInject(string processName, string dllPath) {
+PUCHAR _TlsGetValue;
+PUCHAR target;
+TlsLockedHookStatus* hookStatus;
+vector<std::pair<PVOID, SIZE_T>> usedRegions;
+int MapDLLIntoKernel(string dllPath) {
 
     if (!InitMemoryController()) {
-        return FALSE;
+        return 1;
     }
 
     // Not &TlsGetValue to avoid __imp intermodule calls
-    PUCHAR _TlsGetValue = (PUCHAR)GetProcAddress(GetModuleHandleA("KERNEL32"), "TlsGetValue");
+    _TlsGetValue = (PUCHAR)GetProcAddress(GetModuleHandleA("KERNEL32"), "TlsGetValue");
     if (*_TlsGetValue != 0xE9 && *_TlsGetValue != 0xEB) {
         UnloadCapcomDriver();
-        return FALSE;
+        return 2;
     }
-	PUCHAR target;
+	// PUCHAR target;
     if (*_TlsGetValue == 0xEB) {
         target = (_TlsGetValue + 2 + *(int8_t*) (_TlsGetValue + 1));
     } else {
         target = (_TlsGetValue + 5 + *(int32_t*) (_TlsGetValue + 1));
     }
 
-    TlsLockedHookStatus* hookStatus;
+    // TlsLockedHookStatus* hookStatus;
     PVOID memory;
-    vector<std::pair<PVOID, SIZE_T>> usedRegions;
+    // vector<std::pair<PVOID, SIZE_T>> usedRegions;
     BOOL success = MapDllToKernel(dllPath, _TlsGetValue, target, TRUE, [&](SIZE_T size) {
         memory = AllocateKernelMemory(size);
 		ExposeKernelMemoryToProcess(memory, size, currentEProcess);
@@ -127,23 +131,26 @@ BOOL StealthInject(string processName, string dllPath) {
     });
     UnloadCapcomDriver();
     if (!success) {
-        return FALSE;
+        return 3;
     }
     hookStatus = (TlsLockedHookStatus*)memory;
-    
+	return 0;
+}
+
+int InjectDLLIntoProcess(string processName) {
     uint64_t pid = 0;
 	for (int i = 0; i < 200; i++) {
 		pid = FindProcess(processName);
 		Sleep(10);
 	}
     if (!pid) {
-        return FALSE;
+        return 4;
     }
 	// cout << "found " << processName.data() << ". Pid " << pid << endl;
 
     uint64_t eProcess = FindEProcess(pid);
 	if (!eProcess) {
-        return FALSE;
+        return 5;
     }
     // cout << "EProcess: " << hex << eProcess << dec <<endl;
 
@@ -165,7 +172,7 @@ BOOL StealthInject(string processName, string dllPath) {
 	PUCHAR padSpace = FindKernelPadSinglePage(_TlsGetValue, pidBasedHook.size());
 
 	if (!padSpace) {
-        return FALSE;
+        return 6;
     }
 
 	// printf("Hooking TlsGetValue @                   %16llx\n", (uint64_t)_TlsGetValue);
@@ -204,19 +211,19 @@ BOOL StealthInject(string processName, string dllPath) {
 
     // check maching memory checks AND is CoW check 
 
-	cout << "Writing stub to padding..." << endl;
+	// cout << "Writing stub to padding..." << endl;
 	AssertCoW(padSpace);
 	SetTargetEProcessIfCanRead(eProcess, padSpace);
 	ReadVirtual(padSpace, backup1.data(), pidBasedHook.size());
 	WriteVirtual(pidBasedHook.data(), padSpace, pidBasedHook.size());
 
-	cout << "Writing the hook to TlsGetValue..." << endl;
+	// cout << "Writing the hook to TlsGetValue..." << endl;
 	AssertCoW(_TlsGetValue);
 	SetTargetEProcessIfCanRead(eProcess, _TlsGetValue);
 	ReadVirtual(_TlsGetValue, backup2.data(), 5);
 	WriteVirtual(jmp, _TlsGetValue, 5);
 
-	cout << "Hooked! Waiting for threads to spin..." << endl;
+	// cout << "Hooked! Waiting for threads to spin..." << endl;
 
 	// Wait for threads to lock
 	for (int i = 0; i < 500; i++) {
@@ -225,27 +232,28 @@ BOOL StealthInject(string processName, string dllPath) {
     }
 
 		
-	cout << "Threads spinning: " << (int)hookStatus->numThreadsWaiting << endl;
+	// cout << "Threads spinning: " << (int)hookStatus->numThreadsWaiting << endl;
 
 	// // Restore Backup
 	SetTargetEProcessIfCanRead(eProcess, _TlsGetValue);
 	WriteVirtual(backup2.data(), _TlsGetValue, 5);
 	
-	
+	int ret;
 	if (hookStatus->numThreadsWaiting) {
-       cout << "Unhooked and started thread hijacking!" << endl;
+		ret = 0;
+    //    cout << "Unhooked and started thread hijacking!" << endl;
     } else {
-        cout << "ERROR: Wait timed out..." << endl;
+		ret = 7;
+        // cout << "ERROR: Wait timed out..." << endl;
     }
 
 	hookStatus->isFree = TRUE;
-	Sleep(2000);
 
 	SetTargetEProcessIfCanRead(eProcess, padSpace);
 	WriteVirtual(backup1.data(), padSpace, pidBasedHook.size());
 
-	// TODO write test cases for the driver (e.g. loading & unloading 100x, init memory controller 100x, ...)
+	// TODO write more test cases for the driver to increase robustness
 
-    return TRUE;
+    return ret;
 }
 
