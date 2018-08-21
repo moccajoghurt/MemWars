@@ -3,9 +3,10 @@ useDllInjector = false
 useDirect3DInjector = false
 useIATHookInjector = false
 useThreadHijacker = false
-useLsassAttack = true
+useLsassAttack = false
+useKernelDLLInector = true
 
-targetProcessName = "SkypeApp.exe"
+targetProcessName = "TestApp.exe"
 
 if useDllInjector then
     print("#### Testing DLL Injection")
@@ -82,3 +83,15 @@ if useLsassAttack then
     print(lsassAttackClient:GetAttackResults())
 end
 
+if useKernelDLLInector then
+    print("### Testing Hidden Kernel DLL Injection")
+    kernelInjector = HiddenKernelDLLInjector()
+    kernelInjector:SetTargetDLL("C:/Users/Marius/git/MemWars/AttackServices/DLLInjectionAttack/InjectedDLL.dll")
+    if kernelInjector:LoadDLLIntoKernel() then
+        print ("Successfully loaded DLL into kernel")
+    end
+    if kernelInjector:InjectDLLIntoProcess(targetProcessName) then
+        print ("Successfully injected DLL into process")
+    end
+    print(kernelInjector:GetAttackResults())
+end

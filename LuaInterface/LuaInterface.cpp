@@ -11,6 +11,7 @@ extern "C" {
 #include "../PenetrationRoutines/ThreadHijackProvider/ThreadHijackProvider.h"
 #include "../PenetrationRoutines/SPIAttackProvider/Installer/SPIInstallProvider.h"
 #include "../PenetrationRoutines/SPIAttackProvider/Client/SPIAttackProvider.h"
+#include "../PenetrationRoutines/KernelDLLInjectionProvider/KernelDLLInjectionProvider.h"
 
 using namespace luabridge;
 using namespace std;
@@ -55,6 +56,12 @@ int main() {
         .addFunction ("ReadProcessMemory", &SPIAttackProvider::ReadProcessMemory)
         .addFunction ("WriteProcessMemory", &SPIAttackProvider::WriteProcessMemory)
         .addFunction ("GetUsableSharedMemSize", &SPIAttackProvider::GetUsableSharedMemSize)
+    .endClass()
+    .deriveClass <KernelDLLInjectionProvider, AttackProvider>("HiddenKernelDLLInjector")
+        .addConstructor<void(*) (void)>()
+        .addFunction ("SetTargetDLL", &KernelDLLInjectionProvider::SetTargetDLL)
+        .addFunction ("LoadDLLIntoKernel", &KernelDLLInjectionProvider::LoadDLLIntoKernel)
+        .addFunction ("InjectDLLIntoProcess", &KernelDLLInjectionProvider::InjectDLLIntoTargetProcess)
     .endClass()
     ;
 
