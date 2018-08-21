@@ -1,9 +1,9 @@
-#include "Installer.h"
+#include "SPIInstallProvider.h"
 #include <iostream>
 
 using namespace std;
 
-void Installer::Init() {
+void SPIInstallProvider::Init() {
     wstring we = L"";
     samsrvDll = we+L's'+L'a'+L'm'+L's'+L'r'+L'v'+L'.'+L'd'+L'l'+L'l';
     msvcrtDll = we+L'm'+L's'+L'v'+L'c'+L'r'+L't'+L'.'+L'd'+L'l'+L'l';
@@ -11,7 +11,7 @@ void Installer::Init() {
     lsassExe = we+L'l'+L's'+L'a'+L's'+L's'+L'.'+L'e'+L'x'+L'e';
 }
 
-BOOL Installer::Install() {
+bool SPIInstallProvider::Install() {
     this->Init();
 
     StealthyMemInstaller smi;
@@ -23,8 +23,8 @@ BOOL Installer::Install() {
         return FALSE;
     }
 
-    int result = smi.Install();
-    if (result != 0) {
+    int status = smi.Install();
+    if (status != 0) {
         results += "[-] Install() failed. System Error Code: ";
         results += to_string(GetLastError());
         results += "\n";
@@ -38,18 +38,17 @@ BOOL Installer::Install() {
         if (status == 8) results += "[-] Gatekeeper process (explorer.exe) could not get a HANDLE to the file mapping.\n";
         if (status == 9) results += "[-] Could not inject file mapping shellcode into lsass.exe.\n";
         if (status == 10) results += "[-] Could not inject communication shellcode into lsass.exe.\n";
+        results += "[-] Hint: The process needs to be run as administrator.\n";
         return FALSE;
     }
     results += "[+] Successfully installed the lsass.exe attack\n";
 
-    // TODO Überlegen, wie ich installer wegen mutex mache. Ist mutex in client überhaupt nötig? eigentlich nicht
-    // da ja client wartet, bis installer fertig ist. nach installer kann spiel gestartet werden und dann client ausgeführt werden
-    // daher mutex check aus client entfernen
+    // TODO Assert no anti-cheat running
 
     return TRUE;
 }
 
 // int main() {
-//     Installer inst;
+//     SPIInstallProvider inst;
 //     inst.Install();
 // }

@@ -11,16 +11,18 @@
 
 class SPIAttackProvider : public AttackProvider {
 public:
-    BOOL Init(wstring targetProcess, wstring pivotProcess);
-    BOOL ReadProcessMemory(HANDLE hProcess, void* address, void* readBuf, SIZE_T readSize, SIZE_T* bytesRead = NULL);
-    BOOL WriteProcessMemory(HANDLE hProcess, void* address, void* writeBuf, SIZE_T writeSize, SIZE_T* bytesWritten = NULL);
-    SIZE_T GetUsableSharedMemSize() {
+    SPIAttackProvider() {}
+    bool Init(string targetProcess/*, string pivotProcess*/);
+    string ReadProcessMemory(string address, int readSize);
+    unsigned int WriteProcessMemory(string address, string hexSequence);
+    int GetUsableSharedMemSize() {
         return smc.GetUsableSharedMemSize();
     }
 protected:
-    wstring pivotProcess;
-    wstring targetProcess;
+    // wstring pivotProcess;
+    string targetProcess;
     StealthyMemClient smc;
+    vector<BYTE> HexStringToBytes(string hexString);
 };
 
 

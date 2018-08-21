@@ -4,10 +4,11 @@
 
 using namespace std;
 
-class Installer : public AttackProvider {
+class SPIInstallProvider : public AttackProvider {
 public:
+    bool Install();
+protected:
     void Init();
-    BOOL Install();
     wstring samsrvDll;
     wstring msvcrtDll;
     wstring crypt32Dll;
