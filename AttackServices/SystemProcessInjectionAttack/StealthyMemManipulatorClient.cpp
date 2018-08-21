@@ -1,7 +1,7 @@
-
+#include <iostream>
 #include <string>
 #include <algorithm>
-#include <iostream> // for debugging, remove later
+// #include <iostream> // for debugging, remove later
 #include "StealthyMemManipulatorClient.h"
 #include "StealthyMemManipulatorGetHandleId.h"
 
@@ -9,34 +9,34 @@ using namespace std;
 
 BOOL StealthyMemClient::Init(wstring pivotProcessName) {
     
-    if (InstanceAlreadyRunning()) {
-        cout << "StealthyMemClient::InstanceAlreadyRunning failed" << endl;
+    // if (InstanceAlreadyRunning()) {
+        // cout << "StealthyMemClient::InstanceAlreadyRunning failed" << endl;
         // return FALSE;
-    }
+    // }
 
 	if (!SetPivotProcess(pivotProcessName)) {
-        cout << "StealthyMemClient::SetPivotProcess failed" << endl;
+        // cout << "StealthyMemClient::SetPivotProcess failed" << endl;
         return FALSE;
     }
     
     if (!ConnectToFileMapping()) {
-        cout << "StealthyMemClient::ConnectToFileMapping failed" << endl;
+        // cout << "StealthyMemClient::ConnectToFileMapping failed" << endl;
         return FALSE;
     }
     
 	return Reconnect();
 }
 
-BOOL StealthyMemClient::InstanceAlreadyRunning() {
-    string e = "";
-	string mutexNoStr = e+'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M'+'M'+'t'+'x';
-	m_hMutex = CreateMutexA(NULL, TRUE, mutexNoStr.c_str());
-	if (GetLastError() == ERROR_ALREADY_EXISTS) {
-        // exit(EXIT_FAILURE);
-        return TRUE;
-    }
-    return FALSE;
-}
+// BOOL StealthyMemClient::InstanceAlreadyRunning() {
+//     string e = "";
+// 	string mutexNoStr = e+'G'+'l'+'o'+'b'+'a'+'l'+'\\'+'S'+'M'+'e'+'m'+'M'+'M'+'t'+'x';
+// 	m_hMutex = CreateMutexA(NULL, TRUE, mutexNoStr.c_str());
+// 	if (GetLastError() == ERROR_ALREADY_EXISTS) {
+//         // exit(EXIT_FAILURE);
+//         return TRUE;
+//     }
+//     return FALSE;
+// }
 
 BOOL StealthyMemClient::SetPivotProcess(wstring pivotProcessName) {
 	vector<DWORD> pidsLsass = GetPIDs(pivotProcessName);
@@ -120,6 +120,8 @@ NTSTATUS StealthyMemClient::ReadWriteVirtualMemory(void* lpBaseAddress, void* lp
     if (!lpBuffer || !lpBaseAddress || !nSize || nSize >= m_usableSharedMemSize || !m_hHiJack) {
         return (NTSTATUS)0xFFFFFFFF;
     }
+
+    // memset(m_ptrLocalSharedMem, 0, m_usableSharedMemSize); // setting mem to zero
 
     // Preparing order structure
     _REMOTE_COMMAND_INFO rpmOrder;

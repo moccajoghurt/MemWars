@@ -311,10 +311,10 @@ void SMMClient_ReadWriteMemoryWithLsass() {
     preferedThreadModuleNames.push_back(L"msvcrt.dll");
     preferedThreadModuleNames.push_back(L"crypt32.dll");
     smi.Init(preferedThreadModuleNames, L"lsass.exe");
-    if (!smi.Install()) {
-        cout << "SMMClient_ReadMemoryTest() failed. Installer failed" << endl;
-        return;
-    }
+    // if (!smi.Install()) {
+    //     cout << "SMMClient_ReadMemoryTest() failed. Installer failed" << endl;
+    //     return;
+    // }
 
     StealthyMemClient smc;
     if (!smc.Init(L"lsass.exe")) {
@@ -336,6 +336,8 @@ void SMMClient_ReadWriteMemoryWithLsass() {
         cout << "SMMClient_ReadMemoryTest() failed. Could not get Handle" << endl;
         return;
     }
+
+    cout << (uint64_t*)ptrBuf.memPointerArray[0] << endl;
 
     BYTEARRAY bArr1 = {0};
     SIZE_T bytesReadBuf = 0;

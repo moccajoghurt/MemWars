@@ -22,7 +22,7 @@ extern "C" void SpinLockByte(volatile void* byteAddr, volatile BYTE valueExit);
 struct _REMOTE_COMMAND_INFO {
 	DWORD64 exec = 1; // Least significant byte used to release the spinlock
 	DWORD order = 0; // 0: Read, 1: Write
-	NTSTATUS status = 0xFFFFFFFF;
+	NTSTATUS status = 0x1;//0xFFFFFFFF; // USAGE UNUSED MIGHT BE ADDED IN FUTURE
 	HANDLE hProcess = NULL;
 	DWORD64 lpBaseAddress = NULL;
 	SIZE_T nSize = 0;
@@ -41,7 +41,7 @@ public:
     // StealthyMemClient();
 	~StealthyMemClient();
     BOOL Init(wstring pivotProcessName);
-    BOOL InstanceAlreadyRunning();
+    // BOOL InstanceAlreadyRunning();
     BOOL SetPivotProcess(wstring pivotProcessName);
     BOOL ConnectToFileMapping();
     vector<DWORD> GetPIDs(wstring targetProcessName);
