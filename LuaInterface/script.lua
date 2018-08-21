@@ -90,6 +90,9 @@ if useKernelDLLInector then
     if kernelInjector:LoadDLLIntoKernel() then
         print ("Successfully loaded DLL into kernel")
     end
+    -- After the DLL has been mapped, the anti-cheat protected procress can be started
+    -- this ensures that the capcom driver cannot be detected since it has been unloaded
+    -- start target process here
     if kernelInjector:InjectDLLIntoProcess(targetProcessName) then
         print ("Successfully injected DLL into process")
     end

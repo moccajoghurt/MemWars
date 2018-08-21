@@ -81,7 +81,7 @@ public:
             results += "[-] - The DLL contains runtime errors.\n";
             return FALSE;
         }
-        results += "[+] InjectDLL() was successful.\n[+] ";
+        results += "[+] InjectDLLIntoProcess() was successful.\n[+] ";
         results += processName;
         results += " is vulnerable to the Hidden Kernel DLL Injection Attack.\n";
         if (!DeleteFile(tempPath)) {
