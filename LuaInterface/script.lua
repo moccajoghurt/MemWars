@@ -1,12 +1,12 @@
 
-useDllInjector = false
+useDllInjector = true
 useDirect3DInjector = false
 useIATHookInjector = false
-useThreadHijacker = false
+useThreadHijacker = true
 useLsassAttack = false
-useKernelDLLInector = true
+useKernelDLLInector = false
 
-targetProcessName = "TestApp.exe"
+targetProcessName = "LoaderLock.exe"
 
 if useDllInjector then
     print("#### Testing DLL Injection")
@@ -90,7 +90,7 @@ if useKernelDLLInector then
     if kernelInjector:LoadDLLIntoKernel() then
         print ("Successfully loaded DLL into kernel")
     end
-    -- After the DLL has been mapped, the anti-cheat protected procress can be started
+    -- After the DLL has been mapped into the kernel, the anti-cheat protected procress can be started
     -- this ensures that the capcom driver cannot be detected since it has been unloaded
     -- start target process here
     if kernelInjector:InjectDLLIntoProcess(targetProcessName) then
