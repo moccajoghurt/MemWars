@@ -1,0 +1,2 @@
+@ECHO OFF
+cl.exe /EHsc LoadLibraryHook.cpp ../../../Core/MemWarsServicesCore.cpp ../../../Core/MemWarsCore.c /link /LTCG /LIBPATH:"C:\Users\marius\git\MemWars\libs\Capstone\msvc\x64\Release" user32.lib ntdll.lib Advapi32.lib Shlwapi.lib
