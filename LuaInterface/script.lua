@@ -2,11 +2,11 @@
 useDllInjector = true
 useDirect3DInjector = false
 useIATHookInjector = false
-useThreadHijacker = true
+useThreadHijacker = false
 useLsassAttack = false
-useKernelDLLInector = false
+useKernelDLLInector = true
 
-targetProcessName = "LoaderLock.exe"
+targetProcessName = "LoadLibraryHook.exe"
 
 if useDllInjector then
     print("#### Testing DLL Injection")
