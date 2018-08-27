@@ -1,4 +1,4 @@
-#include "SPIInstallProvider.h"
+#include "LsassInstallProvider.h"
 #include <iostream>
 
 using namespace std;

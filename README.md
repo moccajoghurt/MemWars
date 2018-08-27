@@ -16,7 +16,7 @@ The following attack methods are implemented:
 - (basic) [Import Address Table Hook](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/IATHookAttack)
 - (basic) [JMP Hook](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/JmpHookAttack)
 - (basic) [Thread Hijacking](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/ThreadHijackAttack)
-- (advanced) [System Process Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/SystemProcessInjectionAttack)
+- (advanced) [Lsass Attack](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/LsassAttack)
 - (advanced) [Capcom Driver Attack](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/CapcomDriverAttack)
 - (advanced) [Hidden Kernel DLL Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/HiddenKernelDLLInjectionAttack)
 
@@ -25,10 +25,5 @@ The project is still under development.
 
 ## TODO:
 
-- Finishing the Lua Interface for all attack methods
-	- (done) basic attack methods
-	- [System Process Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/SystemProcessInjectionAttack)
-	- [Capcom Driver Attack](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/CapcomDriverAttack)
-	- [Hidden Kernel DLL Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/HiddenKernelDLLInjectionAttack)
 - Security checks before execution of certain attacks
 - Development of exemplary anti-cheat methods that defend against attacks

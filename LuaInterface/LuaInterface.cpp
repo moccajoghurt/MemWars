@@ -9,8 +9,8 @@ extern "C" {
 
 #include "../PenetrationRoutines/DLLInjectionProvider/DLLInjectionProvider.h"
 #include "../PenetrationRoutines/ThreadHijackProvider/ThreadHijackProvider.h"
-#include "../PenetrationRoutines/SPIAttackProvider/Installer/SPIInstallProvider.h"
-#include "../PenetrationRoutines/SPIAttackProvider/Client/SPIAttackProvider.h"
+#include "../PenetrationRoutines/LsassAttackProvider/Installer/LsassInstallProvider.h"
+#include "../PenetrationRoutines/LsassAttackProvider/Client/LsassAttackProvider.h"
 #include "../PenetrationRoutines/KernelDLLInjectionProvider/KernelDLLInjectionProvider.h"
 
 using namespace luabridge;

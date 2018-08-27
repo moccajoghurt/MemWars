@@ -1,0 +1,2 @@
+@ECHO OFF
+cl.exe /EHsc LsassAttackProvider.cpp ../../../AttackServices/LsassAttack/StealthyMemManipulatorClient.cpp ../../../AttackServices/LsassAttack/StealthyMemManipulatorGetHandleId.cpp ../../../Core/MemWarsServicesCore.cpp ../../../Core/MemWarsCore.c ../../../AttackServices/LsassAttack/spinlock.obj /link User32.lib Kernel32.lib Advapi32.lib Ntdll.lib

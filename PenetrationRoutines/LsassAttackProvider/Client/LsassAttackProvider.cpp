@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <sstream>
 
-#include "SPIAttackProvider.h"
+#include "LsassAttackProvider.h"
 #include "../../../Core/MemWarsCore.h"
 #include "../../../Core/MemWarsServicesCore.h"
 
