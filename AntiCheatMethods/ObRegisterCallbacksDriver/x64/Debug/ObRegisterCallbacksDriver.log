@@ -1,0 +1,23 @@
+﻿  Building 'ObRegisterCallbacksDriver' with toolset 'WindowsKernelModeDriver10.0' and the 'Universal' target platform.
+  Stamping x64\Debug\ObRegisterCallbacksDriver.inf
+  Stamping [Version] section with DriverVer=08/28/2018,15.44.15.508
+  driver.c
+  ObRegisterCallbacksDriver.vcxproj -> C:\Users\marius\git\MemWars\AntiCheatMethods\ObRegisterCallbacksDriver\ObRegisterCallbacksDriver\x64\Debug\ObRegisterCallbacksDriver.sys
+  Done Adding Additional Store
+  Successfully signed: C:\Users\marius\git\MemWars\AntiCheatMethods\ObRegisterCallbacksDriver\ObRegisterCallbacksDriver\x64\Debug\ObRegisterCallbacksDriver.sys
+  
+  Driver is a Universal Driver.
+  .........................
+  Signability test complete.
+  
+  Errors:
+  None
+  
+  Warnings:
+  None
+  
+  Catalog generation complete.
+  C:\Users\marius\git\MemWars\AntiCheatMethods\ObRegisterCallbacksDriver\ObRegisterCallbacksDriver\x64\Debug\ObRegisterCallbacksDriver\obregistercallbacksdriver.cat
+  Done Adding Additional Store
+  Successfully signed: C:\Users\marius\git\MemWars\AntiCheatMethods\ObRegisterCallbacksDriver\ObRegisterCallbacksDriver\x64\Debug\ObRegisterCallbacksDriver\obregistercallbacksdriver.cat
+  

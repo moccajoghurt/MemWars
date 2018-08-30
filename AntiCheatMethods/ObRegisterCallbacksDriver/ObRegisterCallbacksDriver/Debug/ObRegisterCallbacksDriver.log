@@ -1,0 +1,33 @@
+﻿  Building 'ObRegisterCallbacksDriver' with toolset 'WindowsKernelModeDriver10.0' and the 'Universal' target platform.
+  Stamping Debug\ObRegisterCallbacksDriver.inf
+  Stamping [Version] section with DriverVer=08/28/2018,14.51.23.805
+  driver.cpp
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(128): error C3861: "PsGetThreadProcessId": Bezeichner wurde nicht gefunden.
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(141): error C3861: "PsGetCurrentProcessId": Bezeichner wurde nicht gefunden.
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(189): error C3861: "TdSetCallContext": Bezeichner wurde nicht gefunden.
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(208): error C3861: "PsGetCurrentProcessId": Bezeichner wurde nicht gefunden.
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(209): error C3861: "PsGetCurrentThreadId": Bezeichner wurde nicht gefunden.
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(253): error C2065: "CBTdPostOperationCallback": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(259): error C2065: "CBTdPostOperationCallback": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(262): error C2065: "CBAltitude": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(264): error C2065: "CBObRegistration": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(264): error C2228: Links von ".Version" müssen sich in einer Klasse/Struktur/Union befinden
+  c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(264): note: Typ ist "unknown-type"
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(265): error C2065: "CBObRegistration": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(265): error C2228: Links von ".OperationRegistrationCount" müssen sich in einer Klasse/Struktur/Union befinden
+  c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(265): note: Typ ist "unknown-type"
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(266): error C2065: "CBObRegistration": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(266): error C2228: Links von ".Altitude" müssen sich in einer Klasse/Struktur/Union befinden
+  c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(266): note: Typ ist "unknown-type"
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(266): error C2065: "CBAltitude": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(267): error C2065: "CBObRegistration": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(267): error C2228: Links von ".RegistrationContext" müssen sich in einer Klasse/Struktur/Union befinden
+  c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(267): note: Typ ist "unknown-type"
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(267): error C2065: "CBCallbackRegistration": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(268): error C2065: "CBObRegistration": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(268): error C2228: Links von ".OperationRegistration" müssen sich in einer Klasse/Struktur/Union befinden
+  c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(268): note: Typ ist "unknown-type"
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(272): error C2065: "CBObRegistration": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(273): error C2065: "pCBRegistrationHandle": nichtdeklarierter Bezeichner
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(307): error C3861: "TdDeleteProtectNameCallback": Bezeichner wurde nicht gefunden.
+c:\users\marius\git\memwars\anticheatmethods\obregistercallbacksdriver\obregistercallbacksdriver\obregistercallbacksdriver\driver.cpp(354): error C3861: "TdDeleteProtectNameCallback": Bezeichner wurde nicht gefunden.
