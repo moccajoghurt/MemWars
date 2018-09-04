@@ -10,11 +10,11 @@ void LoadDllTest() {
     while (hProcess == NULL) {
         hProcess = (HANDLE)GetProcessByName("memoryTestApp.exe");
     }
-
-    if (LoadDll(hProcess, L"InjectedDLL.dll")) {
+    int ret = LoadDll(hProcess, L"InjectedDLLa.dll");
+    if (ret == 0) {
         cout << "LoadDllTest() success" << endl;
     } else {
-        cout << "LoadDllTest() failed" << endl;
+        cout << "LoadDllTest() failed " << ret << endl;
     }
 
     Exit:

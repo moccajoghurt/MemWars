@@ -17,7 +17,6 @@ BOOL APIENTRY DllMain(HMODULE hinstDLL, DWORD  fdwReason, LPVOID lpReserved) {
 	switch (fdwReason) {
 		case DLL_PROCESS_ATTACH:
 			CreateThread(NULL, 0, &StartWork, hinstDLL, 0, NULL);
-			// FreeLibrary(hinstDLL);
 			break;
 		case DLL_THREAD_ATTACH:
         	break;
