@@ -4,10 +4,11 @@ useDirect3DInjector = false
 useIATHookInjector = false
 useThreadHijacker = false
 useLsassAttack = false
-useKernelDLLInector = true
+useKernelDLLInector = false
 
 targetProcessName = "LoadLibraryHook.exe"
 
+-- todo: timeout
 if useDllInjector then
     print("#### Testing DLL Injection")
     injector = DLLInjector()

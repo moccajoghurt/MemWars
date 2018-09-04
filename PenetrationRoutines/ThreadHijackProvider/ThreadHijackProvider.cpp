@@ -68,30 +68,28 @@ bool ThreadHijackProvider::HijackThread() {
         return FALSE;
     }
 
-    TCHAR processPath[MAX_PATH];
-    GetModuleFileNameExA(hProcess, NULL, processPath, MAX_PATH);
-    memset(processPath + strlen(processPath) - strlen(this->processName.c_str()), 0, MAX_PATH - strlen(processPath));
-    lstrcatA(processPath, "hijackConfirmationFile");
+    // TCHAR processPath[MAX_PATH];
+    // GetModuleFileNameExA(hProcess, NULL, processPath, MAX_PATH);
+    // memset(processPath + strlen(processPath) - strlen(this->processName.c_str()), 0, MAX_PATH - strlen(processPath));
+    // lstrcatA(processPath, "hijackConfirmationFile");
 
-    if (!PathFileExists(processPath)) {
-        results += "[+] HijackThread() was successful but the confirmation file could not be found.\n";
-        results += "[-] " ;
-        results += this->processName;
-        results += " is likely to run in a folder where it has no write permissions.\n";
+    TCHAR filename[MAX_PATH];
+    GetTempPath(MAX_PATH, filename);
+    lstrcatA(filename, "hijackConfirmationFile");
+
+    if (!PathFileExists(filename)) {
+        results += "[-] HijackThread() failed because the confirmation file could not be found.\n";
         results += "[-] If " ;
         results += this->processName;
-        results += " crashed it might be because injected shellcode (x64) is not compatible with the bit architecture.\n";
-        results += "[+] " ;
-        results += this->processName;
-        results += " is vulnerable to thread hijacking.\n";
-        return TRUE;
+        results += " crashed it might be because the injected shellcode (x64) is not compatible with the bit architecture.\n";
+        return FALSE;
     }
     results += "[+] HijackThread() was successful.\n[+] ";
     results += this->processName;
     results += " is vulnerable to thread hijacking.\n";
-    if (!DeleteFile(processPath)) {
+    if (!DeleteFile(filename)) {
         results += "[-] Warning: confirmation file could not be deleted! Make sure to delete it before running further tests. The containing folder is:\n";
-        results += processPath;
+        results += filename;
         results += "\n";
     }
     return TRUE;

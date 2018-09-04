@@ -11,7 +11,7 @@ typedef HMODULE(__stdcall* tLoadLibraryW)(LPWSTR lpFileName);
 tLoadLibraryW oLoadLibraryW;
 
 HMODULE __stdcall hLoadLibraryA(LPCTSTR lpFileName) {
-    cout << "got called" << endl;
+    wcout << lpFileName << L" tried to be injected" << endl;
     if (strcmp(lpFileName, "allowed.dll") == 0) {
         return oLoadLibraryA(lpFileName);
     } else {
@@ -22,7 +22,7 @@ HMODULE __stdcall hLoadLibraryA(LPCTSTR lpFileName) {
 }
 
 HMODULE __stdcall hLoadLibraryW(LPWSTR lpFileName) {
-    cout << "got called" << endl;
+    wcout << lpFileName << L" tried to be injected" << endl;
     if (wcscmp(lpFileName, L"allowed.dll") == 0) {
         return oLoadLibraryW(lpFileName);
     } else {
