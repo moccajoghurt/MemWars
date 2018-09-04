@@ -42,9 +42,11 @@ bool DLLInjectionProvider::InjectDLL() {
         if (status == 1) results += "[-] Could not run VirtualAllocEx() on target process.\n";
         if (status == 2) results += "[-] Could not run WriteProcessMemory() on target process.\n";
         if (status == 3) results += "[-] Could not retrieve module handle of kernel32.dll.\n";
-        if (status == 4) results += "[-] Could not retrieve process address of LoadLibraryW.\n";
+        if (status == 4) results += "[-] Could not retrieve process address of LoadLibraryW or ExitThread.\n";
         if (status == 5) results += "[-] Could not run CreateRemoteThread() on target process.\n";
-        if (status == 6) results += "[-] Wait for remote thread timed out.\n";
+        if (status == 6) results += "[-] WaitForSingleObject() returned WAIT_FAILED.\n";
+        if (status == 7) results += "[-] LoadLibrary() returned NULL.\n";
+        if (status == 8) results += "[-] GetExitCodeThread() failed. Could not retrieve status of remote thread.\n";
         results += "[+] This indicates that ";
         results += this->processName;
         results += " is protected from DLL Injections.\n";
@@ -76,6 +78,10 @@ bool DLLInjectionProvider::InjectDLL() {
     return TRUE;
 }
 
+bool DLLInjectionProvider::AssertCompatible() {
+    // would be nice to have (check if DLL and process share bit architecture)
+    return TRUE;
+}
 
 
 // int main() {
