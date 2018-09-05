@@ -1,9 +1,9 @@
 
-useDllInjector = false
-useDirect3DInjector = false
-useIATHookInjector = false
+useDllInjector = true
+useDirect3DInjector = true
+useIATHookInjector = true
 useThreadHijacker = false
-useLsassAttack = true
+useLsassAttack = false
 useKernelDLLInector = false
 
 targetProcessName = "notepad.exe"
