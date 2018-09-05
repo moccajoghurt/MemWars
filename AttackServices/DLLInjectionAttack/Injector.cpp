@@ -29,6 +29,7 @@ int LoadDll(HANDLE hProcess, const WCHAR* dllName) {
     }
 
     BYTE loadLibraryCodeCave[] = {
+        0x48, 0x83, 0xE4, 0xF0,				// +0 and rsp, 0x0f (make sure stack 16-byte aligned)
         0x48, 0xB9, 0, 0, 0, 0, 0, 0, 0, 0,         // mov rcx (DLL name)
         0x48, 0xB8, 0, 0, 0, 0, 0, 0, 0, 0,         // mov rax (LoadLibraryW Process Address)
         0x48, 0x83, 0xEC, 0x20,				        // sub rsp 0x20
@@ -46,9 +47,9 @@ int LoadDll(HANDLE hProcess, const WCHAR* dllName) {
 
     size_t shellCodeSize = sizeof(loadLibraryCodeCave);
 
-    *(DWORD64*)((PUCHAR)loadLibraryCodeCave + 2) = (DWORD64)(ULONG_PTR)remoteMemory + shellCodeSize;
-	*(DWORD64*)((PUCHAR)loadLibraryCodeCave + 12) = (DWORD64)(ULONG_PTR)addrLoadLibraryW;
-    *(DWORD64*)((PUCHAR)loadLibraryCodeCave + 48) = (DWORD64)(ULONG_PTR)addrExitThread;
+    *(DWORD64*)((PUCHAR)loadLibraryCodeCave + 6) = (DWORD64)(ULONG_PTR)remoteMemory + shellCodeSize;
+	*(DWORD64*)((PUCHAR)loadLibraryCodeCave + 16) = (DWORD64)(ULONG_PTR)addrLoadLibraryW;
+    *(DWORD64*)((PUCHAR)loadLibraryCodeCave + 52) = (DWORD64)(ULONG_PTR)addrExitThread;
     
 
     CopyMemory(rwMemory, loadLibraryCodeCave, sizeof(loadLibraryCodeCave));
