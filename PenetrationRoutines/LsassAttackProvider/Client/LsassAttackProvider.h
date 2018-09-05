@@ -18,29 +18,11 @@ public:
     int GetUsableSharedMemSize() {
         return smc.GetUsableSharedMemSize();
     }
+    bool StartAttack();
 protected:
     // wstring pivotProcess;
-    string targetProcess;
+    string targetProcess = "";
     StealthyMemClient smc;
     vector<BYTE> HexStringToBytes(string hexString);
 };
 
-
-/*
-Strings of interest:
-lua_*
-get_*
-get_unit_data
-mTarget*
-unit_position
-unit_indices
-unit_rotation
-local_rotation
-local_position
-set_local_position
-world_pose
-world_rotation
-world_position
-set_local_pose
-update_position_lookup
-*/

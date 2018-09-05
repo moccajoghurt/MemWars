@@ -83,6 +83,68 @@ bool SPIAttackProvider::Init(string _targetProcess/*, string _pivotProcess*/) {
     return TRUE;
 }
 
+bool SPIAttackProvider::StartAttack() {
+    if (this->targetProcess == "") {
+        results += "[-] StartAttack() failed. Specify target process first with SetTargetProcessByName()\n";
+        return FALSE;
+    }
+    wstring targetProcess(targetProcess.begin(), targetProcess.end());
+    HANDLE hProcess = GetProcessHandleByName(targetProcess, PROCESS_QUERY_INFORMATION);
+    if (hProcess == NULL) {
+        results += "[-] StartAttack() failed. Could not retrieve the HANDLE of the process.\n";
+        results += "[-] The automated penetration test failed but the Read/WriteProcessMemory-Functions might still work. Try to read custom memory offsets to ensure that the process is fully protected.\n";
+        return FALSE;
+    }
+    
+    const WCHAR* value = L"WINDOWS";
+    size_t size = wcslen(value);
+    MEMORY_BASIC_INFORMATION info;
+    for (PBYTE p = NULL; VirtualQueryEx(hProcess, p, &info, sizeof(info)) != 0; p += info.RegionSize) {
+        if (info.State == MEM_COMMIT) {
+            UINT readSize = info.RegionSize > GetUsableSharedMemSize() ? GetUsableSharedMemSize() : info.RegionSize;
+            readSize -= 5;
+            BYTE* buf = (BYTE*)malloc(readSize);
+            int lastIndex = 0;
+            for (int i = 0; i < info.RegionSize; i += readSize) {
+                if (i + size > info.RegionSize) {
+                    // end of memory region reached
+                    break;
+                }
+                SIZE_T sizeBuf;
+                smc.ReadVirtualMemory(p + i, buf, readSize, &sizeBuf);
+                for (int n = 0; n < readSize; n++) {
+                    // cout << *(buf + n);
+                    if (memcmp(buf + n, value, size) == 0) {
+                        results += "[+] StartAttack() successfully read memory values of ";
+                        results += this->targetProcess;
+                        results += ".";
+                        return TRUE;
+                    }
+                }
+                lastIndex = i;
+            }
+            if (lastIndex < info.RegionSize) {
+                SIZE_T sizeBuf;
+                smc.ReadVirtualMemory(p + lastIndex, buf, info.RegionSize - lastIndex, &sizeBuf);
+                for (int n = 0; n < info.RegionSize - lastIndex; n++) {
+                    // cout << *(buf + n);
+                    if (memcmp(buf + n, value, size) == 0) {
+                        results += "[+] StartAttack() successfully read memory values of ";
+                        results += this->targetProcess;
+                        results += ".";
+                        return TRUE;
+                    }
+                }
+            }
+            free(buf);
+        }
+    }
+    results += "[-] StartAttack() failed. Could not read memory of ";
+    results += this->targetProcess;
+    results += ".";
+    return FALSE;
+}
+
 
 // int main() {
 
