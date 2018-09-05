@@ -56,6 +56,7 @@ int main() {
         .addFunction ("ReadProcessMemory", &SPIAttackProvider::ReadProcessMemory)
         .addFunction ("WriteProcessMemory", &SPIAttackProvider::WriteProcessMemory)
         .addFunction ("GetUsableSharedMemSize", &SPIAttackProvider::GetUsableSharedMemSize)
+        .addFunction ("StartAttack", &SPIAttackProvider::StartAttack)
     .endClass()
     .deriveClass <KernelDLLInjectionProvider, AttackProvider>("HiddenKernelDLLInjector")
         .addConstructor<void(*) (void)>()

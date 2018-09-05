@@ -71,7 +71,7 @@ public:
         GetTempPath(MAX_PATH, tempPath);
         lstrcatA(tempPath, "dllInjectionConfirmationFile");
         if (!PathFileExists(tempPath)) {
-            results += "[-] InjectDLL() failed. Confirmation file could not be found.\n";
+            results += "[-] InjectDLL() failed. Confirmation file could not be found. This indicates that LoadLibrary() failed.\n";
             return FALSE;
         }
         results += "[+] InjectDLLIntoProcess() was successful.\n[+] ";

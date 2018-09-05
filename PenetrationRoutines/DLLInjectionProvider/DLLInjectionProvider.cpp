@@ -57,15 +57,8 @@ bool DLLInjectionProvider::InjectDLL() {
     GetTempPath(MAX_PATH, tempPath);
     lstrcatA(tempPath, "dllInjectionConfirmationFile");
     if (!PathFileExists(tempPath)) {
-        results += "[-] InjectDLL() was successful but the confirmation file could not be found.\n";
-        results += "[-] This indicates that " ;
-        results += this->processName;
-        results += " is vulnerable to DLL injections but the injection failed for other reasons.\n";
-        results += "[-] Possible reasons: \n[-] - Process and DLL differ in bit architecture (x86/x64).\n";
-        results += "[-] - The DLL could not be found by the target process because the DLL path was not absolute.\n";
-        results += "[-] - The DLL has already been injected to the target process.\n";
-        results += "[-] - The DLL contains runtime errors.\n";
-        return FALSE;
+        results += "[+] InjectDLL() was successful but the confirmation file could not be found.\n";
+        return TRUE;
     }
     results += "[+] InjectDLL() was successful.\n[+] ";
     results += this->processName;

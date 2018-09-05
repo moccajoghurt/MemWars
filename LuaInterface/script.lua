@@ -1,12 +1,12 @@
 
-useDllInjector = true
+useDllInjector = false
 useDirect3DInjector = false
 useIATHookInjector = false
 useThreadHijacker = false
-useLsassAttack = false
+useLsassAttack = true
 useKernelDLLInector = false
 
-targetProcessName = "LoadLibraryHook.exe"
+targetProcessName = "notepad.exe"
 
 -- todo: timeout
 if useDllInjector then
@@ -76,11 +76,14 @@ if useLsassAttack then
         print("Successfully setup communication with lsass.exe")
     end
     
-    readVal = lsassAttackClient:ReadProcessMemory("0x1c921120000", 1)
-    print(readVal)
-    lsassAttackClient:WriteProcessMemory("0x1c921130000", toLittleEndian("0xBE"))
-    readVal = lsassAttackClient:ReadProcessMemory("0x1c921130000", 1)
-    print(readVal)
+    -- readVal = lsassAttackClient:ReadProcessMemory("0x1c921120000", 1)
+    -- print(readVal)
+    -- lsassAttackClient:WriteProcessMemory("0x1c921130000", toLittleEndian("0xBE"))
+    -- readVal = lsassAttackClient:ReadProcessMemory("0x1c921130000", 1)
+    -- print(readVal)
+    if lsassAttackClient:StartAttack() then
+        print("Successfully read memory of " .. targetProcessName)
+    end
     print(lsassAttackClient:GetAttackResults())
 end
 

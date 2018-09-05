@@ -24,7 +24,7 @@ int LoadDll(HANDLE hProcess, const WCHAR* dllName) {
 
     void* rwMemory = VirtualAlloc(NULL, 4096, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
     if (rwMemory == NULL) {
-        cout << "VirtualAlloc returned NULL. Memory full?" << endl;
+        cout << "VirtualAlloc returned NULL. Memory full? Error code: " << GetLastError() <<endl;
         return 1;
     }
 
