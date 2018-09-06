@@ -35,7 +35,7 @@ bool DLLInjectionProvider::InjectDLL() {
         return FALSE;
     }
     int status = LoadDll(hProcess, dllPath.c_str());
-    if (status != 0) {
+    if (status != 0 && status != 10) {
         results += "[-] InjectDLL() failed. Could not inject DLL. System Error Code: ";
         results += to_string(GetLastError());
         results += "\n";
@@ -45,7 +45,6 @@ bool DLLInjectionProvider::InjectDLL() {
         if (status == 4) results += "[-] Could not retrieve process address of LoadLibraryW or ExitThread.\n";
         if (status == 5) results += "[-] Could not run CreateRemoteThread() on target process.\n";
         if (status == 6) results += "[-] WaitForSingleObject() returned WAIT_FAILED.\n";
-        if (status == 7) results += "[-] LoadLibrary() returned NULL.\n";
         if (status == 8) results += "[-] GetExitCodeThread() failed. Could not retrieve status of remote thread.\n";
         results += "[+] This indicates that ";
         results += this->processName;
@@ -56,14 +55,25 @@ bool DLLInjectionProvider::InjectDLL() {
     TCHAR tempPath[MAX_PATH];
     GetTempPath(MAX_PATH, tempPath);
     lstrcatA(tempPath, "dllInjectionConfirmationFile");
-    if (!PathFileExists(tempPath)) {
-        results += "[+] InjectDLL() was successful but the confirmation file could not be found.\n";
-        return TRUE;
+    if (status == 0) {
+        results += "[+] InjectDLL() was successful.\n[+] ";
+        results += this->processName;
+        results += " is vulnerable to DLL injections (confirmed by return value of LoadLibrary).\n";
+
+    } else if (status == 10 && !PathFileExists(tempPath)) {
+        results += "[-] InjectDLL() failed. LoadLibrary returned NULL and confirmation file could not be found.\n";
+        results += "[-] This indicates that ";
+        results += this->processName;
+        results += " is protected from DLL Injections.\n";
+        return FALSE;
+
+    } else {
+        results += "[+] InjectDLL() was successful.\n[+] ";
+        results += this->processName;
+        results += " is vulnerable to DLL injections (confirmed by the confirmation file creation).\n";
     }
-    results += "[+] InjectDLL() was successful.\n[+] ";
-    results += this->processName;
-    results += " is vulnerable to DLL injections.\n";
-    if (!DeleteFile(tempPath)) {
+    
+    if (PathFileExists(tempPath) && !DeleteFile(tempPath)) {
         results += "[-] Warning: confirmation file could not be deleted! Make sure to delete it before running further tests. The containing folder is:\n";
         results += tempPath;
         results += "\n";
