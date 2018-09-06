@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "Injector.h"
 
-int LoadDll(HANDLE hProcess, const WCHAR* dllPath) {
+int LoadDllNoShellcode(HANDLE hProcess, const WCHAR* dllPath) {
 	int namelen = wcslen(dllPath) + 1;
     LPVOID remoteMemory = VirtualAllocEx(hProcess, NULL, namelen * sizeof(WCHAR), MEM_COMMIT, PAGE_EXECUTE);
     if (remoteMemory == NULL) {
@@ -32,6 +32,6 @@ int LoadDll(HANDLE hProcess, const WCHAR* dllPath) {
     }
     CloseHandle(thread);
     
-    return 0;
+    return 10;
 }
 
