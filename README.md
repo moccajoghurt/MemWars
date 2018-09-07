@@ -24,6 +24,6 @@ The following attack methods are implemented:
 The project is still under development.
 
 ## TODO:
-
+- formalize tests
+- development of a method that determines whether network data are encrypted
 - Security checks before execution of certain attacks
-- Development of exemplary anti-cheat methods that defend against attacks
