@@ -16,14 +16,6 @@ extern "C" {
 using namespace luabridge;
 using namespace std;
 
-// class TestClass {
-// public:
-//     TestClass(){cout << "hi123" << endl;}
-//     string TestFunc(const std::string& s) {
-//         return "hallo";
-//     }
-// };
-
 int main(int argc, char* argv[]) {
 
     if (argc != 2) {
@@ -85,10 +77,4 @@ int main(int argc, char* argv[]) {
     }
 
     lua_close(L);
-
-    // getGlobalNamespace(L)
-    // .beginClass<TestClass>("TestClass")
-    //     .addConstructor<void(*) (void)>()
-    //     .addFunction ("TestFunc", &TestClass::TestFunc)
-    // .endClass();
 }

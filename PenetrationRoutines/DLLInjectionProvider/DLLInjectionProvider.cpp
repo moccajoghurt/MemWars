@@ -30,6 +30,7 @@ bool DLLInjectionProvider::SetTargetDLL(const string _dllPath) {
 }
 
 bool DLLInjectionProvider::InjectDLL() {
+    DeleteConfirmationFile(); // make sure there is no old confirmation file
     if (this->dllPath == L"" || this->hProcess == NULL) {
         results += "[-] InjectDLL() failed. Could not inject DLL. DLL or process is invalid.\n";
         return FALSE;
@@ -53,12 +54,12 @@ bool DLLInjectionProvider::InjectDLL() {
         if (ret == WAIT_TIMEOUT) {
             TerminateThread(hThread, 0);
             results += "[-] InjectDLL() failed. Injection timed out.\n";
+            DeleteConfirmationFile();
             return FALSE;
         } else {
             GetExitCodeThread(hThread, &status);
         }
     }
-    
     
     if (status != 0 && status != 10) {
         results += "[-] InjectDLL() failed. Could not inject DLL. System Error Code: ";
@@ -80,6 +81,7 @@ bool DLLInjectionProvider::InjectDLL() {
     TCHAR tempPath[MAX_PATH];
     GetTempPath(MAX_PATH, tempPath);
     lstrcatA(tempPath, "dllInjectionConfirmationFile");
+    
     if (status == 0) {
         results += "[+] InjectDLL() was successful.\n[+] ";
         results += this->processName;
@@ -112,18 +114,9 @@ bool DLLInjectionProvider::InjectDLL() {
     return TRUE;
 }
 
-DWORD StartThreadedInjection(LPVOID param) {
-    INJECTION_DATA* data = (INJECTION_DATA*)param;
-    if (data->useShellcode) {
-        return LoadDll(data->hProcess, data->dllPath.c_str());
-    } else {
-        return LoadDllNoShellcode(data->hProcess, data->dllPath.c_str());
-    }
-}
 
-
-void DLLInjectionProvider::SetTimeout(int miliSeconds) {
-    this->timeout = miliSeconds;
+void DLLInjectionProvider::SetTimeout(int milliSeconds) {
+    this->timeout = milliSeconds;
 }
 
 void DLLInjectionProvider::RequireConfirmationFile() {
@@ -133,6 +126,22 @@ void DLLInjectionProvider::RequireConfirmationFile() {
 bool DLLInjectionProvider::AssertCompatible() {
     // would be nice to have (check if DLL and process share bit architecture)
     return TRUE;
+}
+
+DWORD StartThreadedInjection(LPVOID param) {
+    INJECTION_DATA* data = (INJECTION_DATA*)param;
+    if (data->useShellcode) {
+        return LoadDll(data->hProcess, data->dllPath.c_str());
+    } else {
+        return LoadDllNoShellcode(data->hProcess, data->dllPath.c_str());
+    }
+}
+
+bool DeleteConfirmationFile() {
+    TCHAR tempPath[MAX_PATH];
+    GetTempPath(MAX_PATH, tempPath);
+    lstrcatA(tempPath, "dllInjectionConfirmationFile");
+    return DeleteFile(tempPath);
 }
 
 

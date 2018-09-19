@@ -7,7 +7,7 @@ injector:SetTargetDLL("C:/Users/Marius/git/MemWars/AttackServices/SocketHookAtta
 -- injector:SetTargetDLL("C:/Users/Marius/git/MemWars/AttackServices/NetworkEncryptionDetector/DetectEncryptionDLL.dll")
 injector:SetTargetProcessByName("SocketTestApp.exe")
 injector:RequireConfirmationFile()
-injector:SetTimeout(1000)
+-- injector:SetTimeout(1000)
 if injector:InjectDLL() then
     print("Successfully injected the DLL in the target process")
 end

@@ -7,7 +7,6 @@ using namespace std;
 
 void CreateConfirmationFile();
 HANDLE hMutex;
-BOOL unhook = FALSE;
 shared_ptr<PLH::Detour> Detour_Send(new PLH::Detour);
 shared_ptr<PLH::Detour> Detour_SendTo(new PLH::Detour);
 shared_ptr<PLH::Detour> Detour_WSASend(new PLH::Detour);
@@ -94,6 +93,7 @@ int __stdcall hWSASendMsg(SOCKET Handle, LPWSAMSG lpMsg, DWORD dwFlags, LPDWORD 
     // return oWSASendMsg(Handle, lpMsg, dwFlags, lpNumberOfBytesSent, lpOverlapped, lpCompletionRoutine);
 }
 
+BOOL unhook = FALSE;
 void CreateConfirmationFile() {
     TCHAR tempPath[MAX_PATH];
     GetTempPath(MAX_PATH, tempPath);
@@ -104,13 +104,6 @@ void CreateConfirmationFile() {
 }
 
 DWORD WINAPI InitializeHook(LPVOID lpParam) {
-    
-    // hMutex = CreateMutex(NULL, TRUE /*initial ownership*/, NULL);
-    // if (hMutex == NULL) {
-    //     MessageBoxA(NULL, "Mutex failed\n", "MemWars Framework", MB_OK | MB_TOPMOST);
-    //     FreeLibraryAndExitThread((HMODULE)lpParam, 0);
-    //     return 1;
-    // }
 
     Detour_Send->SetupHook((BYTE*)&send,(BYTE*) &hSend);
     Detour_Send->Hook();

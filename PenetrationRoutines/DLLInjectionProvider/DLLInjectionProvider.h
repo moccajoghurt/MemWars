@@ -13,6 +13,7 @@ struct INJECTION_DATA {
 };
 
 DWORD StartThreadedInjection(LPVOID param);
+bool DeleteConfirmationFile();
 
 class DLLInjectionProvider : public AttackProvider {
 public:
@@ -20,7 +21,7 @@ public:
     bool SetTargetProcessByName(const string);
     bool SetTargetDLL(const string);
     void RequireConfirmationFile();
-    void SetTimeout(int miliSeconds);
+    void SetTimeout(int milliSeconds);
     bool InjectDLL();
     bool AssertCompatible(); // possible addition
     
