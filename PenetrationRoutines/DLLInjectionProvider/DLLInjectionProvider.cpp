@@ -30,11 +30,36 @@ bool DLLInjectionProvider::SetTargetDLL(const string _dllPath) {
 }
 
 bool DLLInjectionProvider::InjectDLL() {
-    if (dllPath == L"" || hProcess == NULL) {
+    if (this->dllPath == L"" || this->hProcess == NULL) {
         results += "[-] InjectDLL() failed. Could not inject DLL. DLL or process is invalid.\n";
         return FALSE;
     }
-    int status = LoadDll(hProcess, dllPath.c_str());
+    DWORD status;
+    if (this->timeout <= 0) {
+        if (!requireConfirmationFile) {
+            status = LoadDll(hProcess, dllPath.c_str());
+        } else {
+            status = LoadDllNoShellcode(hProcess, dllPath.c_str());
+        }
+    } else {
+
+        INJECTION_DATA data;
+        data.dllPath = this->dllPath;
+        data.hProcess = this->hProcess;
+        data.useShellcode = requireConfirmationFile ? FALSE : TRUE;
+        HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartThreadedInjection, &data, 0, NULL);
+        DWORD ret = WaitForSingleObject(hThread, this->timeout);
+
+        if (ret == WAIT_TIMEOUT) {
+            TerminateThread(hThread, 0);
+            results += "[-] InjectDLL() failed. Injection timed out.\n";
+            return FALSE;
+        } else {
+            GetExitCodeThread(hThread, &status);
+        }
+    }
+    
+    
     if (status != 0 && status != 10) {
         results += "[-] InjectDLL() failed. Could not inject DLL. System Error Code: ";
         results += to_string(GetLastError());
@@ -51,20 +76,26 @@ bool DLLInjectionProvider::InjectDLL() {
         results += " is protected from DLL Injections.\n";
         return FALSE;
     }
-    Sleep(500); // give the DLL time for the file creation
+    Sleep(1000); // give the DLL time for the file creation
     TCHAR tempPath[MAX_PATH];
     GetTempPath(MAX_PATH, tempPath);
     lstrcatA(tempPath, "dllInjectionConfirmationFile");
     if (status == 0) {
         results += "[+] InjectDLL() was successful.\n[+] ";
         results += this->processName;
-        results += " is vulnerable to DLL injections (confirmed by return value of LoadLibrary).\n";
+        results += " is vulnerable to DLL injections (confirmed by the return value of LoadLibrary).\n";
 
     } else if (status == 10 && !PathFileExists(tempPath)) {
-        results += "[-] InjectDLL() failed. LoadLibrary returned NULL and confirmation file could not be found.\n";
-        results += "[-] This indicates that ";
-        results += this->processName;
-        results += " is protected from DLL Injections.\n";
+        if (!requireConfirmationFile) {
+            results += "[-] InjectDLL() failed. LoadLibrary returned NULL and confirmation file could not be found.\n";
+            results += "[-] This indicates that ";
+            results += this->processName;
+            results += " is protected from DLL Injections.\n";
+
+        } else {
+            results += "[-] InjectDLL() failed. Confirmation file could not be found.\n";
+        }
+        
         return FALSE;
 
     } else {
@@ -79,6 +110,24 @@ bool DLLInjectionProvider::InjectDLL() {
         results += "\n";
     }
     return TRUE;
+}
+
+DWORD StartThreadedInjection(LPVOID param) {
+    INJECTION_DATA* data = (INJECTION_DATA*)param;
+    if (data->useShellcode) {
+        return LoadDll(data->hProcess, data->dllPath.c_str());
+    } else {
+        return LoadDllNoShellcode(data->hProcess, data->dllPath.c_str());
+    }
+}
+
+
+void DLLInjectionProvider::SetTimeout(int miliSeconds) {
+    this->timeout = miliSeconds;
+}
+
+void DLLInjectionProvider::RequireConfirmationFile() {
+    requireConfirmationFile = TRUE;
 }
 
 bool DLLInjectionProvider::AssertCompatible() {
