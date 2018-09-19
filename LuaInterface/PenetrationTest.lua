@@ -1,30 +1,25 @@
+print(">> MemWars Penetration Testing Framework")
+print(">> Enter the target process name that should be penetrated")
 
-useDllInjector = true
-useDirect3DInjector = true
-useIATHookInjector = true
-useThreadHijacker = false
-useLsassAttack = false
-useKernelDLLInector = false
+targetProcessName = io.read()
 
-targetProcessName = "notepad.exe"
-
--- todo: timeout
-if useDllInjector then
-    print("#### Testing DLL Injection")
-    injector = DLLInjector()
-    injector:SetTargetDLL("C:/Users/Marius/git/MemWars/AttackServices/DLLInjectionAttack/InjectedDLL.dll")
-    injector:SetTargetProcessByName(targetProcessName)
-    if injector:InjectDLL() then
-        print("Successfully injected the DLL in the target process")
-    end
-    print(injector:GetAttackResults())
+print(">> Testing DLL Injection")
+injector = DLLInjector()
+injector:SetTargetDLL("C:/Users/Marius/git/MemWars/AttackServices/DLLInjectionAttack/InjectedDLL.dll")
+-- injector:SetTargetDLL("C:/Users/Marius/git/MemWars/AttackServices/NetworkEncryptionDetector/DetectEncryptionDLL.dll")
+injector:SetTargetProcessByName(targetProcessName)
+if injector:InjectDLL() then
+    print("Successfully injected the DLL in the target process")
 end
+print(injector:GetAttackResults())
+
 
 if useDirect3DInjector then
     print("#### Testing Direct3D 11 DLL Injection")
     direct3dinjector = DLLInjector()
     direct3dinjector:SetTargetDLL("C:/Users/Marius/git/MemWars/AttackServices/Direct3D11HookAttack/Direct3DHookDLL.dll")
     direct3dinjector:SetTargetProcessByName(targetProcessName)
+    direct3dinjector:RequireConfirmationFile() -- this makes sure that not only LoadLibrary needs to be successful but also the hook
     if direct3dinjector:InjectDLL() then
         print("Successfully hooked the Direct 3D Function PresentHook()")
     end
@@ -36,6 +31,7 @@ if useIATHookInjector then
     IATHookInjector = DLLInjector()
     IATHookInjector:SetTargetDLL("C:/Users/Marius/git/MemWars/AttackServices/IATHookAttack/IATHookDLL.dll")
     IATHookInjector:SetTargetProcessByName(targetProcessName)
+    IATHookInjector:RequireConfirmationFile() -- this makes sure that not only LoadLibrary needs to be successful but also the hook
     if IATHookInjector:InjectDLL() then
         print("Successfully hooked the GetCurrentThreadId() Function")
     end

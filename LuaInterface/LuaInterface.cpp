@@ -24,7 +24,17 @@ using namespace std;
 //     }
 // };
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    if (argc != 2) {
+        cout << "usage: LuaInterface.exe MyScript.lua" << endl;
+        return 1;
+    }
+
+    if (!PathFileExists(argv[1])) {
+        cout << argv[1] << " does not exist." << endl;
+        return 1;
+    }
     
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
@@ -39,6 +49,7 @@ int main() {
         .addConstructor<void(*) (void)>()
         .addFunction ("SetTargetDLL", &DLLInjectionProvider::SetTargetDLL)
         .addFunction ("SetTargetProcessByName", &DLLInjectionProvider::SetTargetProcessByName)
+        .addFunction ("RequireConfirmationFile", &DLLInjectionProvider::ForceConfirmationFile)
         .addFunction ("InjectDLL", &DLLInjectionProvider::InjectDLL)
     .endClass()
     .deriveClass <ThreadHijackProvider, AttackProvider>("ThreadHijacker")
@@ -67,11 +78,9 @@ int main() {
     ;
 
 
-
-
-
-    if (luaL_dofile(L, "script.lua") != 0) {
-        cout << "execution failure occured!" << endl;
+    if (luaL_dofile(L, argv[1]) != 0) {
+        // execution failure occured, print error
+        cout << lua_tostring(L, -1) << endl;
     }
 
     lua_close(L);
