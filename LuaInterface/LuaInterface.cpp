@@ -48,6 +48,7 @@ int main(int argc, char* argv[]) {
     .deriveClass <ThreadHijackProvider, AttackProvider>("ThreadHijacker")
         .addConstructor<void(*) (void)>()
         .addFunction ("SetTargetProcessByName", &ThreadHijackProvider::SetTargetProcessByName)
+        .addFunction ("SetTimeout", &ThreadHijackProvider::SetTimeout)
         .addFunction ("HijackThread", &ThreadHijackProvider::HijackThread)
     .endClass()
     .deriveClass <SPIInstallProvider, AttackProvider>("LsassAttackInstaller")
