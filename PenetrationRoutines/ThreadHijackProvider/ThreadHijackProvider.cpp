@@ -22,7 +22,7 @@ bool ThreadHijackProvider::SetTargetProcessByName(const string _name) {
 }
 
 bool ThreadHijackProvider::HijackThread() {
-
+    DeleteHijackConfirmationFile();
     if (hProcess == NULL) {
         results += "[-] HijackThread() failed. Process HANDLE is NULL.\n";
         return FALSE;
@@ -49,8 +49,29 @@ bool ThreadHijackProvider::HijackThread() {
     }
 
     DWORD tid = tids[0];
+
+    DWORD status;
+    if (this->timeout <= 0) {
+        status = ThreadHijack(hProcess, tid);
+    } else {
+
+        HIJACK_DATA data;
+        data.hProcess = hProcess;
+        data.tid = tid;
+        HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartThreadedHijack, &data, 0, NULL);
+        DWORD ret = WaitForSingleObject(hThread, this->timeout);
+
+        if (ret == WAIT_TIMEOUT) {
+            TerminateThread(hThread, 0);
+            results += "[-] ThreadHijack() failed. Attack timed out.\n";
+            DeleteHijackConfirmationFile();
+            return FALSE;
+        } else {
+            GetExitCodeThread(hThread, &status);
+        }
+    }
+
     
-    int status = ThreadHijack(hProcess, tid);
     if (status != 0) {
         results += "[-] ThreadHijack() failed. Could not hijack thread. System Error Code: ";
         results += to_string(GetLastError());
@@ -95,6 +116,21 @@ bool ThreadHijackProvider::HijackThread() {
     return TRUE;
 }
 
+void ThreadHijackProvider::SetTimeout(int milliSeconds) {
+    this->timeout = milliSeconds;
+}
+
+DWORD StartThreadedHijack(LPVOID param) {
+    HIJACK_DATA* data = (HIJACK_DATA*)param;
+    return ThreadHijack(data->hProcess, data->tid);
+}
+
+bool DeleteHijackConfirmationFile() {
+    TCHAR tempPath[MAX_PATH];
+    GetTempPath(MAX_PATH, tempPath);
+    lstrcatA(tempPath, "hijackConfirmationFile");
+    return DeleteFile(tempPath);
+}
 
 
 // int main() {
