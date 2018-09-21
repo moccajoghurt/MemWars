@@ -13,6 +13,7 @@ The following attack methods are implemented:
 
 - (basic) [DLL Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/DLLInjectionAttack)
 - (basic) [Direct3D 11 Hook](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/Direct3D11HookAttack)
+- (basic) [Socket Hook](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/SocketHookAttack)
 - (basic) [Import Address Table Hook](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/IATHookAttack)
 - (basic) [JMP Hook](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/JmpHookAttack)
 - (basic) [Thread Hijacking](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/ThreadHijackAttack)
@@ -21,9 +22,4 @@ The following attack methods are implemented:
 - (advanced) [Hidden Kernel DLL Injection](https://github.com/moccajoghurt/MemWars/tree/master/AttackServices/HiddenKernelDLLInjectionAttack)
 
 
-The project is still under development.
-
-## TODO:
-- formalize tests
-- development of a method that determines whether network data are encrypted
-- Security checks before execution of certain attacks
+The project is developed for Windows 10 x64. All attack methods target x64 processes.
