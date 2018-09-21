@@ -77,10 +77,20 @@ bool DLLInjectionProvider::InjectDLL() {
         results += " is protected from DLL Injections.\n";
         return FALSE;
     }
-    Sleep(1000); // give the DLL time for the file creation
+
     TCHAR tempPath[MAX_PATH];
     GetTempPath(MAX_PATH, tempPath);
     lstrcatA(tempPath, "dllInjectionConfirmationFile");
+
+    // in case we require a confirmation file, give the injected DLL time to create it
+    if (status != 0) {
+        for (int i = 0; i < 500; i++) {
+            if (PathFileExists(tempPath)) {
+                break;
+            }
+            Sleep(10);
+        }
+    }
     
     if (status == 0) {
         results += "[+] InjectDLL() was successful.\n[+] ";

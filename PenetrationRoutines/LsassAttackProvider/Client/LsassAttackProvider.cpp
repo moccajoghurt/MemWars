@@ -117,7 +117,7 @@ bool SPIAttackProvider::StartAttack() {
                     if (memcmp(buf + n, value, size) == 0) {
                         results += "[+] StartAttack() successfully read memory values of ";
                         results += this->targetProcess;
-                        results += ".";
+                        results += ".\n";
                         return TRUE;
                     }
                 }
@@ -131,7 +131,7 @@ bool SPIAttackProvider::StartAttack() {
                     if (memcmp(buf + n, value, size) == 0) {
                         results += "[+] StartAttack() successfully read memory values of ";
                         results += this->targetProcess;
-                        results += ".";
+                        results += ".\n";
                         return TRUE;
                     }
                 }
@@ -141,7 +141,7 @@ bool SPIAttackProvider::StartAttack() {
     }
     results += "[-] StartAttack() failed. Could not read memory of ";
     results += this->targetProcess;
-    results += ".";
+    results += ".\n";
     return FALSE;
 }
 
