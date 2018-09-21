@@ -51,6 +51,7 @@ if useThreadHijacker then
     print("#### Testing thread hijacking")
     threadHijacker = ThreadHijacker()
     threadHijacker:SetTargetProcessByName(targetProcessName)
+    threadHijacker:SetTimeout(10000)
     if threadHijacker:HijackThread() then
         print("Successfully hijacked the main thread of " .. targetProcessName)
     end
