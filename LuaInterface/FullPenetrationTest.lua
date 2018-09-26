@@ -149,6 +149,7 @@ if HypervisorActivated() then
     colors.SetConsoleColor(colors.red)
     io.write("[-] Cannot test for Hidden Kernel DLL Injection since Hyperisor is activated.\n")
     io.write("[-] Deactivate the Hyper-V Hypervisor Service if you want to test for this attack.\n")
+    io.write("[-] Using this attack with Hypervisor activated leads to BSODs.\n")
     colors.SetConsoleColor(colors.white)
     return
 end
