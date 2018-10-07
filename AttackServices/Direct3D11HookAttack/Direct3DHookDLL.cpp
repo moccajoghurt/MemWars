@@ -88,10 +88,9 @@ DWORD WINAPI InitializeHook(LPVOID lpParam) {
 	pDeviceVTable = (DWORD_PTR*)pDevice;
     pDeviceVTable = (DWORD_PTR*)pDeviceVTable[0];
     
-    pD3D11Present = (D3D11Present)pSwapChainVtable[8];
     DetourD3D11Present->SetupHook((PBYTE)pSwapChainVtable[8], (PBYTE)HookD3D11Present);
     DetourD3D11Present->Hook();
-    // pD3D11Present = DetourD3D11Present->GetOriginal<pD3D11Present>();
+    pD3D11Present = DetourD3D11Present->GetOriginal<D3D11Present>();
     while (!unhooked) {
         Sleep(1000); // wait for D3D11Present to be called
     }
